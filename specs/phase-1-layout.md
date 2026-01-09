@@ -144,13 +144,79 @@ This entire block moves into:
 
 ## Mobile Handling
 
-Follow existing pattern:
-- `isDesktop()` media query already exists
-- On mobile: Hide MiddlePanel entirely
-- Show Chat directly (current behavior preserved)
-- Keep existing mobile toggle (Session vs Review)
+Middle panel becomes an **intermediate navigation screen** on mobile.
 
-No changes to mobile behavior required.
+### Mobile Flow
+
+**Current (OpenCode):**
+```
+Sidebar → Session (chat + prompt) ←→ Review (toggle)
+```
+
+**New (ADE):**
+```
+Sidebar → Middle Panel → Chat / Review / Context
+          (overview)     (detail views)
+```
+
+### Implementation
+
+```tsx
+// Track mobile view state
+const [mobileView, setMobileView] = createSignal<"middle" | "chat" | "review" | "context">("middle")
+
+// Mobile: show one view at a time with navigation
+<Show when={!isDesktop()}>
+  <Switch>
+    <Match when={mobileView() === "middle"}>
+      <MiddlePanel 
+        onOpenChat={() => setMobileView("chat")} 
+        onOpenFile={(f) => { setMobileView("review"); scrollToFile(f) }} 
+      />
+    </Match>
+    <Match when={mobileView() === "chat"}>
+      <MobileHeader title="Chat" onBack={() => setMobileView("middle")} />
+      <ChatContent />
+    </Match>
+    <Match when={mobileView() === "review"}>
+      <MobileHeader title="Review" onBack={() => setMobileView("middle")} />
+      <ReviewContent />
+    </Match>
+    <Match when={mobileView() === "context"}>
+      <MobileHeader title="Context" onBack={() => setMobileView("middle")} />
+      <ContextContent />
+    </Match>
+  </Switch>
+</Show>
+
+// Desktop: side by side as planned
+<Show when={isDesktop()}>
+  <MiddlePanel />
+  <ResizeHandle />
+  <RightPanel /> {/* Tabs: Chat, Review, Context, Files */}
+</Show>
+```
+
+### Mobile Middle Panel
+
+On mobile, the middle panel is the **landing page** for a session:
+- Shows session status, changed files, git info
+- Tap "Chat" button → navigate to chat view
+- Tap a file → navigate to review view, scrolled to that file
+- Back button returns to middle panel
+
+### Mobile Header Component
+
+```tsx
+function MobileHeader(props: { title: string; onBack: () => void }) {
+  return (
+    <div class="h-12 flex items-center gap-2 px-4 border-b border-border-weak-base">
+      <IconButton icon="arrow-left" variant="ghost" onClick={props.onBack} />
+      <span class="text-14-medium">{props.title}</span>
+    </div>
+  )
+}
+```
 
 ---
 
@@ -175,13 +241,15 @@ No changes to mobile behavior required.
 3. Create `FileList` component
 4. Create `GitStatus` component
 5. Create `MiddlePanel` container component
-6. Modify `session.tsx`:
-   - Add MiddlePanel to left side
+6. Create `MobileHeader` component
+7. Modify `session.tsx`:
+   - Add MiddlePanel to left side (desktop)
    - Add Chat tab trigger
    - Wrap existing chat UI in Tabs.Content
    - Update resize handle binding
-7. Test desktop layout
-8. Verify mobile still works
+   - Implement mobile view switching (middle → chat/review/context)
+8. Test desktop layout
+9. Test mobile navigation flow
 
 ---
 
@@ -225,3 +293,23 @@ const status = session.status // 'idle' | 'busy' | 'error'
 - [ ] Should session title be editable inline in middle panel?
 - [ ] Should FileList show all files or just changed files?
 - [ ] Middle panel min/max width: 200px min, 400px max?
+
+---
+
+## Patterns Verified
+
+All patterns align with existing OpenCode codebase:
+
+| Aspect | Pattern | Source |
+|--------|---------|--------|
+| Layout context store | `middlePanel: { width }` | Same as `sidebar`, `terminal`, `session` |
+| Persisted state | `persisted()` wrapper | `layout.tsx` line 48 |
+| Resize methods | `width()` / `resize()` | `session.width()` pattern |
+| Component location | `components/session/` | Existing session components |
+| Component exports | `index.ts` barrel | `components/session/index.ts` |
+| VCS/branch data | `sync.data.vcs?.branch` | `global-sync.tsx` line 55 |
+| Session status | `sync.data.session_status[id]` | Already available |
+| Diffs data | `diffs()` computed | Already in `session.tsx` |
+| Tabs component | `@opencode-ai/ui/tabs` | Already used |
+| ResizeHandle | `@opencode-ai/ui/resize-handle` | Already used |
+| Mobile detection | `isDesktop()` media query | `session.tsx` line 213 |
