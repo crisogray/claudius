@@ -63,6 +63,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         session: {
           width: 600,
         },
+        middlePanel: {
+          width: 280,
+        },
         mobileSidebar: {
           opened: false,
         },
@@ -349,6 +352,16 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
             return
           }
           setStore("session", "width", width)
+        },
+      },
+      middlePanel: {
+        width: createMemo(() => store.middlePanel?.width ?? 280),
+        resize(width: number) {
+          if (!store.middlePanel) {
+            setStore("middlePanel", { width })
+            return
+          }
+          setStore("middlePanel", "width", width)
         },
       },
       mobileSidebar: {
