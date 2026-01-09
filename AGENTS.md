@@ -173,6 +173,73 @@ SessionSummary.computeDiff() -> FileDiff[]
 // Non-git: session.diff from agent's internal tracking
 ```
 
+## Existing Features
+
+### Right Panel Tabs (in `pages/session.tsx`)
+
+| Tab | Trigger | Content |
+|-----|---------|---------|
+| **Review** | Auto (when files changed) | Diff viewer via `SessionReview`, unified/split toggle |
+| **Context** | Click context tab | Token stats, context breakdown bar, system prompt, raw messages |
+| **Files** | Open file (cmd+p) | Syntax-highlighted code, image preview, SVG preview, line selection |
+
+### Session Components (`components/session/`)
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `SessionHeader` | `session-header.tsx` | Project/session selectors, LSP/MCP indicators, share button |
+| `SessionContextTab` | `session-context-tab.tsx` | Token usage, context breakdown visualization, raw message viewer |
+| `SessionNewView` | `session-new-view.tsx` | New session view with worktree selection |
+| `SortableTab` | `session-sortable-tab.tsx` | Draggable file tabs |
+| `SortableTerminalTab` | `session-sortable-terminal-tab.tsx` | Draggable terminal tabs |
+
+### Dialogs (`components/dialog-*.tsx`)
+
+| Dialog | Keybind | Description |
+|--------|---------|-------------|
+| `DialogSelectFile` | `cmd+p` | File search and open |
+| `DialogSelectModel` | `cmd+'` | Model picker |
+| `DialogSelectMcp` | `cmd+;` | MCP server toggles |
+| `DialogSelectProvider` | — | Provider connection |
+| `DialogConnectProvider` | — | OAuth/API key entry |
+| `DialogSelectDirectory` | — | Project folder picker |
+| `DialogEditProject` | — | Project settings |
+| `DialogSelectServer` | — | Server connection |
+| `DialogManageModels` | — | Model management |
+
+### Terminal (`components/terminal.tsx`, `context/terminal.tsx`)
+
+- Multiple terminal instances via ghostty-web
+- WebSocket PTY connections
+- Drag-drop tab reordering
+- Buffer persistence across sessions
+- Theme-aware colors
+
+### Prompt Input (`components/prompt-input.tsx`)
+
+- `@` mentions for agents and files
+- `/` slash commands
+- `!` shell mode
+- Image attachments (drag-drop, paste)
+- File context pills
+- History navigation (up/down)
+
+### Layout (`context/layout.tsx`)
+
+- Resizable sidebar (projects/sessions)
+- Resizable session/panel split
+- Terminal panel (toggleable)
+- Mobile sidebar support
+- Scroll position persistence per tab
+
+### Indicators
+
+| Component | Description |
+|-----------|-------------|
+| `SessionContextUsage` | Token usage bar/indicator |
+| `SessionLspIndicator` | LSP server status |
+| `SessionMcpIndicator` | MCP server status |
+
 ## Development
 
 ```bash
