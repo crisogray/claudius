@@ -31,8 +31,7 @@ import { Global } from "../global"
 import { ProjectRoute } from "./project"
 import { ToolRegistry } from "../tool/registry"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { SessionPrompt } from "../session/prompt"
-import { SessionCompaction } from "../session/compaction"
+import { SDK } from "../sdk"
 import { SessionRevert } from "../session/revert"
 import { lazy } from "../util/lazy"
 import { Todo } from "../session/todo"
@@ -52,9 +51,7 @@ import { QuestionRoute } from "./question"
 import { Installation } from "@/installation"
 import { MDNS } from "./mdns"
 import { Worktree } from "../worktree"
-
-// @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
-globalThis.AI_SDK_LOG_WARNINGS = false
+import { sdkRoutes } from "./sdk-routes"
 
 export namespace Server {
   const log = Log.create({ service: "server" })
@@ -74,6 +71,7 @@ export namespace Server {
   const app = new Hono()
   export const App: () => Hono = lazy(
     () =>
+      // @ts-expect-error - Type instantiation is excessively deep due to deeply chained Hono routes
       app
         .onError((err, c) => {
           log.error("failed", {
@@ -1043,7 +1041,7 @@ export namespace Server {
             }),
           ),
           async (c) => {
-            SessionPrompt.cancel(c.req.valid("param").sessionID)
+            SDK.interrupt(c.req.valid("param").sessionID)
             return c.json(true)
           },
         )
@@ -1183,28 +1181,11 @@ export namespace Server {
           ),
           async (c) => {
             const sessionID = c.req.valid("param").sessionID
-            const body = c.req.valid("json")
-            const session = await Session.get(sessionID)
-            await SessionRevert.cleanup(session)
-            const msgs = await Session.messages({ sessionID })
-            let currentAgent = await Agent.defaultAgent()
-            for (let i = msgs.length - 1; i >= 0; i--) {
-              const info = msgs[i].info
-              if (info.role === "user") {
-                currentAgent = info.agent || (await Agent.defaultAgent())
-                break
-              }
-            }
-            await SessionCompaction.create({
+            // SDK handles compaction internally via /compact command
+            await SDK.start({
               sessionID,
-              agent: currentAgent,
-              model: {
-                providerID: body.providerID,
-                modelID: body.modelID,
-              },
-              auto: body.auto,
+              parts: [{ type: "text", text: "/compact" }],
             })
-            await SessionPrompt.loop(sessionID)
             return c.json(true)
           },
         )
@@ -1421,14 +1402,14 @@ export namespace Server {
               sessionID: z.string().meta({ description: "Session ID" }),
             }),
           ),
-          validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
+          validator("json", SDK.PromptInput.omit({ sessionID: true })),
           async (c) => {
             c.status(200)
             c.header("Content-Type", "application/json")
             return stream(c, async (stream) => {
               const sessionID = c.req.valid("param").sessionID
               const body = c.req.valid("json")
-              const msg = await SessionPrompt.prompt({ ...body, sessionID })
+              const msg = await SDK.start({ ...body, sessionID })
               stream.write(JSON.stringify(msg))
             })
           },
@@ -1453,14 +1434,14 @@ export namespace Server {
               sessionID: z.string().meta({ description: "Session ID" }),
             }),
           ),
-          validator("json", SessionPrompt.PromptInput.omit({ sessionID: true })),
+          validator("json", SDK.PromptInput.omit({ sessionID: true })),
           async (c) => {
             c.status(204)
             c.header("Content-Type", "application/json")
             return stream(c, async () => {
               const sessionID = c.req.valid("param").sessionID
               const body = c.req.valid("json")
-              SessionPrompt.prompt({ ...body, sessionID })
+              SDK.start({ ...body, sessionID })
             })
           },
         )
@@ -1493,11 +1474,29 @@ export namespace Server {
               sessionID: z.string().meta({ description: "Session ID" }),
             }),
           ),
-          validator("json", SessionPrompt.CommandInput.omit({ sessionID: true })),
+          validator(
+            "json",
+            z.object({
+              messageID: z.string().optional(),
+              agent: z.string().optional(),
+              model: z.string().optional(),
+              arguments: z.string(),
+              command: z.string(),
+              variant: z.string().optional(),
+            }),
+          ),
           async (c) => {
             const sessionID = c.req.valid("param").sessionID
             const body = c.req.valid("json")
-            const msg = await SessionPrompt.command({ ...body, sessionID })
+            // Format as command for SDK
+            const prompt = `/${body.command} ${body.arguments}`.trim()
+            const msg = await SDK.start({
+              sessionID,
+              messageID: body.messageID,
+              agent: body.agent,
+              variant: body.variant,
+              parts: [{ type: "text", text: prompt }],
+            })
             return c.json(msg)
           },
         )
@@ -1525,11 +1524,29 @@ export namespace Server {
               sessionID: z.string().meta({ description: "Session ID" }),
             }),
           ),
-          validator("json", SessionPrompt.ShellInput.omit({ sessionID: true })),
+          validator(
+            "json",
+            z.object({
+              agent: z.string(),
+              model: z
+                .object({
+                  providerID: z.string(),
+                  modelID: z.string(),
+                })
+                .optional(),
+              command: z.string(),
+            }),
+          ),
           async (c) => {
             const sessionID = c.req.valid("param").sessionID
             const body = c.req.valid("json")
-            const msg = await SessionPrompt.shell({ ...body, sessionID })
+            // Run shell command via SDK
+            const msg = await SDK.start({
+              sessionID,
+              agent: body.agent,
+              model: body.model,
+              parts: [{ type: "text", text: body.command }],
+            })
             return c.json(msg)
           },
         )
@@ -1771,27 +1788,12 @@ export namespace Server {
             },
           }),
           async (c) => {
-            const config = await Config.get()
-            const disabled = new Set(config.disabled_providers ?? [])
-            const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
-
-            const allProviders = await ModelsDev.get()
-            const filteredProviders: Record<string, (typeof allProviders)[string]> = {}
-            for (const [key, value] of Object.entries(allProviders)) {
-              if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) {
-                filteredProviders[key] = value
-              }
-            }
-
-            const connected = await Provider.list()
-            const providers = Object.assign(
-              mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
-              connected,
-            )
+            // Claude Agent SDK only supports Anthropic - get models from SDK dynamically
+            const provider = await Provider.getAnthropicProviderAsync()
             return c.json({
-              all: Object.values(providers),
-              default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
-              connected: Object.keys(connected),
+              all: [provider],
+              default: { [provider.id]: Provider.sort(Object.values(provider.models))[0].id },
+              connected: ["anthropic"],
             })
           },
         )
@@ -2817,6 +2819,8 @@ export namespace Server {
             })
           },
         )
+        // SDK routes - mounted separately to avoid type instantiation depth issues
+        .route("/", sdkRoutes)
         .all("/*", async (c) => {
           const path = c.req.path
           const response = await proxy(`https://app.opencode.ai${path}`, {

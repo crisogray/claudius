@@ -3,7 +3,6 @@
 import { client } from "./client.gen.js"
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from "./client/index.js"
 import type {
-  AgentPartInput,
   AppAgentsResponses,
   AppLogErrors,
   AppLogResponses,
@@ -23,8 +22,6 @@ import type {
   EventTuiToastShow,
   ExperimentalResourceListResponses,
   FileListResponses,
-  FilePartInput,
-  FilePartSource,
   FileReadResponses,
   FileStatusResponses,
   FindFilesResponses,
@@ -134,8 +131,6 @@ import type {
   SessionUnshareResponses,
   SessionUpdateErrors,
   SessionUpdateResponses,
-  SubtaskPartInput,
-  TextPartInput,
   ToolIdsErrors,
   ToolIdsResponses,
   ToolListErrors,
@@ -1314,13 +1309,27 @@ export class Session extends HeyApiClient {
         modelID: string
       }
       agent?: string
-      noReply?: boolean
-      tools?: {
-        [key: string]: boolean
-      }
-      system?: string
       variant?: string
-      parts?: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
+      parts?: Array<
+        | {
+            type: "text"
+            text: string
+            [key: string]: unknown | "text" | string
+          }
+        | {
+            type: "file"
+            path: string
+            [key: string]: unknown | "file" | string
+          }
+        | {
+            type: "agent"
+            [key: string]: unknown | "agent"
+          }
+        | {
+            type: "subtask"
+            [key: string]: unknown | "subtask"
+          }
+      >
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1334,9 +1343,6 @@ export class Session extends HeyApiClient {
             { in: "body", key: "messageID" },
             { in: "body", key: "model" },
             { in: "body", key: "agent" },
-            { in: "body", key: "noReply" },
-            { in: "body", key: "tools" },
-            { in: "body", key: "system" },
             { in: "body", key: "variant" },
             { in: "body", key: "parts" },
           ],
@@ -1402,13 +1408,27 @@ export class Session extends HeyApiClient {
         modelID: string
       }
       agent?: string
-      noReply?: boolean
-      tools?: {
-        [key: string]: boolean
-      }
-      system?: string
       variant?: string
-      parts?: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
+      parts?: Array<
+        | {
+            type: "text"
+            text: string
+            [key: string]: unknown | "text" | string
+          }
+        | {
+            type: "file"
+            path: string
+            [key: string]: unknown | "file" | string
+          }
+        | {
+            type: "agent"
+            [key: string]: unknown | "agent"
+          }
+        | {
+            type: "subtask"
+            [key: string]: unknown | "subtask"
+          }
+      >
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1422,9 +1442,6 @@ export class Session extends HeyApiClient {
             { in: "body", key: "messageID" },
             { in: "body", key: "model" },
             { in: "body", key: "agent" },
-            { in: "body", key: "noReply" },
-            { in: "body", key: "tools" },
-            { in: "body", key: "system" },
             { in: "body", key: "variant" },
             { in: "body", key: "parts" },
           ],
@@ -1458,14 +1475,6 @@ export class Session extends HeyApiClient {
       arguments?: string
       command?: string
       variant?: string
-      parts?: Array<{
-        id?: string
-        type: "file"
-        mime: string
-        filename?: string
-        url: string
-        source?: FilePartSource
-      }>
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -1482,7 +1491,6 @@ export class Session extends HeyApiClient {
             { in: "body", key: "arguments" },
             { in: "body", key: "command" },
             { in: "body", key: "variant" },
-            { in: "body", key: "parts" },
           ],
         },
       ],

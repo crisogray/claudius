@@ -268,35 +268,25 @@ export const AuthLoginCommand = cmd({
           return filtered
         })
 
-        const priority: Record<string, number> = {
-          opencode: 0,
-          anthropic: 1,
-          "github-copilot": 2,
-          openai: 3,
-          google: 4,
-          openrouter: 5,
-          vercel: 6,
-        }
+        // Anthropic is the primary provider for Claude Agent SDK
         let provider = await prompts.autocomplete({
           message: "Select provider",
           maxItems: 8,
           options: [
+            {
+              label: "Anthropic",
+              value: "anthropic",
+              hint: "recommended - Claude API key",
+            },
             ...pipe(
               providers,
               values(),
-              sortBy(
-                (x) => priority[x.id] ?? 99,
-                (x) => x.name ?? x.id,
-              ),
+              sortBy((x) => x.name ?? x.id),
               map((x) => ({
                 label: x.name,
                 value: x.id,
-                hint: {
-                  opencode: "recommended",
-                  anthropic: "Claude Max or API key",
-                }[x.id],
               })),
-            ),
+            ).filter((x) => x.value !== "anthropic"),
             {
               value: "other",
               label: "Other",
@@ -333,30 +323,8 @@ export const AuthLoginCommand = cmd({
           )
         }
 
-        if (provider === "amazon-bedrock") {
-          prompts.log.info(
-            "Amazon Bedrock authentication priority:\n" +
-              "  1. Bearer token (AWS_BEARER_TOKEN_BEDROCK or /connect)\n" +
-              "  2. AWS credential chain (profile, access keys, IAM roles)\n\n" +
-              "Configure via opencode.json options (profile, region, endpoint) or\n" +
-              "AWS environment variables (AWS_PROFILE, AWS_REGION, AWS_ACCESS_KEY_ID).",
-          )
-          prompts.outro("Done")
-          return
-        }
-
-        if (provider === "opencode") {
-          prompts.log.info("Create an api key at https://opencode.ai/auth")
-        }
-
-        if (provider === "vercel") {
-          prompts.log.info("You can create an api key at https://vercel.link/ai-gateway-token")
-        }
-
-        if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
-          prompts.log.info(
-            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
-          )
+        if (provider === "anthropic") {
+          prompts.log.info("Get your API key at https://console.anthropic.com/settings/keys")
         }
 
         const key = await prompts.password({

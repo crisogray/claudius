@@ -6,7 +6,7 @@ import { Bus } from "../bus"
 import { MessageV2 } from "../session/message-v2"
 import { Identifier } from "../id/id"
 import { Agent } from "../agent/agent"
-import { SessionPrompt } from "../session/prompt"
+import { SDK } from "../sdk"
 import { iife } from "@/util/iife"
 import { defer } from "@/util/defer"
 import { Config } from "../config/config"
@@ -129,13 +129,12 @@ export const TaskTool = Tool.define("task", async (ctx) => {
       }
 
       function cancel() {
-        SessionPrompt.cancel(session.id)
+        SDK.interrupt(session.id)
       }
       ctx.abort.addEventListener("abort", cancel)
       using _ = defer(() => ctx.abort.removeEventListener("abort", cancel))
-      const promptParts = await SessionPrompt.resolvePromptParts(params.prompt)
 
-      const result = await SessionPrompt.prompt({
+      const result = await SDK.start({
         messageID,
         sessionID: session.id,
         model: {
@@ -143,13 +142,7 @@ export const TaskTool = Tool.define("task", async (ctx) => {
           providerID: model.providerID,
         },
         agent: agent.name,
-        tools: {
-          todowrite: false,
-          todoread: false,
-          task: false,
-          ...Object.fromEntries((config.experimental?.primary_tools ?? []).map((t) => [t, false])),
-        },
-        parts: promptParts,
+        parts: [{ type: "text", text: params.prompt }],
       })
       unsub()
       const messages = await Session.messages({ sessionID: session.id })

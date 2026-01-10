@@ -28,7 +28,6 @@ import { MessageV2 } from "@/session/message-v2"
 import { Config } from "@/config/config"
 import { Todo } from "@/session/todo"
 import { z } from "zod"
-import { LoadAPIKeyError } from "ai"
 import type { OpencodeClient, SessionMessageResponse } from "@opencode-ai/sdk/v2"
 
 export namespace ACP {
@@ -404,7 +403,7 @@ export namespace ACP {
         const error = MessageV2.fromError(e, {
           providerID: this.config.defaultModel?.providerID ?? "unknown",
         })
-        if (LoadAPIKeyError.isInstance(error)) {
+        if (MessageV2.AuthError.isInstance(error)) {
           throw RequestError.authRequired()
         }
         throw e
@@ -456,7 +455,7 @@ export namespace ACP {
         const error = MessageV2.fromError(e, {
           providerID: this.config.defaultModel?.providerID ?? "unknown",
         })
-        if (LoadAPIKeyError.isInstance(error)) {
+        if (MessageV2.AuthError.isInstance(error)) {
           throw RequestError.authRequired()
         }
         throw e
@@ -816,9 +815,7 @@ export namespace ACP {
       }
       const agent = session.modeId ?? (await AgentModule.defaultAgent())
 
-      const parts: Array<
-        { type: "text"; text: string } | { type: "file"; url: string; filename: string; mime: string }
-      > = []
+      const parts: Array<{ type: "text"; text: string } | { type: "file"; path: string }> = []
       for (const part of params.prompt) {
         switch (part.type) {
           case "text":
@@ -831,16 +828,12 @@ export namespace ACP {
             if (part.data) {
               parts.push({
                 type: "file",
-                url: `data:${part.mimeType};base64,${part.data}`,
-                filename: "image",
-                mime: part.mimeType,
+                path: `data:${part.mimeType};base64,${part.data}`,
               })
             } else if (part.uri && part.uri.startsWith("http:")) {
               parts.push({
                 type: "file",
-                url: part.uri,
-                filename: "image",
-                mime: part.mimeType,
+                path: part.uri,
               })
             }
             break
@@ -1022,6 +1015,10 @@ export namespace ACP {
         return []
       })
 
+    // Default to Anthropic - Claude Agent SDK only supports Anthropic
+    const DEFAULT_PROVIDER = "anthropic"
+    const DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+
     if (specified && providers.length) {
       const provider = providers.find((p) => p.id === specified.providerID)
       if (provider && provider.models[specified.modelID]) return specified
@@ -1029,12 +1026,9 @@ export namespace ACP {
 
     if (specified && !providers.length) return specified
 
-    const opencodeProvider = providers.find((p) => p.id === "opencode")
-    if (opencodeProvider) {
-      if (opencodeProvider.models["big-pickle"]) {
-        return { providerID: "opencode", modelID: "big-pickle" }
-      }
-      const [best] = Provider.sort(Object.values(opencodeProvider.models))
+    const anthropicProvider = providers.find((p) => p.id === DEFAULT_PROVIDER)
+    if (anthropicProvider) {
+      const [best] = Provider.sort(Object.values(anthropicProvider.models))
       if (best) {
         return {
           providerID: best.providerID,
@@ -1043,44 +1037,26 @@ export namespace ACP {
       }
     }
 
-    const models = providers.flatMap((p) => Object.values(p.models))
-    const [best] = Provider.sort(models)
-    if (best) {
-      return {
-        providerID: best.providerID,
-        modelID: best.id,
-      }
-    }
-
     if (specified) return specified
 
-    return { providerID: "opencode", modelID: "big-pickle" }
+    return { providerID: DEFAULT_PROVIDER, modelID: DEFAULT_MODEL }
   }
 
-  function parseUri(
-    uri: string,
-  ): { type: "file"; url: string; filename: string; mime: string } | { type: "text"; text: string } {
+  function parseUri(uri: string): { type: "file"; path: string } | { type: "text"; text: string } {
     try {
       if (uri.startsWith("file://")) {
-        const path = uri.slice(7)
-        const name = path.split("/").pop() || path
         return {
           type: "file",
-          url: uri,
-          filename: name,
-          mime: "text/plain",
+          path: uri,
         }
       }
       if (uri.startsWith("zed://")) {
         const url = new URL(uri)
-        const path = url.searchParams.get("path")
-        if (path) {
-          const name = path.split("/").pop() || path
+        const filePath = url.searchParams.get("path")
+        if (filePath) {
           return {
             type: "file",
-            url: `file://${path}`,
-            filename: name,
-            mime: "text/plain",
+            path: `file://${filePath}`,
           }
         }
       }

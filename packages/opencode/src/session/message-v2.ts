@@ -1,13 +1,11 @@
 import { BusEvent } from "@/bus/bus-event"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
-import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
 import { Identifier } from "../id/id"
 import { LSP } from "../lsp"
 import { Snapshot } from "@/snapshot"
 import { fn } from "@/util/fn"
 import { Storage } from "@/storage/storage"
-import { ProviderTransform } from "@/provider/transform"
 import { STATUS_CODES } from "http"
 import { iife } from "@/util/iife"
 import { type SystemError } from "bun"
@@ -78,6 +76,7 @@ export namespace MessageV2 {
   export const ReasoningPart = PartBase.extend({
     type: z.literal("reasoning"),
     text: z.string(),
+    signature: z.string().optional(), // Claude thinking verification signature
     metadata: z.record(z.string(), z.any()).optional(),
     time: z.object({
       start: z.number(),
@@ -87,6 +86,19 @@ export namespace MessageV2 {
     ref: "ReasoningPart",
   })
   export type ReasoningPart = z.infer<typeof ReasoningPart>
+
+  // Redacted thinking from Claude (flagged by safety systems)
+  export const RedactedReasoningPart = PartBase.extend({
+    type: z.literal("redacted-reasoning"),
+    data: z.string(), // Encrypted thinking content
+    time: z.object({
+      start: z.number(),
+      end: z.number().optional(),
+    }),
+  }).meta({
+    ref: "RedactedReasoningPart",
+  })
+  export type RedactedReasoningPart = z.infer<typeof RedactedReasoningPart>
 
   const FilePartSourceBase = z.object({
     text: z
@@ -325,6 +337,7 @@ export namespace MessageV2 {
       TextPart,
       SubtaskPart,
       ReasoningPart,
+      RedactedReasoningPart,
       FilePart,
       ToolPart,
       StepStartPart,
@@ -379,6 +392,14 @@ export namespace MessageV2 {
       }),
     }),
     finish: z.string().optional(),
+    // SDK-specific fields for resume and debugging
+    sdk: z
+      .object({
+        uuid: z.string().optional(), // SDK message UUID
+        sessionId: z.string().optional(), // SDK session ID
+        parentToolUseId: z.string().optional(), // For subagent calls
+      })
+      .optional(),
   }).meta({
     ref: "AssistantMessage",
   })
@@ -426,130 +447,7 @@ export namespace MessageV2 {
   })
   export type WithParts = z.infer<typeof WithParts>
 
-  export function toModelMessage(input: WithParts[]): ModelMessage[] {
-    const result: UIMessage[] = []
-
-    for (const msg of input) {
-      if (msg.parts.length === 0) continue
-
-      if (msg.info.role === "user") {
-        const userMessage: UIMessage = {
-          id: msg.info.id,
-          role: "user",
-          parts: [],
-        }
-        result.push(userMessage)
-        for (const part of msg.parts) {
-          if (part.type === "text" && !part.ignored)
-            userMessage.parts.push({
-              type: "text",
-              text: part.text,
-            })
-          // text/plain and directory files are converted into text parts, ignore them
-          if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory")
-            userMessage.parts.push({
-              type: "file",
-              url: part.url,
-              mediaType: part.mime,
-              filename: part.filename,
-            })
-
-          if (part.type === "compaction") {
-            userMessage.parts.push({
-              type: "text",
-              text: "What did we do so far?",
-            })
-          }
-          if (part.type === "subtask") {
-            userMessage.parts.push({
-              type: "text",
-              text: "The following tool was executed by the user",
-            })
-          }
-        }
-      }
-
-      if (msg.info.role === "assistant") {
-        if (
-          msg.info.error &&
-          !(
-            MessageV2.AbortedError.isInstance(msg.info.error) &&
-            msg.parts.some((part) => part.type !== "step-start" && part.type !== "reasoning")
-          )
-        ) {
-          continue
-        }
-        const assistantMessage: UIMessage = {
-          id: msg.info.id,
-          role: "assistant",
-          parts: [],
-        }
-        for (const part of msg.parts) {
-          if (part.type === "text")
-            assistantMessage.parts.push({
-              type: "text",
-              text: part.text,
-              providerMetadata: part.metadata,
-            })
-          if (part.type === "step-start")
-            assistantMessage.parts.push({
-              type: "step-start",
-            })
-          if (part.type === "tool") {
-            if (part.state.status === "completed") {
-              if (part.state.attachments?.length) {
-                result.push({
-                  id: Identifier.ascending("message"),
-                  role: "user",
-                  parts: [
-                    {
-                      type: "text",
-                      text: `Tool ${part.tool} returned an attachment:`,
-                    },
-                    ...part.state.attachments.map((attachment) => ({
-                      type: "file" as const,
-                      url: attachment.url,
-                      mediaType: attachment.mime,
-                      filename: attachment.filename,
-                    })),
-                  ],
-                })
-              }
-              assistantMessage.parts.push({
-                type: ("tool-" + part.tool) as `tool-${string}`,
-                state: "output-available",
-                toolCallId: part.callID,
-                input: part.state.input,
-                output: part.state.time.compacted ? "[Old tool result content cleared]" : part.state.output,
-                callProviderMetadata: part.metadata,
-              })
-            }
-            if (part.state.status === "error")
-              assistantMessage.parts.push({
-                type: ("tool-" + part.tool) as `tool-${string}`,
-                state: "output-error",
-                toolCallId: part.callID,
-                input: part.state.input,
-                errorText: part.state.error,
-                callProviderMetadata: part.metadata,
-              })
-          }
-          if (part.type === "reasoning") {
-            assistantMessage.parts.push({
-              type: "reasoning",
-              text: part.text,
-              providerMetadata: part.metadata,
-            })
-          }
-        }
-        if (assistantMessage.parts.length > 0) {
-          result.push(assistantMessage)
-        }
-      }
-    }
-
-    return convertToModelMessages(result.filter((msg) => msg.parts.some((part) => part.type !== "step-start")))
-  }
+  // Note: toModelMessage removed - Claude SDK handles conversation history internally
 
   export const stream = fn(Identifier.schema("session"), async function* (sessionID) {
     const list = await Array.fromAsync(await Storage.list(["message", sessionID]))
@@ -612,14 +510,8 @@ export namespace MessageV2 {
         ).toObject()
       case MessageV2.OutputLengthError.isInstance(e):
         return e
-      case LoadAPIKeyError.isInstance(e):
-        return new MessageV2.AuthError(
-          {
-            providerID: ctx.providerID,
-            message: e.message,
-          },
-          { cause: e },
-        ).toObject()
+      case MessageV2.AuthError.isInstance(e):
+        return e
       case (e as SystemError)?.code === "ECONNRESET":
         return new MessageV2.APIError(
           {
@@ -633,27 +525,30 @@ export namespace MessageV2 {
           },
           { cause: e },
         ).toObject()
-      case APICallError.isInstance(e):
+      // Handle API errors with status codes (e.g., from fetch responses)
+      case e instanceof Error && "statusCode" in e:
+        const apiError = e as Error & {
+          statusCode?: number
+          responseBody?: string
+          responseHeaders?: Record<string, string>
+          isRetryable?: boolean
+        }
         const message = iife(() => {
-          let msg = e.message
+          let msg = apiError.message
           if (msg === "") {
-            if (e.responseBody) return e.responseBody
-            if (e.statusCode) {
-              const err = STATUS_CODES[e.statusCode]
+            if (apiError.responseBody) return apiError.responseBody
+            if (apiError.statusCode) {
+              const err = STATUS_CODES[apiError.statusCode]
               if (err) return err
             }
             return "Unknown error"
           }
-          const transformed = ProviderTransform.error(ctx.providerID, e)
-          if (transformed !== msg) {
-            return transformed
-          }
-          if (!e.responseBody || (e.statusCode && msg !== STATUS_CODES[e.statusCode])) {
+          if (!apiError.responseBody || (apiError.statusCode && msg !== STATUS_CODES[apiError.statusCode])) {
             return msg
           }
 
           try {
-            const body = JSON.parse(e.responseBody)
+            const body = JSON.parse(apiError.responseBody)
             // try to extract common error message fields
             const errMsg = body.message || body.error || body.error?.message
             if (errMsg && typeof errMsg === "string") {
@@ -661,20 +556,45 @@ export namespace MessageV2 {
             }
           } catch {}
 
-          return `${msg}: ${e.responseBody}`
+          return `${msg}: ${apiError.responseBody}`
         }).trim()
+
+        // Check for auth-related status codes
+        if (apiError.statusCode === 401 || apiError.statusCode === 403) {
+          return new MessageV2.AuthError(
+            {
+              providerID: ctx.providerID,
+              message,
+            },
+            { cause: e },
+          ).toObject()
+        }
 
         return new MessageV2.APIError(
           {
             message,
-            statusCode: e.statusCode,
-            isRetryable: e.isRetryable,
-            responseHeaders: e.responseHeaders,
-            responseBody: e.responseBody,
+            statusCode: apiError.statusCode,
+            isRetryable: apiError.isRetryable ?? (apiError.statusCode ? apiError.statusCode >= 500 : false),
+            responseHeaders: apiError.responseHeaders,
+            responseBody: apiError.responseBody,
           },
           { cause: e },
         ).toObject()
       case e instanceof Error:
+        // Check for auth-related error messages
+        if (
+          e.message.toLowerCase().includes("api key") ||
+          e.message.toLowerCase().includes("authentication") ||
+          e.message.toLowerCase().includes("unauthorized")
+        ) {
+          return new MessageV2.AuthError(
+            {
+              providerID: ctx.providerID,
+              message: e.message,
+            },
+            { cause: e },
+          ).toObject()
+        }
         return new NamedError.Unknown({ message: e.toString() }, { cause: e }).toObject()
       default:
         return new NamedError.Unknown({ message: JSON.stringify(e) }, { cause: e })

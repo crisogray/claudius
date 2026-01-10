@@ -1,12 +1,9 @@
 import { Config } from "../config/config"
 import z from "zod"
 import { Provider } from "../provider/provider"
-import { generateObject, type ModelMessage } from "ai"
-import { SystemPrompt } from "../session/system"
 import { Instance } from "../project/instance"
 import { Truncate } from "../tool/truncation"
 
-import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
@@ -244,41 +241,20 @@ export namespace Agent {
     return state().then((x) => Object.keys(x)[0])
   }
 
-  export async function generate(input: { description: string; model?: { providerID: string; modelID: string } }) {
-    const cfg = await Config.get()
-    const defaultModel = input.model ?? (await Provider.defaultModel())
-    const model = await Provider.getModel(defaultModel.providerID, defaultModel.modelID)
-    const language = await Provider.getLanguage(model)
-    const system = SystemPrompt.header(defaultModel.providerID)
-    system.push(PROMPT_GENERATE)
-    const existing = await list()
-    const result = await generateObject({
-      experimental_telemetry: {
-        isEnabled: cfg.experimental?.openTelemetry,
-        metadata: {
-          userId: cfg.username ?? "unknown",
-        },
-      },
-      temperature: 0.3,
-      messages: [
-        ...system.map(
-          (item): ModelMessage => ({
-            role: "system",
-            content: item,
-          }),
-        ),
-        {
-          role: "user",
-          content: `Create an agent configuration based on this request: \"${input.description}\".\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existing.map((i) => i.name).join(", ")}\n  Return ONLY the JSON object, no other text, do not wrap in backticks`,
-        },
-      ],
-      model: language,
-      schema: z.object({
-        identifier: z.string(),
-        whenToUse: z.string(),
-        systemPrompt: z.string(),
-      }),
-    })
-    return result.object
+  /**
+   * Generate an agent configuration using LLM
+   *
+   * Note: This feature is temporarily disabled during Claude SDK migration.
+   * The generateObject() API from the AI SDK is no longer available.
+   * This could be re-implemented using SDK.start() with structured output parsing.
+   */
+  export async function generate(_input: {
+    description: string
+    model?: { providerID: string; modelID: string }
+  }): Promise<{ identifier: string; whenToUse: string; systemPrompt: string }> {
+    throw new Error(
+      "Agent generation is temporarily disabled. " +
+        "Please create agents manually in your opencode.json configuration file.",
+    )
   }
 }

@@ -169,6 +169,11 @@ export type AssistantMessage = {
     }
   }
   finish?: string
+  sdk?: {
+    uuid?: string
+    sessionId?: string
+    parentToolUseId?: string
+  }
 }
 
 export type Message = UserMessage | AssistantMessage
@@ -211,9 +216,22 @@ export type ReasoningPart = {
   messageID: string
   type: "reasoning"
   text: string
+  signature?: string
   metadata?: {
     [key: string]: unknown
   }
+  time: {
+    start: number
+    end?: number
+  }
+}
+
+export type RedactedReasoningPart = {
+  id: string
+  sessionID: string
+  messageID: string
+  type: "redacted-reasoning"
+  data: string
   time: {
     start: number
     end?: number
@@ -432,6 +450,7 @@ export type Part =
       command?: string
     }
   | ReasoningPart
+  | RedactedReasoningPart
   | FilePart
   | ToolPart
   | StepStartPart
@@ -485,143 +504,6 @@ export type EventPermissionReplied = {
     sessionID: string
     requestID: string
     reply: "once" | "always" | "reject"
-  }
-}
-
-export type SessionStatus =
-  | {
-      type: "idle"
-    }
-  | {
-      type: "retry"
-      attempt: number
-      message: string
-      next: number
-    }
-  | {
-      type: "busy"
-    }
-
-export type EventSessionStatus = {
-  type: "session.status"
-  properties: {
-    sessionID: string
-    status: SessionStatus
-  }
-}
-
-export type EventSessionIdle = {
-  type: "session.idle"
-  properties: {
-    sessionID: string
-  }
-}
-
-export type QuestionOption = {
-  /**
-   * Display text (1-5 words, concise)
-   */
-  label: string
-  /**
-   * Explanation of choice
-   */
-  description: string
-}
-
-export type QuestionInfo = {
-  /**
-   * Complete question
-   */
-  question: string
-  /**
-   * Very short label (max 12 chars)
-   */
-  header: string
-  /**
-   * Available choices
-   */
-  options: Array<QuestionOption>
-  /**
-   * Allow selecting multiple choices
-   */
-  multiple?: boolean
-}
-
-export type QuestionRequest = {
-  id: string
-  sessionID: string
-  /**
-   * Questions to ask
-   */
-  questions: Array<QuestionInfo>
-  tool?: {
-    messageID: string
-    callID: string
-  }
-}
-
-export type EventQuestionAsked = {
-  type: "question.asked"
-  properties: QuestionRequest
-}
-
-export type QuestionAnswer = Array<string>
-
-export type EventQuestionReplied = {
-  type: "question.replied"
-  properties: {
-    sessionID: string
-    requestID: string
-    answers: Array<QuestionAnswer>
-  }
-}
-
-export type EventQuestionRejected = {
-  type: "question.rejected"
-  properties: {
-    sessionID: string
-    requestID: string
-  }
-}
-
-export type EventSessionCompacted = {
-  type: "session.compacted"
-  properties: {
-    sessionID: string
-  }
-}
-
-export type EventFileEdited = {
-  type: "file.edited"
-  properties: {
-    file: string
-  }
-}
-
-export type Todo = {
-  /**
-   * Brief description of the task
-   */
-  content: string
-  /**
-   * Current status of the task: pending, in_progress, completed, cancelled
-   */
-  status: string
-  /**
-   * Priority level of the task: high, medium, low
-   */
-  priority: string
-  /**
-   * Unique identifier for the todo item
-   */
-  id: string
-}
-
-export type EventTodoUpdated = {
-  type: "todo.updated"
-  properties: {
-    sessionID: string
-    todos: Array<Todo>
   }
 }
 
@@ -694,6 +576,57 @@ export type EventCommandExecuted = {
   }
 }
 
+export type Todo = {
+  /**
+   * Brief description of the task
+   */
+  content: string
+  /**
+   * Current status of the task: pending, in_progress, completed, cancelled
+   */
+  status: string
+  /**
+   * Priority level of the task: high, medium, low
+   */
+  priority: string
+  /**
+   * Unique identifier for the todo item
+   */
+  id: string
+}
+
+export type EventTodoUpdated = {
+  type: "todo.updated"
+  properties: {
+    sessionID: string
+    todos: Array<Todo>
+  }
+}
+
+export type EventSdkStarted = {
+  type: "sdk.started"
+  properties: {
+    sessionID: string
+    prompt: string
+  }
+}
+
+export type EventSdkCompleted = {
+  type: "sdk.completed"
+  properties: {
+    sessionID: string
+    messageID?: string
+  }
+}
+
+export type EventSdkError = {
+  type: "sdk.error"
+  properties: {
+    sessionID: string
+    error: string
+  }
+}
+
 export type PermissionAction = "allow" | "deny" | "ask"
 
 export type PermissionRule = {
@@ -732,6 +665,11 @@ export type Session = {
     partID?: string
     snapshot?: string
     diff?: string
+  }
+  sdk?: {
+    sessionId?: string
+    model?: string
+    tools?: Array<string>
   }
 }
 
@@ -772,6 +710,13 @@ export type EventSessionError = {
   }
 }
 
+export type EventFileEdited = {
+  type: "file.edited"
+  properties: {
+    file: string
+  }
+}
+
 export type EventFileWatcherUpdated = {
   type: "file.watcher.updated"
   properties: {
@@ -784,6 +729,102 @@ export type EventVcsBranchUpdated = {
   type: "vcs.branch.updated"
   properties: {
     branch?: string
+  }
+}
+
+export type QuestionOption = {
+  /**
+   * Display text (1-5 words, concise)
+   */
+  label: string
+  /**
+   * Explanation of choice
+   */
+  description: string
+}
+
+export type QuestionInfo = {
+  /**
+   * Complete question
+   */
+  question: string
+  /**
+   * Very short label (max 12 chars)
+   */
+  header: string
+  /**
+   * Available choices
+   */
+  options: Array<QuestionOption>
+  /**
+   * Allow selecting multiple choices
+   */
+  multiple?: boolean
+}
+
+export type QuestionRequest = {
+  id: string
+  sessionID: string
+  /**
+   * Questions to ask
+   */
+  questions: Array<QuestionInfo>
+  tool?: {
+    messageID: string
+    callID: string
+  }
+}
+
+export type EventQuestionAsked = {
+  type: "question.asked"
+  properties: QuestionRequest
+}
+
+export type QuestionAnswer = Array<string>
+
+export type EventQuestionReplied = {
+  type: "question.replied"
+  properties: {
+    sessionID: string
+    requestID: string
+    answers: Array<QuestionAnswer>
+  }
+}
+
+export type EventQuestionRejected = {
+  type: "question.rejected"
+  properties: {
+    sessionID: string
+    requestID: string
+  }
+}
+
+export type SessionStatus =
+  | {
+      type: "idle"
+    }
+  | {
+      type: "retry"
+      attempt: number
+      message: string
+      next: number
+    }
+  | {
+      type: "busy"
+    }
+
+export type EventSessionStatus = {
+  type: "session.status"
+  properties: {
+    sessionID: string
+    status: SessionStatus
+  }
+}
+
+export type EventSessionIdle = {
+  type: "session.idle"
+  properties: {
+    sessionID: string
   }
 }
 
@@ -853,27 +894,29 @@ export type Event =
   | EventMessagePartRemoved
   | EventPermissionAsked
   | EventPermissionReplied
-  | EventSessionStatus
-  | EventSessionIdle
-  | EventQuestionAsked
-  | EventQuestionReplied
-  | EventQuestionRejected
-  | EventSessionCompacted
-  | EventFileEdited
-  | EventTodoUpdated
   | EventTuiPromptAppend
   | EventTuiCommandExecute
   | EventTuiToastShow
   | EventTuiSessionSelect
   | EventMcpToolsChanged
   | EventCommandExecuted
+  | EventTodoUpdated
+  | EventSdkStarted
+  | EventSdkCompleted
+  | EventSdkError
   | EventSessionCreated
   | EventSessionUpdated
   | EventSessionDeleted
   | EventSessionDiff
   | EventSessionError
+  | EventFileEdited
   | EventFileWatcherUpdated
   | EventVcsBranchUpdated
+  | EventQuestionAsked
+  | EventQuestionReplied
+  | EventQuestionRejected
+  | EventSessionStatus
+  | EventSessionIdle
   | EventPtyCreated
   | EventPtyUpdated
   | EventPtyExited
@@ -1790,50 +1833,6 @@ export type VcsInfo = {
   branch: string
 }
 
-export type TextPartInput = {
-  id?: string
-  type: "text"
-  text: string
-  synthetic?: boolean
-  ignored?: boolean
-  time?: {
-    start: number
-    end?: number
-  }
-  metadata?: {
-    [key: string]: unknown
-  }
-}
-
-export type FilePartInput = {
-  id?: string
-  type: "file"
-  mime: string
-  filename?: string
-  url: string
-  source?: FilePartSource
-}
-
-export type AgentPartInput = {
-  id?: string
-  type: "agent"
-  name: string
-  source?: {
-    value: string
-    start: number
-    end: number
-  }
-}
-
-export type SubtaskPartInput = {
-  id?: string
-  type: "subtask"
-  prompt: string
-  description: string
-  agent: string
-  command?: string
-}
-
 export type Command = {
   name: string
   description?: string
@@ -1848,11 +1847,6 @@ export type Command = {
 export type Model = {
   id: string
   providerID: string
-  api: {
-    id: string
-    url: string
-    npm: string
-  }
   name: string
   family?: string
   capabilities: {
@@ -3128,16 +3122,27 @@ export type SessionPromptData = {
       modelID: string
     }
     agent?: string
-    noReply?: boolean
-    /**
-     * @deprecated tools and permissions have been merged, you can set permissions on the session itself now
-     */
-    tools?: {
-      [key: string]: boolean
-    }
-    system?: string
     variant?: string
-    parts: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
+    parts: Array<
+      | {
+          type: "text"
+          text: string
+          [key: string]: unknown | "text" | string
+        }
+      | {
+          type: "file"
+          path: string
+          [key: string]: unknown | "file" | string
+        }
+      | {
+          type: "agent"
+          [key: string]: unknown | "agent"
+        }
+      | {
+          type: "subtask"
+          [key: string]: unknown | "subtask"
+        }
+    >
   }
   path: {
     /**
@@ -3315,16 +3320,27 @@ export type SessionPromptAsyncData = {
       modelID: string
     }
     agent?: string
-    noReply?: boolean
-    /**
-     * @deprecated tools and permissions have been merged, you can set permissions on the session itself now
-     */
-    tools?: {
-      [key: string]: boolean
-    }
-    system?: string
     variant?: string
-    parts: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
+    parts: Array<
+      | {
+          type: "text"
+          text: string
+          [key: string]: unknown | "text" | string
+        }
+      | {
+          type: "file"
+          path: string
+          [key: string]: unknown | "file" | string
+        }
+      | {
+          type: "agent"
+          [key: string]: unknown | "agent"
+        }
+      | {
+          type: "subtask"
+          [key: string]: unknown | "subtask"
+        }
+    >
   }
   path: {
     /**
@@ -3368,14 +3384,6 @@ export type SessionCommandData = {
     arguments: string
     command: string
     variant?: string
-    parts?: Array<{
-      id?: string
-      type: "file"
-      mime: string
-      filename?: string
-      url: string
-      source?: FilePartSource
-    }>
   }
   path: {
     /**

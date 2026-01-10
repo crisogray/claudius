@@ -25,7 +25,7 @@ import { Identifier } from "../../id/id"
 import { Provider } from "../../provider/provider"
 import { Bus } from "../../bus"
 import { MessageV2 } from "../../session/message-v2"
-import { SessionPrompt } from "@/session/prompt"
+import { SDK } from "@/sdk"
 import { $ } from "bun"
 
 type GitHubAuthor = {
@@ -201,31 +201,22 @@ export const GithubInstallCommand = cmd({
           const app = await getAppInfo()
           await installGitHubApp()
 
-          const providers = await ModelsDev.get().then((p) => {
-            // TODO: add guide for copilot, for now just hide it
-            delete p["github-copilot"]
-            return p
-          })
+          const providers = await ModelsDev.get()
 
-          const provider = await promptProvider()
-          const model = await promptModel()
+          // Claude Agent SDK only supports Anthropic
+          const provider = "anthropic"
+          const model = await promptModel(providers)
           //const key = await promptKey()
 
           await addWorkflowFiles()
           printNextSteps()
 
           function printNextSteps() {
-            let step2
-            if (provider === "amazon-bedrock") {
-              step2 =
-                "Configure OIDC in AWS - https://docs.github.com/en/actions/how-tos/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services"
-            } else {
-              step2 = [
-                `    2. Add the following secrets in org or repo (${app.owner}/${app.repo}) settings`,
-                "",
-                ...providers[provider].env.map((e) => `       - ${e}`),
-              ].join("\n")
-            }
+            const step2 = [
+              `    2. Add the following secrets in org or repo (${app.owner}/${app.repo}) settings`,
+              "",
+              `       - ANTHROPIC_API_KEY`,
+            ].join("\n")
 
             prompts.outro(
               [
@@ -258,38 +249,9 @@ export const GithubInstallCommand = cmd({
             return { owner: parsed.owner, repo: parsed.repo, root: Instance.worktree }
           }
 
-          async function promptProvider() {
-            const priority: Record<string, number> = {
-              opencode: 0,
-              anthropic: 1,
-              openai: 2,
-              google: 3,
-            }
-            let provider = await prompts.select({
-              message: "Select provider",
-              maxItems: 8,
-              options: pipe(
-                providers,
-                values(),
-                sortBy(
-                  (x) => priority[x.id] ?? 99,
-                  (x) => x.name ?? x.id,
-                ),
-                map((x) => ({
-                  label: x.name,
-                  value: x.id,
-                  hint: priority[x.id] === 0 ? "recommended" : undefined,
-                })),
-              ),
-            })
-
-            if (prompts.isCancel(provider)) throw new UI.CancelledError()
-
-            return provider
-          }
-
-          async function promptModel() {
-            const providerData = providers[provider]!
+          async function promptModel(allProviders: Record<string, ModelsDev.Provider>) {
+            const providerData = allProviders["anthropic"]
+            if (!providerData) throw new Error("Anthropic provider not found")
 
             const model = await prompts.select({
               message: "Select model",
@@ -363,10 +325,7 @@ export const GithubInstallCommand = cmd({
           }
 
           async function addWorkflowFiles() {
-            const envStr =
-              provider === "amazon-bedrock"
-                ? ""
-                : `\n        env:${providers[provider].env.map((e) => `\n          ${e}: \${{ secrets.${e} }}`).join("")}`
+            const envStr = `\n        env:\n          ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}`
 
             await Bun.write(
               path.join(app.root, WORKFLOW_FILE),
@@ -878,7 +837,7 @@ export const GithubRunCommand = cmd({
       async function chat(message: string, files: PromptFiles = []) {
         console.log("Sending message to opencode...")
 
-        const result = await SessionPrompt.prompt({
+        const result = await SDK.start({
           sessionID: session.id,
           messageID: Identifier.ascending("message"),
           model: {
@@ -888,28 +847,14 @@ export const GithubRunCommand = cmd({
           // agent is omitted - server will use default_agent from config or fall back to "build"
           parts: [
             {
-              id: Identifier.ascending("part"),
               type: "text",
               text: message,
             },
-            ...files.flatMap((f) => [
-              {
-                id: Identifier.ascending("part"),
-                type: "file" as const,
-                mime: f.mime,
-                url: `data:${f.mime};base64,${f.content}`,
-                filename: f.filename,
-                source: {
-                  type: "file" as const,
-                  text: {
-                    value: f.replacement,
-                    start: f.start,
-                    end: f.end,
-                  },
-                  path: f.filename,
-                },
-              },
-            ]),
+            ...files.map((f) => ({
+              type: "file" as const,
+              path: f.filename,
+              mime: f.mime,
+            })),
           ],
         })
 
@@ -926,17 +871,15 @@ export const GithubRunCommand = cmd({
 
         // No text part (tool-only or reasoning-only) - ask agent to summarize
         console.log("Requesting summary from agent...")
-        const summary = await SessionPrompt.prompt({
+        const summary = await SDK.start({
           sessionID: session.id,
           messageID: Identifier.ascending("message"),
           model: {
             providerID,
             modelID,
           },
-          tools: { "*": false }, // Disable all tools to force text response
           parts: [
             {
-              id: Identifier.ascending("part"),
               type: "text",
               text: "Summarize the actions (tool calls & reasoning) you did for the user in 1-2 sentences.",
             },

@@ -14,12 +14,9 @@ import { useKeyboard } from "@opentui/solid"
 import { Clipboard } from "@tui/util/clipboard"
 import { useToast } from "../ui/toast"
 
+// Claude Agent SDK only supports Anthropic
 const PROVIDER_PRIORITY: Record<string, number> = {
-  opencode: 0,
-  anthropic: 1,
-  "github-copilot": 2,
-  openai: 3,
-  google: 4,
+  anthropic: 0,
 }
 
 export function createDialogProviderOptions() {
@@ -33,10 +30,7 @@ export function createDialogProviderOptions() {
       map((provider) => ({
         title: provider.name,
         value: provider.id,
-        description: {
-          opencode: "(Recommended)",
-          anthropic: "(Claude Max or API key)",
-        }[provider.id],
+        description: provider.id === "anthropic" ? "(Recommended - Claude API key)" : undefined,
         category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Other",
         async onSelect() {
           const methods = sync.data.provider_auth[provider.id] ?? [
@@ -212,13 +206,10 @@ function ApiMethod(props: ApiMethodProps) {
       title={props.title}
       placeholder="API key"
       description={
-        props.providerID === "opencode" ? (
+        props.providerID === "anthropic" ? (
           <box gap={1}>
-            <text fg={theme.textMuted}>
-              OpenCode Zen gives you access to all the best coding models at the cheapest prices with a single API key.
-            </text>
             <text fg={theme.text}>
-              Go to <span style={{ fg: theme.primary }}>https://opencode.ai/zen</span> to get a key
+              Get your API key at <span style={{ fg: theme.primary }}>https://console.anthropic.com/settings/keys</span>
             </text>
           </box>
         ) : undefined

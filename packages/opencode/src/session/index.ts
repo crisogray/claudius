@@ -2,7 +2,6 @@ import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
 import { Decimal } from "decimal.js"
 import z from "zod"
-import { type LanguageModelUsage, type ProviderMetadata } from "ai"
 import { Config } from "../config/config"
 import { Flag } from "../flag/flag"
 import { Identifier } from "../id/id"
@@ -12,13 +11,28 @@ import { Storage } from "../storage/storage"
 import { Log } from "../util/log"
 import { MessageV2 } from "./message-v2"
 import { Instance } from "../project/instance"
-import { SessionPrompt } from "./prompt"
+import { SDK } from "../sdk"
 import { fn } from "@/util/fn"
 import { Command } from "../command"
 import { Snapshot } from "@/snapshot"
 
 import type { Provider } from "@/provider/provider"
 import { PermissionNext } from "@/permission/next"
+
+/**
+ * Token usage information (replaces AI SDK LanguageModelUsage)
+ */
+export type TokenUsage = {
+  inputTokens?: number
+  outputTokens?: number
+  cachedInputTokens?: number
+  reasoningTokens?: number
+}
+
+/**
+ * Provider-specific metadata (replaces AI SDK ProviderMetadata)
+ */
+export type ProviderMetadata = Record<string, Record<string, unknown>>
 
 export namespace Session {
   const log = Log.create({ service: "session" })
@@ -70,6 +84,14 @@ export namespace Session {
           partID: z.string().optional(),
           snapshot: z.string().optional(),
           diff: z.string().optional(),
+        })
+        .optional(),
+      // SDK-specific fields for session resume
+      sdk: z
+        .object({
+          sessionId: z.string().optional(), // Claude Agent SDK session ID
+          model: z.string().optional(), // Model used by SDK
+          tools: z.string().array().optional(), // Tools available in SDK session
         })
         .optional(),
     })
@@ -393,12 +415,13 @@ export namespace Session {
   export const getUsage = fn(
     z.object({
       model: z.custom<Provider.Model>(),
-      usage: z.custom<LanguageModelUsage>(),
+      usage: z.custom<TokenUsage>(),
       metadata: z.custom<ProviderMetadata>().optional(),
     }),
     (input) => {
       const cachedInputTokens = input.usage.cachedInputTokens ?? 0
-      const excludesCachedTokens = !!(input.metadata?.["anthropic"] || input.metadata?.["bedrock"])
+      // Anthropic API reports input tokens excluding cached tokens
+      const excludesCachedTokens = !!input.metadata?.["anthropic"]
       const adjustedInputTokens = excludesCachedTokens
         ? (input.usage.inputTokens ?? 0)
         : (input.usage.inputTokens ?? 0) - cachedInputTokens
@@ -412,12 +435,7 @@ export namespace Session {
         output: safe(input.usage.outputTokens ?? 0),
         reasoning: safe(input.usage?.reasoningTokens ?? 0),
         cache: {
-          write: safe(
-            (input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
-              // @ts-expect-error
-              input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
-              0) as number,
-          ),
+          write: safe((input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ?? 0) as number),
           read: safe(cachedInputTokens),
         },
       }
@@ -457,12 +475,15 @@ export namespace Session {
       messageID: Identifier.schema("message"),
     }),
     async (input) => {
-      await SessionPrompt.command({
+      // Run init command via SDK
+      await SDK.start({
         sessionID: input.sessionID,
         messageID: input.messageID,
-        model: input.providerID + "/" + input.modelID,
-        command: Command.Default.INIT,
-        arguments: "",
+        model: {
+          providerID: input.providerID,
+          modelID: input.modelID,
+        },
+        parts: [{ type: "text", text: `/${Command.Default.INIT}` }],
       })
     },
   )

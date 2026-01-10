@@ -586,6 +586,18 @@ PART_MAPPING["reasoning"] = function ReasoningPartDisplay(props) {
   )
 }
 
+// Redacted thinking - shown when Claude's thinking is flagged by safety systems
+PART_MAPPING["redacted-reasoning"] = function RedactedReasoningPartDisplay(props) {
+  return (
+    <div data-component="reasoning-part" data-redacted>
+      <div data-slot="redacted-thinking-notice">
+        <Icon name="shield" size="small" />
+        <span>Thinking redacted for safety</span>
+      </div>
+    </div>
+  )
+}
+
 ToolRegistry.register({
   name: "read",
   render(props) {

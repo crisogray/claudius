@@ -559,12 +559,6 @@ export function Prompt(props: PromptProps) {
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         messageID,
         variant,
-        parts: nonTextParts
-          .filter((x) => x.type === "file")
-          .map((x) => ({
-            id: Identifier.ascending("part"),
-            ...x,
-          })),
       })
     } else {
       sdk.client.session.prompt({
@@ -576,14 +570,15 @@ export function Prompt(props: PromptProps) {
         variant,
         parts: [
           {
-            id: Identifier.ascending("part"),
-            type: "text",
+            type: "text" as const,
             text: inputText,
           },
-          ...nonTextParts.map((x) => ({
-            id: Identifier.ascending("part"),
-            ...x,
-          })),
+          ...nonTextParts.map((x) => {
+            if (x.type === "file") {
+              return { type: "file" as const, path: x.url }
+            }
+            return { type: x.type as "agent" | "subtask" }
+          }),
         ],
       })
     }

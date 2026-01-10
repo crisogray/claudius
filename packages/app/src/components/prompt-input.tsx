@@ -1270,13 +1270,30 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     clearInput()
     addOptimisticMessage()
 
+    // Transform parts to match SDK.PromptInput format
+    const apiParts = requestParts.map((part) => {
+      if (part.type === "text") {
+        return { type: "text" as const, text: part.text }
+      }
+      if (part.type === "file") {
+        // Convert url to path, removing file:// prefix if present
+        const url = (part as any).url as string
+        const path = url.startsWith("file://") ? url.slice(7) : url
+        return { type: "file" as const, path }
+      }
+      if (part.type === "agent") {
+        return { type: "agent" as const }
+      }
+      return { type: "subtask" as const }
+    })
+
     client.session
       .prompt({
         sessionID: session.id,
         agent,
         model,
         messageID,
-        parts: requestParts,
+        parts: apiParts,
         variant,
       })
       .catch((err) => {

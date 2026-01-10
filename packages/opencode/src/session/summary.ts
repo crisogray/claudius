@@ -1,5 +1,3 @@
-import { Provider } from "@/provider/provider"
-
 import { fn } from "@/util/fn"
 import z from "zod"
 import { Session } from "."
@@ -13,9 +11,6 @@ import path from "path"
 import { Instance } from "@/project/instance"
 import { Storage } from "@/storage/storage"
 import { Bus } from "@/bus"
-
-import { LLM } from "./llm"
-import { Agent } from "@/agent/agent"
 
 export namespace SessionSummary {
   const log = Log.create({ service: "session.summary" })
@@ -74,84 +69,8 @@ export namespace SessionSummary {
     }
     await Session.updateMessage(userMsg)
 
-    const assistantMsg = messages.find((m) => m.info.role === "assistant")!.info as MessageV2.Assistant
-    const small =
-      (await Provider.getSmallModel(assistantMsg.providerID)) ??
-      (await Provider.getModel(assistantMsg.providerID, assistantMsg.modelID))
-
-    const textPart = msgWithParts.parts.find((p) => p.type === "text" && !p.synthetic) as MessageV2.TextPart
-    if (textPart && !userMsg.summary?.title) {
-      const agent = await Agent.get("title")
-      const stream = await LLM.stream({
-        agent,
-        user: userMsg,
-        tools: {},
-        model: agent.model ? await Provider.getModel(agent.model.providerID, agent.model.modelID) : small,
-        small: true,
-        messages: [
-          {
-            role: "user" as const,
-            content: `
-              The following is the text to summarize:
-              <text>
-              ${textPart?.text ?? ""}
-              </text>
-            `,
-          },
-        ],
-        abort: new AbortController().signal,
-        sessionID: userMsg.sessionID,
-        system: [],
-        retries: 3,
-      })
-      const result = await stream.text
-      log.info("title", { title: result })
-      userMsg.summary.title = result
-      await Session.updateMessage(userMsg)
-    }
-
-    if (
-      messages.some(
-        (m) =>
-          m.info.role === "assistant" && m.parts.some((p) => p.type === "step-finish" && p.reason !== "tool-calls"),
-      )
-    ) {
-      if (diffs.length > 0) {
-        for (const msg of messages) {
-          for (const part of msg.parts) {
-            if (part.type === "tool" && part.state.status === "completed") {
-              part.state.output = "[TOOL OUTPUT PRUNED]"
-            }
-          }
-        }
-        const summaryAgent = await Agent.get("summary")
-        const stream = await LLM.stream({
-          agent: summaryAgent,
-          user: userMsg,
-          tools: {},
-          model: summaryAgent.model
-            ? await Provider.getModel(summaryAgent.model.providerID, summaryAgent.model.modelID)
-            : small,
-          small: true,
-          messages: [
-            ...MessageV2.toModelMessage(messages),
-            {
-              role: "user" as const,
-              content: `Summarize the above conversation according to your system prompts.`,
-            },
-          ],
-          abort: new AbortController().signal,
-          sessionID: userMsg.sessionID,
-          system: [],
-          retries: 3,
-        })
-        const result = await stream.text
-        if (result) {
-          userMsg.summary.body = result
-        }
-      }
-      await Session.updateMessage(userMsg)
-    }
+    // Note: Title and summary generation via LLM removed during SDK migration
+    // Can be re-added using SDK.start() to generate titles/summaries
   }
 
   export const diff = fn(
