@@ -2,10 +2,12 @@ import { Config } from "../config/config"
 import z from "zod"
 import { Provider } from "../provider/provider"
 import { Instance } from "../project/instance"
-import { Truncate } from "../tool/truncation"
+import { Truncate } from "../util/truncation"
+import { SDK } from "../sdk"
 
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
+import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import { PermissionNext } from "@/permission/next"
@@ -243,18 +245,29 @@ export namespace Agent {
 
   /**
    * Generate an agent configuration using LLM
-   *
-   * Note: This feature is temporarily disabled during Claude SDK migration.
-   * The generateObject() API from the AI SDK is no longer available.
-   * This could be re-implemented using SDK.start() with structured output parsing.
    */
-  export async function generate(_input: {
+  export async function generate(input: {
     description: string
     model?: { providerID: string; modelID: string }
   }): Promise<{ identifier: string; whenToUse: string; systemPrompt: string }> {
-    throw new Error(
-      "Agent generation is temporarily disabled. " +
-        "Please create agents manually in your opencode.json configuration file.",
-    )
+    const existing = await list()
+    const existingNames = existing.map((i) => i.name).join(", ")
+
+    const result = await SDK.singleQuery({
+      prompt: `Create an agent configuration based on this request: "${input.description}".
+
+IMPORTANT: The following identifiers already exist and must NOT be used: ${existingNames}
+
+Return ONLY the JSON object, no other text, do not wrap in backticks.`,
+      systemPrompt: PROMPT_GENERATE,
+    })
+
+    // Parse JSON from response
+    const parsed = JSON.parse(result.trim())
+    return {
+      identifier: parsed.identifier,
+      whenToUse: parsed.whenToUse,
+      systemPrompt: parsed.systemPrompt,
+    }
   }
 }

@@ -1,5 +1,4 @@
 import { Agent } from "@/agent/agent"
-import { Bus } from "@/bus"
 import { PermissionNext } from "@/permission/next"
 import { Question } from "@/question"
 import { Session } from "@/session"
@@ -9,11 +8,42 @@ import type { CanUseTool, PermissionResult } from "@anthropic-ai/claude-agent-sd
 export namespace SDKPermissions {
   const log = Log.create({ service: "sdk.permissions" })
 
+  // Tools that map to "edit" permission
+  const EDIT_TOOLS = ["edit", "write", "patch", "multiedit"]
+
+  /**
+   * Map SDK tool name to opencode permission name
+   */
+  function toPermissionName(toolName: string): string {
+    const name = toolName.toLowerCase()
+    if (EDIT_TOOLS.includes(name)) return "edit"
+    return name
+  }
+
+  /**
+   * Build metadata for permission request based on tool type
+   */
+  function buildMetadata(toolName: string, toolInput: Record<string, unknown>): Record<string, unknown> {
+    const name = toolName.toLowerCase()
+
+    if (EDIT_TOOLS.includes(name)) {
+      // For edit tools, include filepath and diff if available
+      return {
+        input: toolInput,
+        filepath: toolInput.file_path ?? toolInput.path,
+        diff: toolInput.diff,
+      }
+    }
+
+    return { input: toolInput }
+  }
+
   /**
    * Create a permission handler for SDK's canUseTool callback
    *
    * Bridges opencode's permission ruleset to SDK's canUseTool callback.
-   * Handles AskUserQuestion specially by routing to Question module.
+   * Uses PermissionNext.ask() to integrate with opencode's permission system,
+   * which handles the UI events, "always" approvals, and state management.
    */
   export function createPermissionHandler(sessionID: string): CanUseTool {
     return async (toolName: string, toolInput: Record<string, unknown>, options) => {
@@ -28,60 +58,63 @@ export namespace SDKPermissions {
       const agent = await Agent.get(session.permission ? "build" : "build")
 
       // Get the permission ruleset for this session
-      const ruleset = session.permission ?? agent.permission
+      const ruleset = PermissionNext.merge(agent.permission, session.permission ?? [])
 
       // Extract pattern from tool input for pattern-based rules
       const pattern = extractPattern(toolName, toolInput)
 
-      // Evaluate against opencode's permission ruleset
-      const result = PermissionNext.evaluate(toolName.toLowerCase(), pattern, ruleset)
+      // Map tool name to permission name (e.g., Write -> edit)
+      const permissionName = toPermissionName(toolName)
 
       log.info("permission check", {
         tool: toolName,
+        permission: permissionName,
         pattern,
-        action: result.action,
       })
 
-      if (result.action === "allow") {
-        return { behavior: "allow", updatedInput: toolInput }
-      }
-
-      if (result.action === "deny") {
-        return { behavior: "deny", message: `Denied by permission rule for ${toolName}` }
-      }
-
-      // "ask" - publish event for UI to handle and wait for response
-      return new Promise<PermissionResult>((resolve) => {
-        const requestID = `perm-${Date.now()}`
-
-        // Listen for reply
-        const unsub = Bus.subscribe(PermissionNext.Event.Replied, (event) => {
-          if (event.properties.requestID === requestID) {
-            unsub()
-            if (event.properties.reply === "reject") {
-              resolve({ behavior: "deny", message: "User rejected" })
-            } else {
-              resolve({ behavior: "allow", updatedInput: toolInput })
-            }
-          }
-        })
-
-        // Also handle abort
-        options.signal.addEventListener("abort", () => {
-          unsub()
-          resolve({ behavior: "deny", message: "Aborted" })
-        })
-
-        // Publish permission request
-        Bus.publish(PermissionNext.Event.Asked, {
-          id: requestID,
+      try {
+        // Use PermissionNext.ask() which handles:
+        // - Evaluating against ruleset
+        // - Publishing Event.Asked for UI
+        // - Storing in pending state for reply handling
+        // - "Always" approval logic
+        await PermissionNext.ask({
           sessionID,
-          permission: toolName.toLowerCase(),
+          permission: permissionName,
           patterns: [pattern],
-          metadata: { input: toolInput },
+          metadata: buildMetadata(toolName, toolInput),
           always: [pattern],
+          ruleset,
         })
-      })
+
+        // Permission granted
+        return { behavior: "allow", updatedInput: toolInput }
+      } catch (error) {
+        // Handle permission errors
+        if (error instanceof PermissionNext.DeniedError) {
+          return {
+            behavior: "deny",
+            message: `Denied by permission rule for ${toolName}`,
+          }
+        }
+
+        if (error instanceof PermissionNext.RejectedError) {
+          return {
+            behavior: "deny",
+            message: "User rejected the permission request",
+          }
+        }
+
+        if (error instanceof PermissionNext.CorrectedError) {
+          return {
+            behavior: "deny",
+            message: error.message,
+          }
+        }
+
+        // Unknown error - rethrow
+        throw error
+      }
     }
   }
 
