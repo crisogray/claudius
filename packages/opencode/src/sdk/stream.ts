@@ -3,6 +3,7 @@ import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 import { Session } from "@/session"
 import { MessageV2 } from "@/session/message-v2"
+import { SessionStatus } from "@/session/status"
 import { SessionSummary } from "@/session/summary"
 import { Todo } from "@/session/todo"
 import { Snapshot } from "@/snapshot"
@@ -17,12 +18,12 @@ export namespace SDKStream {
     type: "content_block_delta"
     index: number
     delta:
-      | { type: "text_delta"; text: string }
-      | { type: "thinking_delta"; thinking: string }
-      | { type: "input_json_delta"; partial_json: string }
+    | { type: "text_delta"; text: string }
+    | { type: "thinking_delta"; thinking: string }
+    | { type: "input_json_delta"; partial_json: string }
   }
 
-  export type StreamEvent = ContentBlockDelta | { type: string; [key: string]: unknown }
+  export type StreamEvent = ContentBlockDelta | { type: string;[key: string]: unknown }
 
   /**
    * Process SDK stream and convert to MessageV2/Parts
@@ -50,8 +51,8 @@ export namespace SDKStream {
     const partsByIndex = new Map<number, MessageV2.Part>()
 
     // Track child sessions for subagents
-    // Maps parent_tool_use_id -> child session ID
-    const childSessions = new Map<string, string>()
+    // Maps parent_tool_use_id -> { sessionID, userMessageID }
+    const childSessions = new Map<string, { sessionID: string; userMessageID: string }>()
 
     // Track tool summaries for Task UI display
     // Maps parent_tool_use_id -> array of tool summaries
@@ -63,7 +64,7 @@ export namespace SDKStream {
     const toolToParent = new Map<string, string>()
 
     // Get or create child session for a subagent
-    async function getOrCreateChildSession(parentToolUseId: string): Promise<string> {
+    async function getOrCreateChildSession(parentToolUseId: string): Promise<{ sessionID: string; userMessageID: string }> {
       const existing = childSessions.get(parentToolUseId)
       if (existing) return existing
 
@@ -97,7 +98,38 @@ export namespace SDKStream {
         parentID: sessionID,
         title: title,
       })
-      childSessions.set(parentToolUseId, childSession.id)
+
+      // Create initial user message in child session with the task prompt
+      // This is needed for the UI to display the conversation
+      const taskPrompt = (messages
+        .flatMap((m) => m.parts)
+        .find((p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId)
+        ?.state as MessageV2.ToolStatePending | MessageV2.ToolStateRunning)?.input?.prompt as string | undefined
+
+      const userMessage: MessageV2.User = {
+        id: Identifier.ascending("message"),
+        sessionID: childSession.id,
+        role: "user",
+        time: { created: Date.now() },
+        model: { modelID: context.modelID, providerID: context.providerID },
+        agent: context.agent,
+      }
+      await Session.updateMessage(userMessage)
+
+      // Create text part for the prompt
+      const textPart: MessageV2.TextPart = {
+        id: Identifier.ascending("part"),
+        sessionID: childSession.id,
+        messageID: userMessage.id,
+        type: "text",
+        text: taskPrompt || title,
+      }
+      await Session.updatePart(textPart)
+      Bus.publish(MessageV2.Event.Updated, { info: userMessage })
+
+      // Store both session ID and user message ID
+      const childInfo = { sessionID: childSession.id, userMessageID: userMessage.id }
+      childSessions.set(parentToolUseId, childInfo)
 
       // Update parent Task tool's metadata with child session ID
       for (const msg of messages) {
@@ -113,13 +145,17 @@ export namespace SDKStream {
         }
       }
 
+      // Set child session status to busy
+      SessionStatus.set(childSession.id, { type: "busy" })
+
       log.info("created child session for subagent", {
         parentToolUseId,
         childSessionID: childSession.id,
+        userMessageID: userMessage.id,
         title,
       })
 
-      return childSession.id
+      return childInfo
     }
 
     // Update parent Task tool's metadata with current summary
@@ -139,7 +175,7 @@ export namespace SDKStream {
             taskPart.state = {
               status: "running",
               input: pendingState.input,
-              metadata: { summary, sessionId: childSessions.get(parentToolUseId) },
+              metadata: { summary, sessionId: childSessions.get(parentToolUseId)?.sessionID },
               time: { start: Date.now() },
             }
           } else {
@@ -167,7 +203,7 @@ export namespace SDKStream {
               // Update session with SDK session ID for resume
               if (message.session_id) {
                 await Session.update(sessionID, (draft) => {
-                  ;(draft as any).sdk = {
+                  ; (draft as any).sdk = {
                     sessionId: message.session_id,
                     model: message.model,
                     tools: message.tools,
@@ -180,13 +216,17 @@ export namespace SDKStream {
 
           case "assistant": {
             // Determine target session - child session for subagents, parent for main agent
-            const targetSessionID = message.parent_tool_use_id
+            const childInfo = message.parent_tool_use_id
               ? await getOrCreateChildSession(message.parent_tool_use_id)
-              : sessionID
+              : null
+            const targetSessionID = childInfo?.sessionID ?? sessionID
+            // For child sessions, parentID is the user message in the child session
+            // For main session, parentID is the original user message
+            const parentID = childInfo?.userMessageID ?? context.parentID
 
             // Create new assistant message
             currentMessage = SDKConvert.createAssistantMessage(message, targetSessionID, {
-              parentID: context.parentID,
+              parentID,
               modelID: context.modelID,
               providerID: context.providerID,
               agent: context.agent,
@@ -195,12 +235,12 @@ export namespace SDKStream {
             })
             currentMessageID = currentMessage.id
 
-            // Store SDK metadata
-            ;(currentMessage as any).sdk = {
-              uuid: message.uuid,
-              sessionId: message.session_id,
-              parentToolUseId: message.parent_tool_use_id ?? undefined,
-            }
+              // Store SDK metadata
+              ; (currentMessage as any).sdk = {
+                uuid: message.uuid,
+                sessionId: message.session_id,
+                parentToolUseId: message.parent_tool_use_id ?? undefined,
+              }
 
             // Save message
             await Session.updateMessage(currentMessage)
@@ -269,8 +309,8 @@ export namespace SDKStream {
                 // First check main session, then child sessions
                 let found = await updateToolPartResult(sessionID, block)
                 if (!found) {
-                  for (const childSessionID of childSessions.values()) {
-                    found = await updateToolPartResult(childSessionID, block)
+                  for (const childInfo of childSessions.values()) {
+                    found = await updateToolPartResult(childInfo.sessionID, block)
                     if (found) break
                   }
                 }
@@ -304,7 +344,7 @@ export namespace SDKStream {
 
               // Compute diffs using existing snapshot system
               if (initialSnapshot) {
-                await finalizeDiffs(sessionID, currentMessageID, initialSnapshot, tokens, currentMessage.cost)
+                await finalizeDiffs(sessionID, currentMessageID, context.parentID, initialSnapshot, tokens, currentMessage.cost)
               }
 
               Bus.publish(MessageV2.Event.Updated, { info: currentMessage })
@@ -365,7 +405,7 @@ export namespace SDKStream {
       // Tool input streaming - update raw field
       const part = parts.get(index)
       if (part?.type === "tool") {
-        ;(part.state as MessageV2.ToolStatePending).raw += delta.partial_json
+        ; (part.state as MessageV2.ToolStatePending).raw += delta.partial_json
       }
     }
   }
@@ -376,11 +416,13 @@ export namespace SDKStream {
   async function handleTodoWrite(sessionID: string, block: SDKConvert.ToolUseBlock) {
     if (block.name !== "TodoWrite") return
 
-    const sdkTodos = (block.input as { todos?: Array<{
-      content: string
-      status: "pending" | "in_progress" | "completed"
-      activeForm?: string
-    }> }).todos
+    const sdkTodos = (block.input as {
+      todos?: Array<{
+        content: string
+        status: "pending" | "in_progress" | "completed"
+        activeForm?: string
+      }>
+    }).todos
 
     if (!sdkTodos) return
 
@@ -428,31 +470,52 @@ export namespace SDKStream {
 
         const completedState: MessageV2.ToolStateCompleted | MessageV2.ToolStateError = block.is_error
           ? {
-              status: "error",
-              input,
-              error: output,
-              metadata,
-              time: {
-                start: Date.now() - 1000, // Approximate
-                end: Date.now(),
-              },
-            }
+            status: "error",
+            input,
+            error: output,
+            metadata,
+            time: {
+              start: Date.now() - 1000, // Approximate
+              end: Date.now(),
+            },
+          }
           : {
-              status: "completed",
-              input,
-              output,
-              title: part.tool,
-              metadata,
-              time: {
-                start: Date.now() - 1000, // Approximate
-                end: Date.now(),
-              },
-            }
+            status: "completed",
+            input,
+            output,
+            title: part.tool,
+            metadata,
+            time: {
+              start: Date.now() - 1000, // Approximate
+              end: Date.now(),
+            },
+          }
 
         part.state = completedState
         await Session.updatePart(part)
         Bus.publish(MessageV2.Event.PartUpdated, { part })
         log.info("updated tool part result", { callID: block.tool_use_id, status: completedState.status })
+
+        // If this is a Task tool completing, set the child session status to idle
+        // and mark all assistant messages as completed (stops the timer)
+        if (part.tool === "task" && metadata.sessionId) {
+          const childSessionID = metadata.sessionId as string
+          SessionStatus.set(childSessionID, { type: "idle" })
+
+          // Complete all assistant messages in child session
+          // No limit - child sessions with many messages need ALL assistants completed
+          const childMessages = await Session.messages({ sessionID: childSessionID })
+          const now = Date.now()
+          for (const msg of childMessages) {
+            if (msg.info.role === "assistant" && !msg.info.time.completed) {
+              msg.info.time.completed = now
+              msg.info.finish = block.is_error ? "error" : "stop"
+              await Session.updateMessage(msg.info)
+              Bus.publish(MessageV2.Event.Updated, { info: msg.info })
+            }
+          }
+        }
+
         return true
       }
     }
@@ -467,7 +530,8 @@ export namespace SDKStream {
    */
   async function finalizeDiffs(
     sessionID: string,
-    messageID: string,
+    assistantMessageID: string,
+    userMessageID: string,
     initialSnapshot: string,
     tokens: MessageV2.Assistant["tokens"],
     cost: number,
@@ -480,7 +544,7 @@ export namespace SDKStream {
     const stepFinishPart: MessageV2.StepFinishPart = {
       id: Identifier.ascending("part"),
       sessionID,
-      messageID,
+      messageID: assistantMessageID,
       type: "step-finish",
       reason: "stop",
       snapshot: finalSnapshot,
@@ -495,7 +559,7 @@ export namespace SDKStream {
       const patchPart: MessageV2.PatchPart = {
         id: Identifier.ascending("part"),
         sessionID,
-        messageID,
+        messageID: assistantMessageID,
         type: "patch",
         hash: patch.hash,
         files: patch.files,
@@ -504,8 +568,9 @@ export namespace SDKStream {
       log.info("created patch part", { files: patch.files.length })
     }
 
-    // Trigger diff computation, storage, and Bus event - all existing code
-    SessionSummary.summarize({ sessionID, messageID })
+    // Trigger diff computation, storage, and Bus event
+    // Pass userMessageID since SessionSummary expects a user message
+    SessionSummary.summarize({ sessionID, messageID: userMessageID })
   }
 
   /**

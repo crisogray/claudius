@@ -1,4 +1,4 @@
-import { createMemo, createResource, Show } from "solid-js"
+import { createMemo, createResource, createEffect, Show } from "solid-js"
 import { A, useNavigate, useParams } from "@solidjs/router"
 import { useLayout } from "@/context/layout"
 import { useCommand } from "@/context/command"
@@ -121,6 +121,9 @@ export function SessionHeader() {
                   variant="ghost"
                 />
                 <div class="text-text-weaker">/</div>
+                <span class="text-14-regular text-text-base truncate max-w-[200px]">
+                  {currentSession()?.title || "Subagent"}
+                </span>
                 <div class="flex items-center gap-1.5 min-w-0">
                   <Tooltip value="Back to parent session">
                     <button

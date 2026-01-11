@@ -1,28 +1,23 @@
 import { Popover as Kobalte } from "@kobalte/core/popover"
-import { Component, createMemo, createSignal, JSX, Show } from "solid-js"
+import { Component, createMemo, createSignal, JSX } from "solid-js"
 import { useLocal } from "@/context/local"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { popularProviders } from "@/hooks/use-providers"
-import { Button } from "@opencode-ai/ui/button"
-import { Tag } from "@opencode-ai/ui/tag"
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { List } from "@opencode-ai/ui/list"
-import { DialogSelectProvider } from "./dialog-select-provider"
-import { DialogManageModels } from "./dialog-manage-models"
+
+// Model priority: opus > sonnet 4.5 > sonnet 4 > haiku
+const MODEL_PRIORITY = ["claude-opus-4-5", "claude-sonnet-4-5", "claude-sonnet-4", "claude-haiku-4-5"]
+
+function getModelPriority(id: string): number {
+  const index = MODEL_PRIORITY.findIndex((p) => id.includes(p))
+  return index === -1 ? MODEL_PRIORITY.length : index
+}
 
 const ModelList: Component<{
-  provider?: string
   class?: string
   onSelect: () => void
 }> = (props) => {
   const local = useLocal()
-
-  const models = createMemo(() =>
-    local.model
-      .list()
-      .filter((m) => local.model.visible({ modelID: m.id, providerID: m.provider.id }))
-      .filter((m) => (props.provider ? m.provider.id === props.provider : true)),
-  )
 
   return (
     <List
@@ -30,20 +25,10 @@ const ModelList: Component<{
       search={{ placeholder: "Search models", autofocus: true }}
       emptyMessage="No model results"
       key={(x) => `${x.provider.id}:${x.id}`}
-      items={models}
+      items={local.model.list()}
       current={local.model.current()}
-      filterKeys={["provider.name", "name", "id"]}
-      sortBy={(a, b) => a.name.localeCompare(b.name)}
-      groupBy={(x) => x.provider.name}
-      sortGroupsBy={(a, b) => {
-        if (a.category === "Recent" && b.category !== "Recent") return -1
-        if (b.category === "Recent" && a.category !== "Recent") return 1
-        const aProvider = a.items[0].provider.id
-        const bProvider = b.items[0].provider.id
-        if (popularProviders.includes(aProvider) && !popularProviders.includes(bProvider)) return -1
-        if (!popularProviders.includes(aProvider) && popularProviders.includes(bProvider)) return 1
-        return popularProviders.indexOf(aProvider) - popularProviders.indexOf(bProvider)
-      }}
+      filterKeys={["name", "id"]}
+      sortBy={(a, b) => getModelPriority(a.id) - getModelPriority(b.id)}
       onSelect={(x) => {
         local.model.set(x ? { modelID: x.id, providerID: x.provider.id } : undefined, {
           recent: true,
@@ -54,12 +39,6 @@ const ModelList: Component<{
       {(i) => (
         <div class="w-full flex items-center gap-x-2 text-13-regular">
           <span class="truncate">{i.name}</span>
-          <Show when={i.provider.id === "opencode" && (!i.cost || i.cost?.input === 0)}>
-            <Tag>Free</Tag>
-          </Show>
-          <Show when={i.latest}>
-            <Tag>Latest</Tag>
-          </Show>
         </div>
       )}
     </List>
@@ -67,7 +46,6 @@ const ModelList: Component<{
 }
 
 export const ModelSelectorPopover: Component<{
-  provider?: string
   children: JSX.Element
 }> = (props) => {
   const [open, setOpen] = createSignal(false)
@@ -78,38 +56,19 @@ export const ModelSelectorPopover: Component<{
       <Kobalte.Portal>
         <Kobalte.Content class="w-72 h-80 flex flex-col rounded-md border border-border-base bg-surface-raised-stronger-non-alpha shadow-md z-50 outline-none">
           <Kobalte.Title class="sr-only">Select model</Kobalte.Title>
-          <ModelList provider={props.provider} onSelect={() => setOpen(false)} class="p-1" />
+          <ModelList onSelect={() => setOpen(false)} class="p-1" />
         </Kobalte.Content>
       </Kobalte.Portal>
     </Kobalte>
   )
 }
 
-export const DialogSelectModel: Component<{ provider?: string }> = (props) => {
+export const DialogSelectModel: Component = () => {
   const dialog = useDialog()
 
   return (
-    <Dialog
-      title="Select model"
-      action={
-        <Button
-          class="h-7 -my-1 text-14-medium"
-          icon="plus-small"
-          tabIndex={-1}
-          onClick={() => dialog.show(() => <DialogSelectProvider />)}
-        >
-          Connect provider
-        </Button>
-      }
-    >
-      <ModelList provider={props.provider} onSelect={() => dialog.close()} />
-      <Button
-        variant="ghost"
-        class="ml-3 mt-5 mb-6 text-text-base self-start"
-        onClick={() => dialog.show(() => <DialogManageModels />)}
-      >
-        Manage models
-      </Button>
+    <Dialog title="Select model">
+      <ModelList onSelect={() => dialog.close()} />
     </Dialog>
   )
 }

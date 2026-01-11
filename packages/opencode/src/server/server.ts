@@ -1791,7 +1791,14 @@ export namespace Server {
                                     write: z.number(),
                                   }),
                                 }),
-                                context: z.number(),
+                                limit: z.object({
+                                  context: z.number(),
+                                  output: z.number(),
+                                }),
+                                status: z.enum(["alpha", "beta", "deprecated", "active"]),
+                                options: z.record(z.string(), z.unknown()),
+                                headers: z.record(z.string(), z.string()),
+                                release_date: z.string(),
                               }),
                             ),
                           })
