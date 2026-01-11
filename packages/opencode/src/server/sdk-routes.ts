@@ -35,7 +35,7 @@ export const sdkRoutes = new Hono()
   })
   .post("/session/:sessionID/sdk/abort", async (c) => {
     const sessionID = c.req.param("sessionID")
-    SDK.interrupt(sessionID)
+    await SDK.interrupt(sessionID)
     return c.json(true)
   })
   .get("/session/:sessionID/sdk/status", async (c) => {

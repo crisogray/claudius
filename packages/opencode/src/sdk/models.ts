@@ -5,6 +5,9 @@ import { Log } from "@/util/log"
 const log = Log.create({ service: "sdk.models" })
 
 export namespace SDKModels {
+  /** Model alias for simplified model selection */
+  export type ModelAlias = "sonnet" | "opus" | "haiku"
+
   export const Model = z.object({
     id: z.string(),
     name: z.string(),
@@ -127,11 +130,22 @@ export namespace SDKModels {
     return "claude-sonnet-4-5-20250929"
   }
 
-  // Map model ID to SDK model alias (sonnet, opus, haiku)
-  export function toSDKModelAlias(modelID?: string): "sonnet" | "opus" | "haiku" | undefined {
+  /** Map model ID to SDK model alias (sonnet, opus, haiku) */
+  export function toSDKModelAlias(modelID?: string): ModelAlias | undefined {
     if (!modelID) return undefined
     if (modelID.includes("opus")) return "opus"
     if (modelID.includes("haiku")) return "haiku"
     return "sonnet"
+  }
+
+  /** Map SDK model alias to full model ID from available models */
+  export async function fromSDKModelAlias(alias: ModelAlias): Promise<string> {
+    const models = await getSupportedModels()
+    // Find model that matches the alias
+    const match = models.find((m) => m.value.includes(alias))
+    if (match) return match.value
+    // Fallback to hardcoded models if SDK didn't return a match
+    const fallback = Object.keys(FALLBACK_MODELS).find((id) => id.includes(alias))
+    return fallback ?? getDefaultModel()
   }
 }

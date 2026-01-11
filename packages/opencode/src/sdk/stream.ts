@@ -32,6 +32,7 @@ export namespace SDKStream {
       modelID: string
       providerID: string
     },
+    onMessageID?: (messageID: string | null) => void,
   ): Promise<{ messageID: string | null; error?: Error }> {
     let currentMessage: MessageV2.Assistant | null = null
     let currentMessageID: string | null = null
@@ -193,6 +194,8 @@ export namespace SDKStream {
                   }
                 })
               }
+
+              SessionSummary.summarize({ sessionID, messageID: context.parentID })
             }
             break
           }
@@ -223,6 +226,7 @@ export namespace SDKStream {
               root: Instance.worktree,
             })
             currentMessageID = currentMessage.id
+            onMessageID?.(currentMessageID)
 
               // Store SDK metadata
               ; (currentMessage as any).sdk = {
@@ -321,6 +325,7 @@ export namespace SDKStream {
           }
 
           case "result": {
+            log.info("result message received", { hasCurrentMessage: !!currentMessage, currentMessageID, hasInitialSnapshot: !!initialSnapshot })
             if (currentMessage && currentMessageID) {
               // Update message with final tokens and cost
               const tokens = SDKConvert.sdkResultToTokens(message)
@@ -333,6 +338,7 @@ export namespace SDKStream {
 
               // Compute diffs using existing snapshot system
               if (initialSnapshot) {
+                log.info("calling finalizeDiffs", { sessionID, currentMessageID, parentID: context.parentID })
                 await finalizeDiffs(sessionID, currentMessageID, context.parentID, initialSnapshot, tokens, currentMessage.cost)
               }
 
@@ -376,6 +382,7 @@ export namespace SDKStream {
                 currentMessage = assistantMessage
                 currentMessageID = assistantMessage.id
                 streamingMessageID = assistantMessage.id
+                onMessageID?.(currentMessageID)
 
                 // Track by Anthropic API message ID (stable across partial/complete messages)
                 const anthropicMessageId = (event as SDKConvert.MessageStartEvent).message.id
@@ -693,6 +700,7 @@ export namespace SDKStream {
 
     // Trigger diff computation, storage, and Bus event
     // Pass userMessageID since SessionSummary expects a user message
+    log.info("triggering SessionSummary.summarize", { sessionID, userMessageID })
     SessionSummary.summarize({ sessionID, messageID: userMessageID })
   }
 

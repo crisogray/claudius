@@ -68,7 +68,6 @@ export namespace Server {
   const app = new Hono()
   export const App: () => Hono = lazy(
     () =>
-      // @ts-expect-error - Type instantiation is excessively deep due to deeply chained Hono routes
       app
         .onError((err, c) => {
           log.error("failed", {
@@ -964,7 +963,7 @@ export namespace Server {
             }),
           ),
           async (c) => {
-            SDK.interrupt(c.req.valid("param").sessionID)
+            await SDK.interrupt(c.req.valid("param").sessionID)
             return c.json(true)
           },
         )

@@ -51,6 +51,9 @@ export namespace SDK {
   // Active query state per session
   const activeQueries = new Map<string, Query>()
 
+  // Track current message ID per session for interrupt cleanup
+  const currentMessages = new Map<string, string>()
+
   /**
    * Input format matching SessionPrompt.PromptInput
    */
@@ -210,6 +213,12 @@ export namespace SDK {
           modelID,
           providerID,
         },
+        // Callback to track current message ID for interrupt cleanup
+        (messageID) => {
+          if (messageID) {
+            currentMessages.set(input.sessionID, messageID)
+          }
+        },
       )
 
       Bus.publish(Event.Completed, {
@@ -232,6 +241,7 @@ export namespace SDK {
       throw error
     } finally {
       activeQueries.delete(input.sessionID)
+      currentMessages.delete(input.sessionID)
       // Set session status back to idle
       SessionStatus.set(input.sessionID, { type: "idle" })
     }
@@ -239,12 +249,40 @@ export namespace SDK {
 
   /**
    * Interrupt the active SDK query for a session
+   *
+   * This immediately:
+   * 1. Signals the SDK to stop
+   * 2. Sets session status to idle
+   * 3. Completes the current message with "cancelled" finish reason
    */
-  export function interrupt(sessionID: string) {
+  export async function interrupt(sessionID: string) {
     const activeQuery = activeQueries.get(sessionID)
     if (activeQuery) {
       log.info("interrupting SDK", { sessionID })
       activeQuery.interrupt()
+
+      // Immediately set session status to idle (stops the timer)
+      SessionStatus.set(sessionID, { type: "idle" })
+
+      // Complete the current message
+      const messageID = currentMessages.get(sessionID)
+      if (messageID) {
+        try {
+          const msg = await MessageV2.get({ sessionID, messageID })
+          if (msg.info.role === "assistant" && !msg.info.time.completed) {
+            const assistantMsg = msg.info as MessageV2.Assistant
+            assistantMsg.time.completed = Date.now()
+            assistantMsg.finish = "cancelled"
+            await Session.updateMessage(assistantMsg)
+            Bus.publish(MessageV2.Event.Updated, { info: assistantMsg })
+          }
+        } catch (error) {
+          log.warn("failed to complete message on interrupt", { sessionID, messageID, error })
+        }
+      }
+
+      // Cleanup tracking
+      currentMessages.delete(sessionID)
     }
   }
 
@@ -383,36 +421,51 @@ export namespace SDK {
 
   /**
    * Simple single-message query for tasks like title generation
-   * Uses haiku for speed/cost and no tools
+   * Uses specified model (defaults to haiku for speed/cost) and no tools
    */
   export async function singleQuery(input: {
     prompt: string
     systemPrompt?: string
+    model?: SDKModels.ModelAlias
   }): Promise<string> {
-    log.info("single query", { promptLength: input.prompt.length })
+    const modelID = await SDKModels.fromSDKModelAlias(input.model ?? "haiku")
+    log.info("single query start", { promptLength: input.prompt.length, model: modelID })
 
     let result = ""
 
-    for await (const message of query({
-      prompt: input.prompt,
-      options: {
-        model: "claude-haiku-4-20250514",
-        cwd: Instance.directory,
-        tools: [], // Empty array disables all tools
-        maxTurns: 1,
-        systemPrompt: input.systemPrompt, // Can be a plain string
-      },
-    })) {
-      // Extract text from assistant messages
-      if (message.type === "assistant" && message.message?.content) {
-        for (const block of message.message.content) {
-          if (block.type === "text") {
-            result += block.text
+    try {
+      for await (const message of query({
+        prompt: input.prompt,
+        options: {
+          model: modelID,
+          cwd: Instance.directory,
+          tools: [], // Empty array disables all tools
+          maxTurns: 1,
+          systemPrompt: input.systemPrompt, // Can be a plain string
+        },
+      })) {
+        log.info("single query message", { type: message.type })
+        // Extract text from assistant messages
+        if (message.type === "assistant" && message.message?.content) {
+          for (const block of message.message.content) {
+            if (block.type === "text") {
+              result += block.text
+            }
           }
         }
       }
+    } catch (error) {
+      // If we already have a result, don't throw - the SDK sometimes exits
+      // with code 1 even after successful completion
+      if (result) {
+        log.warn("single query error after getting result, ignoring", { error, resultLength: result.length })
+      } else {
+        log.error("single query error", { error })
+        throw error
+      }
     }
 
+    log.info("single query complete", { resultLength: result.length })
     return result.trim()
   }
 }

@@ -62,7 +62,10 @@ export namespace SessionSummary {
     const messages = input.messages.filter(
       (m) => m.info.id === input.messageID || (m.info.role === "assistant" && m.info.parentID === input.messageID),
     )
-    const msgWithParts = messages.find((m) => m.info.id === input.messageID)!
+    const msgWithParts = messages.find((m) => m.info.id === input.messageID)
+    if (!msgWithParts) {
+      return
+    }
     const userMsg = msgWithParts.info as MessageV2.User
     const diffs = await computeDiff({ messages })
     userMsg.summary = {
@@ -77,7 +80,12 @@ export namespace SessionSummary {
       try {
         const agent = await Agent.get("title")
         const title = await SDK.singleQuery({
-          prompt: `The following is the text to summarize:\n<text>\n${textPart.text}\n</text>`,
+          prompt: `
+              The following is the text to summarize:
+              <text>
+              ${textPart.text}
+              </text>
+            `,
           systemPrompt: agent?.prompt,
         })
         if (title) {
@@ -99,6 +107,51 @@ export namespace SessionSummary {
       } catch (err) {
         log.error("failed to generate title", { error: err })
       }
+    }
+
+    // Generate body summary if there are diffs and the message is complete
+    const hasFinishedStep = messages.some(
+      (m) => m.info.role === "assistant" && m.parts.some((p) => p.type === "step-finish" && p.reason !== "tool-calls"),
+    )
+    if (hasFinishedStep && diffs.length > 0) {
+      try {
+        // Extract text content from messages for summarization
+        const conversationParts: string[] = []
+        for (const msg of messages) {
+          const role = msg.info.role
+          const textContent = msg.parts
+            .filter((p): p is MessageV2.TextPart => p.type === "text" && !p.ignored)
+            .map((p) => p.text)
+            .join("\n")
+          if (textContent) {
+            conversationParts.push(`${role}: ${textContent}`)
+          }
+          // Include tool calls but prune their output
+          const toolCalls = msg.parts
+            .filter((p): p is MessageV2.ToolPart => p.type === "tool")
+            .map((p) => `[Tool: ${p.tool}]`)
+            .join(" ")
+          if (toolCalls) {
+            conversationParts.push(toolCalls)
+          }
+        }
+        const conversationText = conversationParts.join("\n\n")
+
+        const summaryAgent = await Agent.get("summary")
+        const body = await SDK.singleQuery({
+          prompt: `${conversationText}\n\nSummarize the above conversation according to your system prompts.`,
+          systemPrompt: summaryAgent?.prompt,
+        })
+        if (body) {
+          userMsg.summary = {
+            ...userMsg.summary,
+            body,
+          }
+        }
+      } catch (err) {
+        log.error("failed to generate body summary", { error: err })
+      }
+      await Session.updateMessage(userMsg)
     }
   }
 
