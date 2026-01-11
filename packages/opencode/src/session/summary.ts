@@ -11,6 +11,8 @@ import path from "path"
 import { Instance } from "@/project/instance"
 import { Storage } from "@/storage/storage"
 import { Bus } from "@/bus"
+import { Agent } from "@/agent/agent"
+import { SDK } from "@/sdk"
 
 export namespace SessionSummary {
   const log = Log.create({ service: "session.summary" })
@@ -69,8 +71,35 @@ export namespace SessionSummary {
     }
     await Session.updateMessage(userMsg)
 
-    // Note: Title and summary generation via LLM removed during SDK migration
-    // Can be re-added using SDK.start() to generate titles/summaries
+    // Generate title for the message if it doesn't have one
+    const textPart = msgWithParts.parts.find((p) => p.type === "text" && !p.synthetic) as MessageV2.TextPart
+    if (textPart && !userMsg.summary?.title) {
+      try {
+        const agent = await Agent.get("title")
+        const title = await SDK.singleQuery({
+          prompt: `The following is the text to summarize:\n<text>\n${textPart.text}\n</text>`,
+          systemPrompt: agent?.prompt,
+        })
+        if (title) {
+          log.info("generated title", { title })
+          userMsg.summary = {
+            ...userMsg.summary,
+            title,
+          }
+          await Session.updateMessage(userMsg)
+
+          // Also update session title if it's still the default
+          const session = await Session.get(userMsg.sessionID)
+          if (Session.isDefaultTitle(session.title)) {
+            await Session.update(userMsg.sessionID, (draft) => {
+              draft.title = title
+            })
+          }
+        }
+      } catch (err) {
+        log.error("failed to generate title", { error: err })
+      }
+    }
   }
 
   export const diff = fn(

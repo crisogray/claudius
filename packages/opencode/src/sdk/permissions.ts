@@ -1,32 +1,29 @@
 import { Agent } from "@/agent/agent"
 import { Bus } from "@/bus"
 import { PermissionNext } from "@/permission/next"
+import { Question } from "@/question"
 import { Session } from "@/session"
 import { Log } from "@/util/log"
+import type { CanUseTool, PermissionResult } from "@anthropic-ai/claude-agent-sdk"
 
 export namespace SDKPermissions {
   const log = Log.create({ service: "sdk.permissions" })
 
-  // SDK canUseTool callback result
-  export type CanUseToolResult =
-    | { behavior: "allow" }
-    | { behavior: "deny"; message?: string }
-    | { behavior: "ask" }
-
-  // SDK canUseTool callback type
-  export type CanUseTool = (
-    toolName: string,
-    toolInput: unknown,
-    options: { signal: AbortSignal },
-  ) => Promise<CanUseToolResult>
-
   /**
    * Create a permission handler for SDK's canUseTool callback
    *
-   * Bridges opencode's permission ruleset to SDK's canUseTool callback
+   * Bridges opencode's permission ruleset to SDK's canUseTool callback.
+   * Handles AskUserQuestion specially by routing to Question module.
    */
   export function createPermissionHandler(sessionID: string): CanUseTool {
-    return async (toolName: string, toolInput: unknown, options: { signal: AbortSignal }) => {
+    return async (toolName: string, toolInput: Record<string, unknown>, options) => {
+      log.info("permission check start", { tool: toolName })
+
+      // Handle AskUserQuestion specially - route to Question module
+      if (toolName === "AskUserQuestion") {
+        return handleAskUserQuestion(sessionID, toolInput, options)
+      }
+
       const session = await Session.get(sessionID)
       const agent = await Agent.get(session.permission ? "build" : "build")
 
@@ -46,7 +43,7 @@ export namespace SDKPermissions {
       })
 
       if (result.action === "allow") {
-        return { behavior: "allow" }
+        return { behavior: "allow", updatedInput: toolInput }
       }
 
       if (result.action === "deny") {
@@ -54,7 +51,7 @@ export namespace SDKPermissions {
       }
 
       // "ask" - publish event for UI to handle and wait for response
-      return new Promise<CanUseToolResult>((resolve) => {
+      return new Promise<PermissionResult>((resolve) => {
         const requestID = `perm-${Date.now()}`
 
         // Listen for reply
@@ -64,7 +61,7 @@ export namespace SDKPermissions {
             if (event.properties.reply === "reject") {
               resolve({ behavior: "deny", message: "User rejected" })
             } else {
-              resolve({ behavior: "allow" })
+              resolve({ behavior: "allow", updatedInput: toolInput })
             }
           }
         })
@@ -85,6 +82,77 @@ export namespace SDKPermissions {
           always: [pattern],
         })
       })
+    }
+  }
+
+  /**
+   * Handle AskUserQuestion tool - routes to Question module
+   *
+   * The SDK's AskUserQuestion tool is mapped to opencode's Question module.
+   * Questions are published via bus events and answers are collected from UI.
+   */
+  async function handleAskUserQuestion(
+    sessionID: string,
+    input: Record<string, unknown>,
+    options: { signal: AbortSignal },
+  ): Promise<PermissionResult> {
+    log.info("handling AskUserQuestion", { sessionID })
+
+    const questions = input.questions as Array<{
+      question: string
+      header: string
+      options: Array<{ label: string; description: string }>
+      multiSelect?: boolean
+    }>
+
+    if (!questions || !Array.isArray(questions)) {
+      return { behavior: "deny", message: "Invalid questions format" }
+    }
+
+    // Convert SDK question format to opencode Question format
+    const opencodeQuestions: Question.Info[] = questions.map((q) => ({
+      question: q.question,
+      header: q.header,
+      options: q.options,
+      multiple: q.multiSelect,
+    }))
+
+    try {
+      // Ask questions via Question module (publishes events for UI)
+      const answers = await Question.ask({
+        sessionID,
+        questions: opencodeQuestions,
+      })
+
+      // Convert answers back to SDK format
+      // SDK expects: { questions: [...], answers: { "question text": "selected label" } }
+      const answersMap: Record<string, string> = {}
+      questions.forEach((q, i) => {
+        const answer = answers[i]
+        if (answer && answer.length > 0) {
+          answersMap[q.question] = answer.join(", ")
+        }
+      })
+
+      log.info("AskUserQuestion answered", { answers: answersMap })
+
+      return {
+        behavior: "allow",
+        updatedInput: {
+          questions: input.questions,
+          answers: answersMap,
+        },
+      }
+    } catch (error) {
+      // User dismissed the question
+      if (error instanceof Question.RejectedError) {
+        return { behavior: "deny", message: "User dismissed the question" }
+      }
+      // Check if aborted
+      if (options.signal.aborted) {
+        return { behavior: "deny", message: "Aborted" }
+      }
+      throw error
     }
   }
 

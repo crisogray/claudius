@@ -191,6 +191,7 @@ export namespace SDK {
           mcpServers: options.mcpServers,
           maxThinkingTokens: options.maxThinkingTokens,
           permissionMode: options.permissionMode,
+          canUseTool: options.canUseTool,
           resume: options.resume,
           systemPrompt: options.systemPrompt,
           includePartialMessages: true,
@@ -378,6 +379,41 @@ export namespace SDK {
       log.info("setting model", { sessionID, model })
       await activeQuery.setModel(model)
     }
+  }
+
+  /**
+   * Simple single-message query for tasks like title generation
+   * Uses haiku for speed/cost and no tools
+   */
+  export async function singleQuery(input: {
+    prompt: string
+    systemPrompt?: string
+  }): Promise<string> {
+    log.info("single query", { promptLength: input.prompt.length })
+
+    let result = ""
+
+    for await (const message of query({
+      prompt: input.prompt,
+      options: {
+        model: "claude-haiku-4-20250514",
+        cwd: Instance.directory,
+        tools: [], // Empty array disables all tools
+        maxTurns: 1,
+        systemPrompt: input.systemPrompt, // Can be a plain string
+      },
+    })) {
+      // Extract text from assistant messages
+      if (message.type === "assistant" && message.message?.content) {
+        for (const block of message.message.content) {
+          if (block.type === "text") {
+            result += block.text
+          }
+        }
+      }
+    }
+
+    return result.trim()
   }
 }
 
