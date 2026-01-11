@@ -49,6 +49,110 @@ export namespace SDKStream {
     let initialSnapshot: string | undefined
     const partsByIndex = new Map<number, MessageV2.Part>()
 
+    // Track child sessions for subagents
+    // Maps parent_tool_use_id -> child session ID
+    const childSessions = new Map<string, string>()
+
+    // Track tool summaries for Task UI display
+    // Maps parent_tool_use_id -> array of tool summaries
+    const toolSummaries = new Map<
+      string,
+      Array<{ id: string; tool: string; state: { status: string; title?: string } }>
+    >()
+    // Maps tool callID -> parent_tool_use_id (for updating summary when tool completes)
+    const toolToParent = new Map<string, string>()
+
+    // Get or create child session for a subagent
+    async function getOrCreateChildSession(parentToolUseId: string): Promise<string> {
+      const existing = childSessions.get(parentToolUseId)
+      if (existing) return existing
+
+      // Find the parent Task tool to get description for title
+      const messages = await Session.messages({ sessionID, limit: 10 })
+      let title = "Subagent"
+      for (const msg of messages) {
+        const taskPart = msg.parts.find(
+          (p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId,
+        )
+        if (taskPart && taskPart.state.status !== "completed") {
+          const input = "input" in taskPart.state ? taskPart.state.input : {}
+          title = (input as any).description || "Subagent"
+
+          // Transition Task to running with sessionId (will be set after session created)
+          if (taskPart.state.status === "pending") {
+            const pendingState = taskPart.state as MessageV2.ToolStatePending
+            taskPart.state = {
+              status: "running",
+              input: pendingState.input,
+              metadata: {},
+              time: { start: Date.now() },
+            }
+          }
+          break
+        }
+      }
+
+      // Create child session
+      const childSession = await Session.create({
+        parentID: sessionID,
+        title: title,
+      })
+      childSessions.set(parentToolUseId, childSession.id)
+
+      // Update parent Task tool's metadata with child session ID
+      for (const msg of messages) {
+        const taskPart = msg.parts.find(
+          (p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId,
+        )
+        if (taskPart && taskPart.state.status === "running") {
+          const state = taskPart.state as MessageV2.ToolStateRunning
+          state.metadata = { ...state.metadata, sessionId: childSession.id }
+          await Session.updatePart(taskPart)
+          Bus.publish(MessageV2.Event.PartUpdated, { part: taskPart })
+          break
+        }
+      }
+
+      log.info("created child session for subagent", {
+        parentToolUseId,
+        childSessionID: childSession.id,
+        title,
+      })
+
+      return childSession.id
+    }
+
+    // Update parent Task tool's metadata with current summary
+    async function updateTaskSummary(parentToolUseId: string) {
+      const summary = toolSummaries.get(parentToolUseId)
+      if (!summary) return
+
+      const messages = await Session.messages({ sessionID, limit: 10 })
+      for (const msg of messages) {
+        const taskPart = msg.parts.find(
+          (p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId,
+        )
+        if (taskPart && (taskPart.state.status === "running" || taskPart.state.status === "pending")) {
+          if (taskPart.state.status === "pending") {
+            // Transition to running first
+            const pendingState = taskPart.state as MessageV2.ToolStatePending
+            taskPart.state = {
+              status: "running",
+              input: pendingState.input,
+              metadata: { summary, sessionId: childSessions.get(parentToolUseId) },
+              time: { start: Date.now() },
+            }
+          } else {
+            const state = taskPart.state as MessageV2.ToolStateRunning
+            state.metadata = { ...state.metadata, summary }
+          }
+          await Session.updatePart(taskPart)
+          Bus.publish(MessageV2.Event.PartUpdated, { part: taskPart })
+          return
+        }
+      }
+    }
+
     log.info("starting stream processing", { sessionID })
 
     try {
@@ -75,8 +179,13 @@ export namespace SDKStream {
           }
 
           case "assistant": {
+            // Determine target session - child session for subagents, parent for main agent
+            const targetSessionID = message.parent_tool_use_id
+              ? await getOrCreateChildSession(message.parent_tool_use_id)
+              : sessionID
+
             // Create new assistant message
-            currentMessage = SDKConvert.createAssistantMessage(message, sessionID, {
+            currentMessage = SDKConvert.createAssistantMessage(message, targetSessionID, {
               parentID: context.parentID,
               modelID: context.modelID,
               providerID: context.providerID,
@@ -96,11 +205,11 @@ export namespace SDKStream {
             // Save message
             await Session.updateMessage(currentMessage)
 
-            // Add StepStartPart with initial snapshot
-            if (initialSnapshot) {
+            // Add StepStartPart with initial snapshot (only for main session)
+            if (initialSnapshot && !message.parent_tool_use_id) {
               const stepStartPart: MessageV2.StepStartPart = {
                 id: Identifier.ascending("part"),
-                sessionID,
+                sessionID: targetSessionID,
                 messageID: currentMessage.id,
                 type: "step-start",
                 snapshot: initialSnapshot,
@@ -113,7 +222,7 @@ export namespace SDKStream {
             for (let i = 0; i < message.message.content.length; i++) {
               const block = message.message.content[i]
               const part = SDKConvert.sdkBlockToPart(block, timestamp, {
-                sessionID,
+                sessionID: targetSessionID,
                 messageID: currentMessage.id,
               })
 
@@ -123,7 +232,22 @@ export namespace SDKStream {
 
                 // Handle TodoWrite tool calls
                 if (block.type === "tool_use") {
-                  await handleTodoWrite(sessionID, block)
+                  await handleTodoWrite(targetSessionID, block)
+                }
+
+                // Track tool summaries for subagent tools (for Task UI display)
+                if (message.parent_tool_use_id && part.type === "tool") {
+                  const parentId = message.parent_tool_use_id
+                  if (!toolSummaries.has(parentId)) {
+                    toolSummaries.set(parentId, [])
+                  }
+                  toolToParent.set(part.callID, parentId)
+                  toolSummaries.get(parentId)!.push({
+                    id: part.callID,
+                    tool: part.tool,
+                    state: { status: "pending" },
+                  })
+                  await updateTaskSummary(parentId)
                 }
               }
             }
@@ -134,9 +258,31 @@ export namespace SDKStream {
 
           case "user": {
             // Tool results come as user messages with tool_result content
+            // Note: tool_result messages don't have parent_tool_use_id, but the tool_use_id
+            // tells us which tool completed. We need to find the right session.
             for (const block of message.message.content) {
               if (block.type === "tool_result") {
-                await updateToolPartResult(sessionID, block)
+                // Try to find which session this tool belongs to
+                // First check main session, then child sessions
+                let found = await updateToolPartResult(sessionID, block)
+                if (!found) {
+                  for (const childSessionID of childSessions.values()) {
+                    found = await updateToolPartResult(childSessionID, block)
+                    if (found) break
+                  }
+                }
+
+                // Update summary if this is a subagent tool
+                const parentId = toolToParent.get(block.tool_use_id)
+                if (parentId) {
+                  const summary = toolSummaries.get(parentId)
+                  const entry = summary?.find((t) => t.id === block.tool_use_id)
+                  if (entry) {
+                    entry.state.status = block.is_error ? "error" : "completed"
+                    entry.state.title = block.is_error ? undefined : entry.tool
+                    await updateTaskSummary(parentId)
+                  }
+                }
               }
             }
             break
@@ -251,8 +397,9 @@ export namespace SDKStream {
 
   /**
    * Update ToolPart when tool completes
+   * Returns true if the tool was found and updated
    */
-  async function updateToolPartResult(sessionID: string, block: SDKConvert.ToolResultBlock) {
+  async function updateToolPartResult(sessionID: string, block: SDKConvert.ToolResultBlock): Promise<boolean> {
     // Find the ToolPart by tool_use_id in recent messages
     const messages = await Session.messages({ sessionID, limit: 5 })
 
@@ -262,18 +409,26 @@ export namespace SDKStream {
       )
 
       if (part) {
-        const input = (part.state as MessageV2.ToolStatePending).input
+        const currentState = part.state
+        const input = "input" in currentState ? currentState.input : {}
         const output =
           typeof block.content === "string" ? block.content : JSON.stringify(block.content)
 
-        // Extract metadata from output based on tool type
-        const metadata = extractToolMetadata(part.tool, output)
+        // Preserve existing metadata from running state (e.g., real-time task summary)
+        const existingMetadata = "metadata" in currentState ? currentState.metadata : {}
+
+        // Extract additional metadata from output based on tool type
+        const extractedMetadata = extractToolMetadata(part.tool, output)
+
+        // Merge: existing metadata (real-time updates) + extracted metadata
+        const metadata = { ...existingMetadata, ...extractedMetadata }
 
         const completedState: MessageV2.ToolStateCompleted | MessageV2.ToolStateError = block.is_error
           ? {
               status: "error",
               input,
               error: output,
+              metadata,
               time: {
                 start: Date.now() - 1000, // Approximate
                 end: Date.now(),
@@ -295,11 +450,11 @@ export namespace SDKStream {
         await Session.updatePart(part)
         Bus.publish(MessageV2.Event.PartUpdated, { part })
         log.info("updated tool part result", { callID: block.tool_use_id, status: completedState.status })
-        return
+        return true
       }
     }
 
-    log.warn("tool part not found for result", { tool_use_id: block.tool_use_id })
+    return false
   }
 
   /**
@@ -355,6 +510,8 @@ export namespace SDKStream {
    * This populates fields like count, matches, etc. for UI display
    *
    * SDK tools return structured JSON output, so we parse it to extract metadata.
+   * Note: Task tool summary is built in real-time via updateParentTaskSummary,
+   * not here - the summary is preserved from the running state's metadata.
    */
   function extractToolMetadata(tool: string, output: string): Record<string, unknown> {
     const metadata: Record<string, unknown> = {}
@@ -394,16 +551,6 @@ export namespace SDKStream {
           // Fallback: count lines
           const lines = output.trim().split("\n").filter(Boolean)
           metadata.matches = lines.length
-        }
-        break
-      }
-
-      case "task": {
-        // SDK returns { result: string, usage?: {...}, total_cost_usd?: number }
-        // Session ID might be in result text
-        const sessionIdMatch = output.match(/session_id:\s*(\S+)/)
-        if (sessionIdMatch) {
-          metadata.sessionId = sessionIdMatch[1]
         }
         break
       }
