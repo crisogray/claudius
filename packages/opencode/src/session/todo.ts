@@ -10,6 +10,7 @@ export namespace Todo {
       status: z.string().describe("Current status of the task: pending, in_progress, completed, cancelled"),
       priority: z.string().describe("Priority level of the task: high, medium, low"),
       id: z.string().describe("Unique identifier for the todo item"),
+      activeForm: z.string().optional().describe("Present continuous form of the task (e.g., 'Running tests')"),
     })
     .meta({ ref: "Todo" })
   export type Info = z.infer<typeof Info>

@@ -12,6 +12,7 @@ import type {
   CommandListResponses,
   Config as Config2,
   ConfigGetResponses,
+  ConfigModelsResponses,
   ConfigProvidersResponses,
   ConfigUpdateErrors,
   ConfigUpdateResponses,
@@ -48,6 +49,7 @@ import type {
   McpLocalConfig,
   McpRemoteConfig,
   McpStatusResponses,
+  ModelsListResponses,
   Part as Part2,
   PartDeleteErrors,
   PartDeleteResponses,
@@ -66,10 +68,6 @@ import type {
   ProjectUpdateResponses,
   ProviderAuthResponses,
   ProviderListResponses,
-  ProviderOauthAuthorizeErrors,
-  ProviderOauthAuthorizeResponses,
-  ProviderOauthCallbackErrors,
-  ProviderOauthCallbackResponses,
   PtyConnectErrors,
   PtyConnectResponses,
   PtyCreateErrors,
@@ -578,7 +576,7 @@ export class Config extends HeyApiClient {
   /**
    * List config providers
    *
-   * Get a list of all configured AI providers and their default models.
+   * Get a list of all configured AI providers and their models.
    */
   public providers<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -589,6 +587,25 @@ export class Config extends HeyApiClient {
     const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
     return (options?.client ?? this.client).get<ConfigProvidersResponses, unknown, ThrowOnError>({
       url: "/config/providers",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * List config models
+   *
+   * Get available models and the default model.
+   */
+  public models<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
+    return (options?.client ?? this.client).get<ConfigModelsResponses, unknown, ThrowOnError>({
+      url: "/config/models",
       ...options,
       ...params,
     })
@@ -1904,88 +1921,23 @@ export class Command extends HeyApiClient {
   }
 }
 
-export class Oauth extends HeyApiClient {
+export class Models extends HeyApiClient {
   /**
-   * OAuth authorize
+   * List models
    *
-   * Initiate OAuth authorization for a specific AI provider to get an authorization URL.
+   * Get available Claude models
    */
-  public authorize<ThrowOnError extends boolean = false>(
-    parameters: {
-      providerID: string
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
       directory?: string
-      method?: number
     },
     options?: Options<never, ThrowOnError>,
   ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "providerID" },
-            { in: "query", key: "directory" },
-            { in: "body", key: "method" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).post<
-      ProviderOauthAuthorizeResponses,
-      ProviderOauthAuthorizeErrors,
-      ThrowOnError
-    >({
-      url: "/provider/{providerID}/oauth/authorize",
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
+    return (options?.client ?? this.client).get<ModelsListResponses, unknown, ThrowOnError>({
+      url: "/models",
       ...options,
       ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
-    })
-  }
-
-  /**
-   * OAuth callback
-   *
-   * Handle the OAuth callback from a provider after user authorization.
-   */
-  public callback<ThrowOnError extends boolean = false>(
-    parameters: {
-      providerID: string
-      directory?: string
-      method?: number
-      code?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "path", key: "providerID" },
-            { in: "query", key: "directory" },
-            { in: "body", key: "method" },
-            { in: "body", key: "code" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).post<
-      ProviderOauthCallbackResponses,
-      ProviderOauthCallbackErrors,
-      ThrowOnError
-    >({
-      url: "/provider/{providerID}/oauth/callback",
-      ...options,
-      ...params,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-        ...params.headers,
-      },
     })
   }
 }
@@ -1994,7 +1946,7 @@ export class Provider extends HeyApiClient {
   /**
    * List providers
    *
-   * Get a list of all available AI providers, including both available and connected ones.
+   * Get available AI providers (Anthropic only for Claude SDK)
    */
   public list<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2013,7 +1965,7 @@ export class Provider extends HeyApiClient {
   /**
    * Get provider auth methods
    *
-   * Retrieve available authentication methods for all AI providers.
+   * Get available authentication methods for providers
    */
   public auth<ThrowOnError extends boolean = false>(
     parameters?: {
@@ -2028,8 +1980,6 @@ export class Provider extends HeyApiClient {
       ...params,
     })
   }
-
-  oauth = new Oauth({ client: this.client })
 }
 
 export class Find extends HeyApiClient {
@@ -3017,6 +2967,8 @@ export class OpencodeClient extends HeyApiClient {
   question = new Question({ client: this.client })
 
   command = new Command({ client: this.client })
+
+  models = new Models({ client: this.client })
 
   provider = new Provider({ client: this.client })
 

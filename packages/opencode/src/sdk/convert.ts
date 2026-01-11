@@ -1,6 +1,7 @@
 import { Identifier } from "@/id/id"
 import { MessageV2 } from "@/session/message-v2"
 import { Log } from "@/util/log"
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 
 export namespace SDKConvert {
   const log = Log.create({ service: "sdk.convert" })
@@ -29,11 +30,138 @@ export namespace SDKConvert {
     input: Record<string, unknown>
   }
 
-  export interface ToolResultBlock {
+  export type ToolResultContent = CallToolResult["content"][number]
+
+  export interface ToolResultBlock extends CallToolResult {
     type: "tool_result"
     tool_use_id: string
-    content: string | Array<{ type: string; [key: string]: unknown }>
     is_error?: boolean
+  }
+
+  /**
+   * Extract text from CallToolResult content
+   * Handles both string content and structured array format
+   */
+  export function extractTextFromToolResult(content: string | ToolResultContent[]): string {
+    if (typeof content === "string") {
+      return content
+    }
+
+    // Extract text from content blocks array
+    const textParts: string[] = []
+    for (const block of content) {
+      if (block.type === "text") {
+        textParts.push(block.text)
+      } else if (block.type === "resource") {
+        // EmbeddedResource - check for text in the resource
+        if ("text" in block.resource) {
+          textParts.push(block.resource.text)
+        }
+      }
+      // Skip image, audio, and resource_link blocks for text extraction
+    }
+    return textParts.join("\n\n")
+  }
+
+  /**
+   * Create MessageV2 parts from CallToolResult content
+   * Handles text, image, audio, resource, and resource_link content types
+   */
+  export function createPartsFromToolResult(
+    content: string | ToolResultContent[],
+    context: { sessionID: string; messageID: string },
+  ): MessageV2.Part[] {
+    const now = Date.now()
+
+    if (typeof content === "string") {
+      if (!content) return []
+      return [
+        {
+          id: Identifier.ascending("part"),
+          sessionID: context.sessionID,
+          messageID: context.messageID,
+          type: "text",
+          text: content,
+          time: { start: now, end: now },
+        },
+      ]
+    }
+
+    const parts: MessageV2.Part[] = []
+    for (const block of content) {
+      switch (block.type) {
+        case "text":
+          if (block.text) {
+            parts.push({
+              id: Identifier.ascending("part"),
+              sessionID: context.sessionID,
+              messageID: context.messageID,
+              type: "text",
+              text: block.text,
+              time: { start: now, end: now },
+            })
+          }
+          break
+
+        case "image":
+          parts.push({
+            id: Identifier.ascending("part"),
+            sessionID: context.sessionID,
+            messageID: context.messageID,
+            type: "file",
+            url: `data:${block.mimeType};base64,${block.data}`,
+            mime: block.mimeType,
+          })
+          break
+
+        case "audio":
+          parts.push({
+            id: Identifier.ascending("part"),
+            sessionID: context.sessionID,
+            messageID: context.messageID,
+            type: "file",
+            url: `data:${block.mimeType};base64,${block.data}`,
+            mime: block.mimeType,
+          })
+          break
+
+        case "resource":
+          // EmbeddedResource - contains either text or blob
+          if ("text" in block.resource) {
+            parts.push({
+              id: Identifier.ascending("part"),
+              sessionID: context.sessionID,
+              messageID: context.messageID,
+              type: "text",
+              text: block.resource.text,
+              time: { start: now, end: now },
+            })
+          } else if ("blob" in block.resource) {
+            parts.push({
+              id: Identifier.ascending("part"),
+              sessionID: context.sessionID,
+              messageID: context.messageID,
+              type: "file",
+              url: `data:${block.resource.mimeType || "application/octet-stream"};base64,${block.resource.blob}`,
+              mime: block.resource.mimeType || "application/octet-stream",
+            })
+          }
+          break
+
+        case "resource_link":
+          // ResourceLink - just a reference to a resource, include as text with the URI
+          parts.push({
+            id: Identifier.ascending("part"),
+            sessionID: context.sessionID,
+            messageID: context.messageID,
+            type: "text",
+            text: `[${block.name}](${block.uri})${block.description ? `: ${block.description}` : ""}`,
+            time: { start: now, end: now },
+          })
+          break
+      }
+    }
+    return parts
   }
 
   export type ContentBlock = TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ToolResultBlock
@@ -117,18 +245,18 @@ export namespace SDKConvert {
     type: "content_block_start"
     index: number
     content_block:
-      | { type: "text"; text: string }
-      | { type: "thinking"; thinking: string; signature?: string }
-      | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+    | { type: "text"; text: string }
+    | { type: "thinking"; thinking: string; signature?: string }
+    | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
   }
 
   export interface ContentBlockDeltaEvent {
     type: "content_block_delta"
     index: number
     delta:
-      | { type: "text_delta"; text: string }
-      | { type: "thinking_delta"; thinking: string }
-      | { type: "input_json_delta"; partial_json: string }
+    | { type: "text_delta"; text: string }
+    | { type: "thinking_delta"; thinking: string }
+    | { type: "input_json_delta"; partial_json: string }
   }
 
   export interface ContentBlockStopEvent {

@@ -141,13 +141,6 @@ export namespace SDKStream {
       // Set child session status to busy
       SessionStatus.set(childSession.id, { type: "busy" })
 
-      log.info("created child session for subagent", {
-        parentToolUseId,
-        childSessionID: childSession.id,
-        userMessageID: userMessage.id,
-        title,
-      })
-
       return childInfo
     }
 
@@ -182,8 +175,6 @@ export namespace SDKStream {
       }
     }
 
-    log.info("starting stream processing", { sessionID })
-
     try {
       for await (const message of stream) {
         switch (message.type) {
@@ -191,7 +182,6 @@ export namespace SDKStream {
             if (message.subtype === "init") {
               // Capture initial snapshot for diff computation
               initialSnapshot = await Snapshot.track()
-              log.info("captured initial snapshot", { hash: initialSnapshot })
 
               // Update session with SDK session ID for resume
               if (message.session_id) {
@@ -347,11 +337,6 @@ export namespace SDKStream {
               }
 
               Bus.publish(MessageV2.Event.Updated, { info: currentMessage })
-              log.info("stream complete", {
-                messageID: currentMessageID,
-                tokens,
-                cost: currentMessage.cost,
-              })
             }
             break
           }
@@ -396,12 +381,12 @@ export namespace SDKStream {
                 const anthropicMessageId = (event as SDKConvert.MessageStartEvent).message.id
                 streamedAnthropicMessageIDs.add(anthropicMessageId)
 
-                // Store SDK metadata
-                ;(currentMessage as any).sdk = {
-                  uuid: msg.uuid,
-                  sessionId: msg.session_id,
-                  parentToolUseId: msg.parent_tool_use_id ?? undefined,
-                }
+                  // Store SDK metadata
+                  ; (currentMessage as any).sdk = {
+                    uuid: msg.uuid,
+                    sessionId: msg.session_id,
+                    parentToolUseId: msg.parent_tool_use_id ?? undefined,
+                  }
 
                 await Session.updateMessage(assistantMessage)
 
@@ -551,9 +536,8 @@ export namespace SDKStream {
       content: t.content,
       status: t.status,
       priority: "medium", // SDK doesn't have priority
+      activeForm: t.activeForm, // Preserve present continuous form from SDK
     }))
-
-    log.info("updating todos from SDK", { count: todos.length })
 
     // Persist and publish event (existing system)
     await Todo.update({ sessionID, todos })
@@ -575,14 +559,18 @@ export namespace SDKStream {
       if (part) {
         const currentState = part.state
         const input = "input" in currentState ? currentState.input : {}
-        const output =
-          typeof block.content === "string" ? block.content : JSON.stringify(block.content)
+        const output = SDKConvert.extractTextFromToolResult(block.content)
 
         // Preserve existing metadata from running state (e.g., real-time task summary)
         const existingMetadata = "metadata" in currentState ? currentState.metadata : {}
 
         // Extract additional metadata from output based on tool type
         const extractedMetadata = extractToolMetadata(part.tool, output)
+
+        // Special case: todowrite needs todos in metadata for UI rendering
+        if (part.tool === "todowrite" && input.todos) {
+          extractedMetadata.todos = input.todos
+        }
 
         // Merge: existing metadata (real-time updates) + extracted metadata
         const metadata = { ...existingMetadata, ...extractedMetadata }
@@ -613,7 +601,6 @@ export namespace SDKStream {
         part.state = completedState
         await Session.updatePart(part)
         Bus.publish(MessageV2.Event.PartUpdated, { part })
-        log.info("updated tool part result", { callID: block.tool_use_id, status: completedState.status })
 
         // If this is a Task tool completing, set the child session status to idle
         // and mark all assistant messages as completed (stops the timer)
@@ -625,6 +612,24 @@ export namespace SDKStream {
           // No limit - child sessions with many messages need ALL assistants completed
           const childMessages = await Session.messages({ sessionID: childSessionID })
           const now = Date.now()
+
+          // Find the last assistant message to add the result to
+          const lastAssistant = childMessages.find(m => m.info.role === "assistant")
+
+          // Add the subagent's result as parts in the child session
+          // This shows the final output that gets returned to the parent
+          if (lastAssistant && !block.is_error) {
+            // Create parts from structured CallToolResult content (text, images, resources)
+            const resultParts = SDKConvert.createPartsFromToolResult(block.content, {
+              sessionID: childSessionID,
+              messageID: lastAssistant.info.id,
+            })
+            for (const resultPart of resultParts) {
+              await Session.updatePart(resultPart)
+              Bus.publish(MessageV2.Event.PartUpdated, { part: resultPart })
+            }
+          }
+
           for (const msg of childMessages) {
             if (msg.info.role === "assistant" && !msg.info.time.completed) {
               msg.info.time.completed = now
@@ -684,7 +689,6 @@ export namespace SDKStream {
         files: patch.files,
       }
       await Session.updatePart(patchPart)
-      log.info("created patch part", { files: patch.files.length })
     }
 
     // Trigger diff computation, storage, and Bus event
@@ -747,6 +751,8 @@ export namespace SDKStream {
         }
         break
       }
+      // Note: todowrite metadata.todos is set directly in updateToolPartResult
+      // since it needs access to input.todos
     }
 
     return metadata

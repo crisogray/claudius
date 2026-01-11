@@ -4,20 +4,6 @@ export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
 }
 
-export type EventInstallationUpdated = {
-  type: "installation.updated"
-  properties: {
-    version: string
-  }
-}
-
-export type EventInstallationUpdateAvailable = {
-  type: "installation.update-available"
-  properties: {
-    version: string
-  }
-}
-
 export type Project = {
   id: string
   worktree: string
@@ -38,6 +24,20 @@ export type Project = {
 export type EventProjectUpdated = {
   type: "project.updated"
   properties: Project
+}
+
+export type EventInstallationUpdated = {
+  type: "installation.updated"
+  properties: {
+    version: string
+  }
+}
+
+export type EventInstallationUpdateAvailable = {
+  type: "installation.update-available"
+  properties: {
+    version: string
+  }
 }
 
 export type EventServerInstanceDisposed = {
@@ -507,6 +507,35 @@ export type EventPermissionReplied = {
   }
 }
 
+export type SessionStatus =
+  | {
+      type: "idle"
+    }
+  | {
+      type: "retry"
+      attempt: number
+      message: string
+      next: number
+    }
+  | {
+      type: "busy"
+    }
+
+export type EventSessionStatus = {
+  type: "session.status"
+  properties: {
+    sessionID: string
+    status: SessionStatus
+  }
+}
+
+export type EventSessionIdle = {
+  type: "session.idle"
+  properties: {
+    sessionID: string
+  }
+}
+
 export type EventTuiPromptAppend = {
   type: "tui.prompt.append"
   properties: {
@@ -593,6 +622,10 @@ export type Todo = {
    * Unique identifier for the todo item
    */
   id: string
+  /**
+   * Present continuous form of the task (e.g., 'Running tests')
+   */
+  activeForm?: string
 }
 
 export type EventTodoUpdated = {
@@ -799,35 +832,6 @@ export type EventQuestionRejected = {
   }
 }
 
-export type SessionStatus =
-  | {
-      type: "idle"
-    }
-  | {
-      type: "retry"
-      attempt: number
-      message: string
-      next: number
-    }
-  | {
-      type: "busy"
-    }
-
-export type EventSessionStatus = {
-  type: "session.status"
-  properties: {
-    sessionID: string
-    status: SessionStatus
-  }
-}
-
-export type EventSessionIdle = {
-  type: "session.idle"
-  properties: {
-    sessionID: string
-  }
-}
-
 export type Pty = {
   id: string
   title: string
@@ -882,9 +886,9 @@ export type EventGlobalDisposed = {
 }
 
 export type Event =
+  | EventProjectUpdated
   | EventInstallationUpdated
   | EventInstallationUpdateAvailable
-  | EventProjectUpdated
   | EventServerInstanceDisposed
   | EventLspClientDiagnostics
   | EventLspUpdated
@@ -894,6 +898,8 @@ export type Event =
   | EventMessagePartRemoved
   | EventPermissionAsked
   | EventPermissionReplied
+  | EventSessionStatus
+  | EventSessionIdle
   | EventTuiPromptAppend
   | EventTuiCommandExecute
   | EventTuiToastShow
@@ -915,8 +921,6 @@ export type Event =
   | EventQuestionAsked
   | EventQuestionReplied
   | EventQuestionRejected
-  | EventSessionStatus
-  | EventSessionIdle
   | EventPtyCreated
   | EventPtyUpdated
   | EventPtyExited
@@ -1414,90 +1418,15 @@ export type AgentConfig = {
 }
 
 export type ProviderConfig = {
-  api?: string
-  name?: string
-  env?: Array<string>
-  id?: string
-  npm?: string
-  models?: {
-    [key: string]: {
-      id?: string
-      name?: string
-      family?: string
-      release_date?: string
-      attachment?: boolean
-      reasoning?: boolean
-      temperature?: boolean
-      tool_call?: boolean
-      interleaved?:
-        | true
-        | {
-            field: "reasoning_content" | "reasoning_details"
-          }
-      cost?: {
-        input: number
-        output: number
-        cache_read?: number
-        cache_write?: number
-        context_over_200k?: {
-          input: number
-          output: number
-          cache_read?: number
-          cache_write?: number
-        }
-      }
-      limit?: {
-        context: number
-        output: number
-      }
-      modalities?: {
-        input: Array<"text" | "audio" | "image" | "video" | "pdf">
-        output: Array<"text" | "audio" | "image" | "video" | "pdf">
-      }
-      experimental?: boolean
-      status?: "alpha" | "beta" | "deprecated"
-      options?: {
-        [key: string]: unknown
-      }
-      headers?: {
-        [key: string]: string
-      }
-      provider?: {
-        npm: string
-      }
-      /**
-       * Variant-specific configuration
-       */
-      variants?: {
-        [key: string]: {
-          /**
-           * Disable this variant for the model
-           */
-          disabled?: boolean
-          [key: string]: unknown | boolean | undefined
-        }
-      }
-    }
-  }
-  whitelist?: Array<string>
-  blacklist?: Array<string>
-  options?: {
-    apiKey?: string
-    baseURL?: string
-    /**
-     * GitHub Enterprise URL for copilot authentication
-     */
-    enterpriseUrl?: string
-    /**
-     * Enable promptCacheKey for this provider (default false)
-     */
-    setCacheKey?: boolean
-    /**
-     * Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.
-     */
-    timeout?: number | false
-    [key: string]: unknown | string | boolean | number | false | undefined
-  }
+  /**
+   * API key for the provider
+   */
+  apiKey?: string
+  /**
+   * Base URL for API requests
+   */
+  baseURL?: string
+  [key: string]: unknown | string | undefined
 }
 
 export type McpLocalConfig = {
@@ -1846,34 +1775,9 @@ export type Command = {
 
 export type Model = {
   id: string
-  providerID: string
   name: string
   family?: string
-  capabilities: {
-    temperature: boolean
-    reasoning: boolean
-    attachment: boolean
-    toolcall: boolean
-    input: {
-      text: boolean
-      audio: boolean
-      image: boolean
-      video: boolean
-      pdf: boolean
-    }
-    output: {
-      text: boolean
-      audio: boolean
-      image: boolean
-      video: boolean
-      pdf: boolean
-    }
-    interleaved:
-      | boolean
-      | {
-          field: "reasoning_content" | "reasoning_details"
-        }
-  }
+  reasoning: boolean
   cost: {
     input: number
     output: number
@@ -1881,57 +1785,8 @@ export type Model = {
       read: number
       write: number
     }
-    experimentalOver200K?: {
-      input: number
-      output: number
-      cache: {
-        read: number
-        write: number
-      }
-    }
   }
-  limit: {
-    context: number
-    output: number
-  }
-  status: "alpha" | "beta" | "deprecated" | "active"
-  options: {
-    [key: string]: unknown
-  }
-  headers: {
-    [key: string]: string
-  }
-  release_date: string
-  variants?: {
-    [key: string]: {
-      [key: string]: unknown
-    }
-  }
-}
-
-export type Provider = {
-  id: string
-  name: string
-  source: "env" | "config" | "custom" | "api"
-  env: Array<string>
-  key?: string
-  options: {
-    [key: string]: unknown
-  }
-  models: {
-    [key: string]: Model
-  }
-}
-
-export type ProviderAuthMethod = {
-  type: "oauth" | "api"
-  label: string
-}
-
-export type ProviderAuthAuthorization = {
-  url: string
-  method: "auto" | "code"
-  instructions: string
+  context: number
 }
 
 export type Symbol = {
@@ -3745,7 +3600,69 @@ export type ConfigProvidersResponses = {
    * List of providers
    */
   200: {
-    providers: Array<Provider>
+    providers: Array<{
+      id: string
+      name: string
+      source: "env" | "config" | "custom" | "api"
+      env: Array<string>
+      key?: string
+      options: {
+        [key: string]: unknown
+      }
+      models: {
+        [key: string]: {
+          id: string
+          providerID: string
+          name: string
+          family?: string
+          capabilities: {
+            temperature: boolean
+            reasoning: boolean
+            attachment: boolean
+            toolcall: boolean
+            input: {
+              text: boolean
+              audio: boolean
+              image: boolean
+              video: boolean
+              pdf: boolean
+            }
+            output: {
+              text: boolean
+              audio: boolean
+              image: boolean
+              video: boolean
+              pdf: boolean
+            }
+            interleaved:
+              | boolean
+              | {
+                  field: "reasoning_content" | "reasoning_details"
+                }
+          }
+          cost: {
+            input: number
+            output: number
+            cache: {
+              read: number
+              write: number
+            }
+          }
+          limit: {
+            context: number
+            output: number
+          }
+          status: "alpha" | "beta" | "deprecated" | "active"
+          options: {
+            [key: string]: unknown
+          }
+          headers: {
+            [key: string]: string
+          }
+          release_date: string
+        }
+      }
+    }>
     default: {
       [key: string]: string
     }
@@ -3753,6 +3670,45 @@ export type ConfigProvidersResponses = {
 }
 
 export type ConfigProvidersResponse = ConfigProvidersResponses[keyof ConfigProvidersResponses]
+
+export type ConfigModelsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/config/models"
+}
+
+export type ConfigModelsResponses = {
+  /**
+   * List of models
+   */
+  200: {
+    models: Array<Model>
+    default: string
+  }
+}
+
+export type ConfigModelsResponse = ConfigModelsResponses[keyof ConfigModelsResponses]
+
+export type ModelsListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/models"
+}
+
+export type ModelsListResponses = {
+  /**
+   * List of models
+   */
+  200: Array<Model>
+}
+
+export type ModelsListResponse = ModelsListResponses[keyof ModelsListResponses]
 
 export type ProviderListData = {
   body?: never
@@ -3768,66 +3724,7 @@ export type ProviderListResponses = {
    * List of providers
    */
   200: {
-    all: Array<{
-      api?: string
-      name: string
-      env: Array<string>
-      id: string
-      npm?: string
-      models: {
-        [key: string]: {
-          id: string
-          name: string
-          family?: string
-          release_date: string
-          attachment: boolean
-          reasoning: boolean
-          temperature: boolean
-          tool_call: boolean
-          interleaved?:
-            | true
-            | {
-                field: "reasoning_content" | "reasoning_details"
-              }
-          cost?: {
-            input: number
-            output: number
-            cache_read?: number
-            cache_write?: number
-            context_over_200k?: {
-              input: number
-              output: number
-              cache_read?: number
-              cache_write?: number
-            }
-          }
-          limit: {
-            context: number
-            output: number
-          }
-          modalities?: {
-            input: Array<"text" | "audio" | "image" | "video" | "pdf">
-            output: Array<"text" | "audio" | "image" | "video" | "pdf">
-          }
-          experimental?: boolean
-          status?: "alpha" | "beta" | "deprecated"
-          options: {
-            [key: string]: unknown
-          }
-          headers?: {
-            [key: string]: string
-          }
-          provider?: {
-            npm: string
-          }
-          variants?: {
-            [key: string]: {
-              [key: string]: unknown
-            }
-          }
-        }
-      }
-    }>
+    all: Array<unknown>
     default: {
       [key: string]: string
     }
@@ -3848,92 +3745,17 @@ export type ProviderAuthData = {
 
 export type ProviderAuthResponses = {
   /**
-   * Provider auth methods
+   * Auth methods by provider
    */
   200: {
-    [key: string]: Array<ProviderAuthMethod>
+    [key: string]: Array<{
+      type: "oauth" | "api"
+      label: string
+    }>
   }
 }
 
 export type ProviderAuthResponse = ProviderAuthResponses[keyof ProviderAuthResponses]
-
-export type ProviderOauthAuthorizeData = {
-  body?: {
-    /**
-     * Auth method index
-     */
-    method: number
-  }
-  path: {
-    /**
-     * Provider ID
-     */
-    providerID: string
-  }
-  query?: {
-    directory?: string
-  }
-  url: "/provider/{providerID}/oauth/authorize"
-}
-
-export type ProviderOauthAuthorizeErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type ProviderOauthAuthorizeError = ProviderOauthAuthorizeErrors[keyof ProviderOauthAuthorizeErrors]
-
-export type ProviderOauthAuthorizeResponses = {
-  /**
-   * Authorization URL and method
-   */
-  200: ProviderAuthAuthorization
-}
-
-export type ProviderOauthAuthorizeResponse = ProviderOauthAuthorizeResponses[keyof ProviderOauthAuthorizeResponses]
-
-export type ProviderOauthCallbackData = {
-  body?: {
-    /**
-     * Auth method index
-     */
-    method: number
-    /**
-     * OAuth authorization code
-     */
-    code?: string
-  }
-  path: {
-    /**
-     * Provider ID
-     */
-    providerID: string
-  }
-  query?: {
-    directory?: string
-  }
-  url: "/provider/{providerID}/oauth/callback"
-}
-
-export type ProviderOauthCallbackErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type ProviderOauthCallbackError = ProviderOauthCallbackErrors[keyof ProviderOauthCallbackErrors]
-
-export type ProviderOauthCallbackResponses = {
-  /**
-   * OAuth callback processed successfully
-   */
-  200: boolean
-}
-
-export type ProviderOauthCallbackResponse = ProviderOauthCallbackResponses[keyof ProviderOauthCallbackResponses]
 
 export type FindTextData = {
   body?: never
