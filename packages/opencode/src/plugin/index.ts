@@ -90,7 +90,8 @@ export namespace Plugin {
     const hooks = await state().then((x) => x.hooks)
     const config = await Config.get()
     for (const hook of hooks) {
-      await hook.config?.(config)
+      // Cast to satisfy plugin Config type - we're Anthropic-only now
+      await hook.config?.(config as Parameters<NonNullable<typeof hook.config>>[0])
     }
     Bus.subscribeAll(async (input) => {
       const hooks = await state().then((x) => x.hooks)

@@ -242,10 +242,13 @@ export namespace SDKStream {
                     toolSummaries.set(parentId, [])
                   }
                   toolToParent.set(part.callID, parentId)
+                  // Extract meaningful title from input
+                  const input = (part.state as MessageV2.ToolStatePending).input
+                  const title = getToolTitle(part.tool, input)
                   toolSummaries.get(parentId)!.push({
                     id: part.callID,
                     tool: part.tool,
-                    state: { status: "pending" },
+                    state: { status: "pending", title },
                   })
                   await updateTaskSummary(parentId)
                 }
@@ -279,7 +282,7 @@ export namespace SDKStream {
                   const entry = summary?.find((t) => t.id === block.tool_use_id)
                   if (entry) {
                     entry.state.status = block.is_error ? "error" : "completed"
-                    entry.state.title = block.is_error ? undefined : entry.tool
+                    // Keep the existing title (set from input) - don't overwrite
                     await updateTaskSummary(parentId)
                   }
                 }
@@ -508,10 +511,6 @@ export namespace SDKStream {
   /**
    * Extract metadata from tool output based on tool type
    * This populates fields like count, matches, etc. for UI display
-   *
-   * SDK tools return structured JSON output, so we parse it to extract metadata.
-   * Note: Task tool summary is built in real-time via updateParentTaskSummary,
-   * not here - the summary is preserved from the running state's metadata.
    */
   function extractToolMetadata(tool: string, output: string): Record<string, unknown> {
     const metadata: Record<string, unknown> = {}
@@ -567,6 +566,35 @@ export namespace SDKStream {
     }
 
     return metadata
+  }
+
+  /**
+   * Extract a display title from tool input
+   * Used for showing meaningful info in subagent tool summaries
+   */
+  function getToolTitle(tool: string, input: Record<string, unknown>): string {
+    switch (tool) {
+      case "read":
+      case "write":
+      case "edit":
+        return String(input.file_path || input.filePath || "")
+      case "glob":
+      case "grep":
+        return String(input.pattern || "")
+      case "bash": {
+        if (input.description) return String(input.description)
+        const cmd = String(input.command || "")
+        return cmd.length > 50 ? cmd.slice(0, 50) + "..." : cmd
+      }
+      case "webfetch":
+        return String(input.url || "")
+      case "websearch":
+        return String(input.query || "")
+      case "task":
+        return String(input.description || "")
+      default:
+        return String(input.file_path || input.filePath || input.pattern || input.query || input.description || "")
+    }
   }
 
 }

@@ -17,7 +17,6 @@ import type {
 } from "@octokit/webhooks-types"
 import { UI } from "../ui"
 import { cmd } from "./cmd"
-import { ModelsDev } from "../../provider/models"
 import { Instance } from "@/project/instance"
 import { bootstrap } from "../bootstrap"
 import { Session } from "../../session"
@@ -201,11 +200,9 @@ export const GithubInstallCommand = cmd({
           const app = await getAppInfo()
           await installGitHubApp()
 
-          const providers = await ModelsDev.get()
-
           // Claude Agent SDK only supports Anthropic
           const provider = "anthropic"
-          const model = await promptModel(providers)
+          const model = await promptModel()
           //const key = await promptKey()
 
           await addWorkflowFiles()
@@ -249,22 +246,16 @@ export const GithubInstallCommand = cmd({
             return { owner: parsed.owner, repo: parsed.repo, root: Instance.worktree }
           }
 
-          async function promptModel(allProviders: Record<string, ModelsDev.Provider>) {
-            const providerData = allProviders["anthropic"]
-            if (!providerData) throw new Error("Anthropic provider not found")
+          async function promptModel() {
+            const models = Provider.sort(Provider.list())
 
             const model = await prompts.select({
               message: "Select model",
               maxItems: 8,
-              options: pipe(
-                providerData.models,
-                values(),
-                sortBy((x) => x.name ?? x.id),
-                map((x) => ({
-                  label: x.name ?? x.id,
-                  value: x.id,
-                })),
-              ),
+              options: models.map((m) => ({
+                label: m.name,
+                value: m.id,
+              })),
             })
 
             if (prompts.isCancel(model)) throw new UI.CancelledError()

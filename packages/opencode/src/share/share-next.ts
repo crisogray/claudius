@@ -8,6 +8,33 @@ import { Storage } from "@/storage/storage"
 import { Log } from "@/util/log"
 import type * as SDK from "@opencode-ai/sdk/v2"
 
+/**
+ * Convert our simplified Provider.Model to SDK.Model format
+ */
+function toSDKModel(m: Provider.Model): SDK.Model {
+  return {
+    id: m.id,
+    providerID: "anthropic",
+    name: m.name,
+    family: m.family,
+    capabilities: {
+      temperature: true,
+      reasoning: m.reasoning,
+      attachment: true,
+      toolcall: true,
+      input: { text: true, audio: false, image: true, video: false, pdf: true },
+      output: { text: true, audio: false, image: false, video: false, pdf: false },
+      interleaved: m.reasoning ? { field: "reasoning_content" } : false,
+    },
+    cost: m.cost,
+    limit: { context: m.context, output: m.context },
+    status: "active",
+    options: {},
+    headers: {},
+    release_date: "2025-01-01",
+  }
+}
+
 export namespace ShareNext {
   const log = Log.create({ service: "share-next" })
 
@@ -32,16 +59,15 @@ export namespace ShareNext {
         },
       ])
       if (evt.properties.info.role === "user") {
-        await sync(evt.properties.info.sessionID, [
-          {
-            type: "model",
-            data: [
-              await Provider.getModel(evt.properties.info.model.providerID, evt.properties.info.model.modelID).then(
-                (m) => m,
-              ),
-            ],
-          },
-        ])
+        const model = Provider.getModel(evt.properties.info.model.modelID)
+        if (model) {
+          await sync(evt.properties.info.sessionID, [
+            {
+              type: "model",
+              data: [toSDKModel(model)],
+            },
+          ])
+        }
       }
     })
     Bus.subscribe(MessageV2.Event.PartUpdated, async (evt) => {
@@ -165,12 +191,12 @@ export namespace ShareNext {
     const session = await Session.get(sessionID)
     const diffs = await Session.diff(sessionID)
     const messages = await Array.fromAsync(MessageV2.stream(sessionID))
-    const models = await Promise.all(
-      messages
-        .filter((m) => m.info.role === "user")
-        .map((m) => (m.info as SDK.UserMessage).model)
-        .map((m) => Provider.getModel(m.providerID, m.modelID).then((m) => m)),
-    )
+    const models = messages
+      .filter((m) => m.info.role === "user")
+      .map((m) => (m.info as SDK.UserMessage).model)
+      .map((m) => Provider.getModel(m.modelID))
+      .filter((m): m is Provider.Model => m !== undefined)
+      .map(toSDKModel)
     await sync(sessionID, [
       {
         type: "session",

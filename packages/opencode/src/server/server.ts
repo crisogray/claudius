@@ -12,7 +12,6 @@ import z from "zod"
 import { Provider } from "../provider/provider"
 import { filter, mapValues, sortBy, pipe } from "remeda"
 import { NamedError } from "@opencode-ai/util/error"
-import { ModelsDev } from "../provider/models"
 import { Ripgrep } from "../file/ripgrep"
 import { Config } from "../config/config"
 import { File } from "../file"
@@ -26,7 +25,6 @@ import { Vcs } from "../project/vcs"
 import { Agent } from "../agent/agent"
 import { Auth } from "../auth"
 import { Command } from "../command"
-import { ProviderAuth } from "../provider/auth"
 import { Global } from "../global"
 import { ProjectRoute } from "./project"
 import { ToolRegistry } from "../tool/registry"
@@ -1737,7 +1735,7 @@ export namespace Server {
           "/config/providers",
           describeRoute({
             summary: "List config providers",
-            description: "Get a list of all configured AI providers and their default models.",
+            description: "Get a list of all configured AI providers and their models.",
             operationId: "config.providers",
             responses: {
               200: {
@@ -1746,7 +1744,58 @@ export namespace Server {
                   "application/json": {
                     schema: resolver(
                       z.object({
-                        providers: Provider.Info.array(),
+                        providers: z
+                          .object({
+                            id: z.string(),
+                            name: z.string(),
+                            source: z.enum(["env", "config", "custom", "api"]),
+                            env: z.array(z.string()),
+                            key: z.string().optional(),
+                            options: z.record(z.string(), z.unknown()),
+                            models: z.record(
+                              z.string(),
+                              z.object({
+                                id: z.string(),
+                                providerID: z.string(),
+                                name: z.string(),
+                                family: z.string().optional(),
+                                capabilities: z.object({
+                                  temperature: z.boolean(),
+                                  reasoning: z.boolean(),
+                                  attachment: z.boolean(),
+                                  toolcall: z.boolean(),
+                                  input: z.object({
+                                    text: z.boolean(),
+                                    audio: z.boolean(),
+                                    image: z.boolean(),
+                                    video: z.boolean(),
+                                    pdf: z.boolean(),
+                                  }),
+                                  output: z.object({
+                                    text: z.boolean(),
+                                    audio: z.boolean(),
+                                    image: z.boolean(),
+                                    video: z.boolean(),
+                                    pdf: z.boolean(),
+                                  }),
+                                  interleaved: z.union([
+                                    z.boolean(),
+                                    z.object({ field: z.enum(["reasoning_content", "reasoning_details"]) }),
+                                  ]),
+                                }),
+                                cost: z.object({
+                                  input: z.number(),
+                                  output: z.number(),
+                                  cache: z.object({
+                                    read: z.number(),
+                                    write: z.number(),
+                                  }),
+                                }),
+                                context: z.number(),
+                              }),
+                            ),
+                          })
+                          .array(),
                         default: z.record(z.string(), z.string()),
                       }),
                     ),
@@ -1756,19 +1805,103 @@ export namespace Server {
             },
           }),
           async (c) => {
-            using _ = log.time("providers")
-            const providers = await Provider.list().then((x) => mapValues(x, (item) => item))
+            const models = Provider.list()
+            const sdkModels: Record<string, unknown> = {}
+            for (const m of models) {
+              sdkModels[m.id] = {
+                id: m.id,
+                providerID: "anthropic",
+                name: m.name,
+                family: m.family,
+                capabilities: {
+                  temperature: true,
+                  reasoning: m.reasoning,
+                  attachment: true,
+                  toolcall: true,
+                  input: { text: true, audio: false, image: true, video: false, pdf: true },
+                  output: { text: true, audio: false, image: false, video: false, pdf: false },
+                  interleaved: m.reasoning ? { field: "reasoning_content" as const } : false,
+                },
+                cost: m.cost,
+                limit: { context: m.context, output: m.context },
+                status: "active" as const,
+                options: {},
+                headers: {},
+                release_date: "2025-01-01",
+              }
+            }
             return c.json({
-              providers: Object.values(providers),
-              default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
+              providers: [
+                {
+                  id: "anthropic",
+                  name: "Anthropic",
+                  source: "env" as const,
+                  env: ["ANTHROPIC_API_KEY"],
+                  options: {},
+                  models: sdkModels,
+                },
+              ],
+              default: { anthropic: Provider.getDefaultModel() },
             })
+          },
+        )
+        .get(
+          "/config/models",
+          describeRoute({
+            summary: "List config models",
+            description: "Get available models and the default model.",
+            operationId: "config.models",
+            responses: {
+              200: {
+                description: "List of models",
+                content: {
+                  "application/json": {
+                    schema: resolver(
+                      z.object({
+                        models: Provider.Model.array(),
+                        default: z.string(),
+                      }),
+                    ),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const models = Provider.sort(Provider.list())
+            return c.json({
+              models,
+              default: Provider.getDefaultModel(),
+            })
+          },
+        )
+        .get(
+          "/models",
+          describeRoute({
+            summary: "List models",
+            description: "Get available Claude models",
+            operationId: "models.list",
+            responses: {
+              200: {
+                description: "List of models",
+                content: {
+                  "application/json": {
+                    schema: resolver(Provider.Model.array()),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const models = await Provider.listAsync()
+            return c.json(Provider.sort(models))
           },
         )
         .get(
           "/provider",
           describeRoute({
             summary: "List providers",
-            description: "Get a list of all available AI providers, including both available and connected ones.",
+            description: "Get available AI providers (Anthropic only for Claude SDK)",
             operationId: "provider.list",
             responses: {
               200: {
@@ -1777,7 +1910,7 @@ export namespace Server {
                   "application/json": {
                     schema: resolver(
                       z.object({
-                        all: ModelsDev.Provider.array(),
+                        all: z.array(z.unknown()),
                         default: z.record(z.string(), z.string()),
                         connected: z.array(z.string()),
                       }),
@@ -1788,12 +1921,45 @@ export namespace Server {
             },
           }),
           async (c) => {
-            // Claude Agent SDK only supports Anthropic - get models from SDK dynamically
-            const provider = await Provider.getAnthropicProviderAsync()
+            const auth = await Auth.all()
+            const connected = auth["anthropic"] ? ["anthropic"] : []
+            // Build full model objects for SDK compatibility
+            const models = Provider.list()
+            const sdkModels: Record<string, unknown> = {}
+            for (const m of models) {
+              sdkModels[m.id] = {
+                id: m.id,
+                providerID: "anthropic",
+                name: m.name,
+                family: m.family,
+                capabilities: {
+                  temperature: true,
+                  reasoning: m.reasoning,
+                  attachment: true,
+                  toolcall: true,
+                  input: { text: true, audio: false, image: true, video: false, pdf: true },
+                  output: { text: true, audio: false, image: false, video: false, pdf: false },
+                  interleaved: m.reasoning ? { field: "reasoning_content" as const } : false,
+                },
+                cost: m.cost,
+                limit: { context: m.context, output: m.context },
+                status: "active" as const,
+                options: {},
+                headers: {},
+                release_date: "2025-01-01",
+              }
+            }
             return c.json({
-              all: [provider],
-              default: { [provider.id]: Provider.sort(Object.values(provider.models))[0].id },
-              connected: ["anthropic"],
+              all: [
+                {
+                  id: "anthropic",
+                  name: "Anthropic",
+                  env: ["ANTHROPIC_API_KEY"],
+                  models: sdkModels,
+                },
+              ],
+              default: { anthropic: Provider.getDefaultModel() },
+              connected,
             })
           },
         )
@@ -1801,103 +1967,34 @@ export namespace Server {
           "/provider/auth",
           describeRoute({
             summary: "Get provider auth methods",
-            description: "Retrieve available authentication methods for all AI providers.",
+            description: "Get available authentication methods for providers",
             operationId: "provider.auth",
             responses: {
               200: {
-                description: "Provider auth methods",
+                description: "Auth methods by provider",
                 content: {
                   "application/json": {
-                    schema: resolver(z.record(z.string(), z.array(ProviderAuth.Method))),
+                    schema: resolver(
+                      z.record(
+                        z.string(),
+                        z
+                          .object({
+                            type: z.enum(["oauth", "api"]),
+                            label: z.string(),
+                          })
+                          .array(),
+                      ),
+                    ),
                   },
                 },
               },
             },
           }),
           async (c) => {
-            return c.json(await ProviderAuth.methods())
-          },
-        )
-        .post(
-          "/provider/:providerID/oauth/authorize",
-          describeRoute({
-            summary: "OAuth authorize",
-            description: "Initiate OAuth authorization for a specific AI provider to get an authorization URL.",
-            operationId: "provider.oauth.authorize",
-            responses: {
-              200: {
-                description: "Authorization URL and method",
-                content: {
-                  "application/json": {
-                    schema: resolver(ProviderAuth.Authorization.optional()),
-                  },
-                },
-              },
-              ...errors(400),
-            },
-          }),
-          validator(
-            "param",
-            z.object({
-              providerID: z.string().meta({ description: "Provider ID" }),
-            }),
-          ),
-          validator(
-            "json",
-            z.object({
-              method: z.number().meta({ description: "Auth method index" }),
-            }),
-          ),
-          async (c) => {
-            const providerID = c.req.valid("param").providerID
-            const { method } = c.req.valid("json")
-            const result = await ProviderAuth.authorize({
-              providerID,
-              method,
+            // Anthropic only supports API key auth
+            return c.json({
+              anthropic: [{ type: "api" as const, label: "API key" }],
             })
-            return c.json(result)
-          },
-        )
-        .post(
-          "/provider/:providerID/oauth/callback",
-          describeRoute({
-            summary: "OAuth callback",
-            description: "Handle the OAuth callback from a provider after user authorization.",
-            operationId: "provider.oauth.callback",
-            responses: {
-              200: {
-                description: "OAuth callback processed successfully",
-                content: {
-                  "application/json": {
-                    schema: resolver(z.boolean()),
-                  },
-                },
-              },
-              ...errors(400),
-            },
-          }),
-          validator(
-            "param",
-            z.object({
-              providerID: z.string().meta({ description: "Provider ID" }),
-            }),
-          ),
-          validator(
-            "json",
-            z.object({
-              method: z.number().meta({ description: "Auth method index" }),
-              code: z.string().optional().meta({ description: "OAuth authorization code" }),
-            }),
-          ),
-          async (c) => {
-            const providerID = c.req.valid("param").providerID
-            const { method, code } = c.req.valid("json")
-            await ProviderAuth.callback({
-              providerID,
-              method,
-              code,
-            })
-            return c.json(true)
           },
         )
         .get(
