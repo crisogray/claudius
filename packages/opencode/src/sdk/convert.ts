@@ -45,6 +45,7 @@ export namespace SDKConvert {
     session_id: string
     parent_tool_use_id?: string
     message: {
+      id: string  // Anthropic API message ID
       content: ContentBlock[]
     }
   }
@@ -78,7 +79,72 @@ export namespace SDKConvert {
     tools?: string[]
   }
 
-  export type SDKMessage = SDKAssistantMessage | SDKUserMessage | SDKResultMessage | SDKSystemMessage
+  export type SDKMessage = SDKAssistantMessage | SDKUserMessage | SDKResultMessage | SDKSystemMessage | SDKPartialAssistantMessage
+
+  // Partial message streaming types (from @anthropic-ai/claude-agent-sdk with includePartialMessages: true)
+  export interface SDKPartialAssistantMessage {
+    type: "stream_event"
+    event: RawMessageStreamEvent
+    parent_tool_use_id: string | null
+    uuid: string
+    session_id: string
+  }
+
+  // Raw message stream event types (from @anthropic-ai/sdk)
+  export type RawMessageStreamEvent =
+    | MessageStartEvent
+    | ContentBlockStartEvent
+    | ContentBlockDeltaEvent
+    | ContentBlockStopEvent
+    | MessageDeltaEvent
+    | MessageStopEvent
+
+  export interface MessageStartEvent {
+    type: "message_start"
+    message: {
+      id: string
+      type: "message"
+      role: "assistant"
+      content: ContentBlock[]
+      model: string
+      stop_reason: string | null
+      stop_sequence: string | null
+      usage: { input_tokens: number; output_tokens: number }
+    }
+  }
+
+  export interface ContentBlockStartEvent {
+    type: "content_block_start"
+    index: number
+    content_block:
+      | { type: "text"; text: string }
+      | { type: "thinking"; thinking: string; signature?: string }
+      | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  }
+
+  export interface ContentBlockDeltaEvent {
+    type: "content_block_delta"
+    index: number
+    delta:
+      | { type: "text_delta"; text: string }
+      | { type: "thinking_delta"; thinking: string }
+      | { type: "input_json_delta"; partial_json: string }
+  }
+
+  export interface ContentBlockStopEvent {
+    type: "content_block_stop"
+    index: number
+  }
+
+  export interface MessageDeltaEvent {
+    type: "message_delta"
+    delta: { stop_reason: string | null; stop_sequence: string | null }
+    usage: { output_tokens: number }
+  }
+
+  export interface MessageStopEvent {
+    type: "message_stop"
+  }
 
   /**
    * Convert SDK content block to opencode Part

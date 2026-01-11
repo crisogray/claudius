@@ -13,18 +13,6 @@ import { SDKConvert } from "./convert"
 export namespace SDKStream {
   const log = Log.create({ service: "sdk.stream" })
 
-  // SDK stream event types (from Anthropic API)
-  export interface ContentBlockDelta {
-    type: "content_block_delta"
-    index: number
-    delta:
-    | { type: "text_delta"; text: string }
-    | { type: "thinking_delta"; thinking: string }
-    | { type: "input_json_delta"; partial_json: string }
-  }
-
-  export type StreamEvent = ContentBlockDelta | { type: string;[key: string]: unknown }
-
   /**
    * Process SDK stream and convert to MessageV2/Parts
    *
@@ -49,6 +37,11 @@ export namespace SDKStream {
     let currentMessageID: string | null = null
     let initialSnapshot: string | undefined
     const partsByIndex = new Map<number, MessageV2.Part>()
+
+    // Streaming state for partial message handling
+    const streamingParts = new Map<number, MessageV2.Part>()
+    let streamingMessageID: string | null = null
+    const streamedAnthropicMessageIDs = new Set<string>()  // Track by Anthropic API message ID
 
     // Track child sessions for subagents
     // Maps parent_tool_use_id -> { sessionID, userMessageID }
@@ -215,6 +208,12 @@ export namespace SDKStream {
           }
 
           case "assistant": {
+            // Skip if already handled via streaming (parts already created)
+            // Use Anthropic API message ID for deduplication (stable across partial/complete messages)
+            if (streamedAnthropicMessageIDs.has(message.message.id)) {
+              break
+            }
+
             // Determine target session - child session for subagents, parent for main agent
             const childInfo = message.parent_tool_use_id
               ? await getOrCreateChildSession(message.parent_tool_use_id)
@@ -356,6 +355,164 @@ export namespace SDKStream {
             }
             break
           }
+
+          case "stream_event": {
+            const msg = message as SDKConvert.SDKPartialAssistantMessage
+            const event = msg.event
+
+            // Determine target session (subagent support)
+            const childInfo = msg.parent_tool_use_id
+              ? await getOrCreateChildSession(msg.parent_tool_use_id)
+              : null
+            const targetSessionID = childInfo?.sessionID ?? sessionID
+            const parentID = childInfo?.userMessageID ?? context.parentID
+
+            switch (event.type) {
+              case "message_start": {
+                // Create assistant message shell
+                const assistantMessage = SDKConvert.createAssistantMessage(
+                  {
+                    type: "assistant",
+                    uuid: msg.uuid,
+                    session_id: msg.session_id,
+                    parent_tool_use_id: msg.parent_tool_use_id ?? undefined,
+                    message: event.message,
+                  },
+                  targetSessionID,
+                  {
+                    parentID,
+                    modelID: context.modelID,
+                    providerID: context.providerID,
+                    agent: context.agent,
+                    cwd: Instance.directory,
+                    root: Instance.worktree,
+                  },
+                )
+                currentMessage = assistantMessage
+                currentMessageID = assistantMessage.id
+                streamingMessageID = assistantMessage.id
+
+                // Track by Anthropic API message ID (stable across partial/complete messages)
+                const anthropicMessageId = (event as SDKConvert.MessageStartEvent).message.id
+                streamedAnthropicMessageIDs.add(anthropicMessageId)
+
+                // Store SDK metadata
+                ;(currentMessage as any).sdk = {
+                  uuid: msg.uuid,
+                  sessionId: msg.session_id,
+                  parentToolUseId: msg.parent_tool_use_id ?? undefined,
+                }
+
+                await Session.updateMessage(assistantMessage)
+
+                // Add StepStartPart with initial snapshot (only for main session)
+                if (initialSnapshot && !msg.parent_tool_use_id) {
+                  const stepStartPart: MessageV2.StepStartPart = {
+                    id: Identifier.ascending("part"),
+                    sessionID: targetSessionID,
+                    messageID: assistantMessage.id,
+                    type: "step-start",
+                    snapshot: initialSnapshot,
+                  }
+                  await Session.updatePart(stepStartPart)
+                }
+
+                Bus.publish(MessageV2.Event.Updated, { info: assistantMessage })
+                break
+              }
+
+              case "content_block_start": {
+                if (!streamingMessageID) break
+                const part = createPartFromBlockStart(event, targetSessionID, streamingMessageID)
+                if (part) {
+                  streamingParts.set(event.index, part)
+                  await Session.updatePart(part)
+                }
+                break
+              }
+
+              case "content_block_delta": {
+                const part = streamingParts.get(event.index)
+                if (!part) break
+
+                if (event.delta.type === "text_delta" && part.type === "text") {
+                  part.text += event.delta.text
+                  await Session.updatePart({ part, delta: event.delta.text })
+                } else if (event.delta.type === "thinking_delta" && part.type === "reasoning") {
+                  part.text += event.delta.thinking
+                  await Session.updatePart({ part, delta: event.delta.thinking })
+                } else if (event.delta.type === "input_json_delta" && part.type === "tool") {
+                  const state = part.state as MessageV2.ToolStatePending
+                  state.raw += event.delta.partial_json
+                  // Don't publish deltas for tool JSON - wait for completion
+                }
+                break
+              }
+
+              case "content_block_stop": {
+                const part = streamingParts.get(event.index)
+                if (!part) break
+
+                // Finalize part
+                if (part.type === "text" || part.type === "reasoning") {
+                  part.text = part.text.trimEnd()
+                  part.time = { start: part.time?.start ?? Date.now(), end: Date.now() }
+                } else if (part.type === "tool") {
+                  // Parse accumulated JSON into input
+                  const state = part.state as MessageV2.ToolStatePending
+                  try {
+                    state.input = JSON.parse(state.raw || "{}")
+                  } catch {
+                    state.input = {}
+                  }
+
+                  // Handle TodoWrite tool calls
+                  if (part.tool === "todowrite") {
+                    await handleTodoWrite(targetSessionID, {
+                      type: "tool_use",
+                      id: part.callID,
+                      name: "TodoWrite",
+                      input: state.input,
+                    })
+                  }
+
+                  // Track tool summaries for subagent tools
+                  if (msg.parent_tool_use_id) {
+                    const parentId = msg.parent_tool_use_id
+                    if (!toolSummaries.has(parentId)) {
+                      toolSummaries.set(parentId, [])
+                    }
+                    toolToParent.set(part.callID, parentId)
+                    const title = getToolTitle(part.tool, state.input)
+                    toolSummaries.get(parentId)!.push({
+                      id: part.callID,
+                      tool: part.tool,
+                      state: { status: "pending", title },
+                    })
+                    await updateTaskSummary(parentId)
+                  }
+                }
+
+                partsByIndex.set(event.index, part)
+                await Session.updatePart(part)
+                streamingParts.delete(event.index)
+                break
+              }
+
+              case "message_delta": {
+                // Capture usage updates if provided - will be finalized in result message
+                break
+              }
+
+              case "message_stop": {
+                // Message complete - cleanup streaming state
+                streamingParts.clear()
+                streamingMessageID = null
+                break
+              }
+            }
+            break
+          }
         }
       }
     } catch (error) {
@@ -370,44 +527,6 @@ export namespace SDKStream {
     }
 
     return { messageID: currentMessageID }
-  }
-
-  /**
-   * Handle stream deltas for incremental updates
-   */
-  export function handleStreamDelta(
-    event: StreamEvent,
-    messageID: string | null,
-    parts: Map<number, MessageV2.Part>,
-  ): void {
-    if (!messageID) return
-    if (event.type !== "content_block_delta") return
-
-    const { index, delta } = event as ContentBlockDelta
-
-    if (delta.type === "text_delta") {
-      // Publish delta for TextPart
-      Bus.publish(MessageV2.Event.PartUpdated, {
-        part: parts.get(index)!,
-        delta: delta.text,
-      })
-    }
-
-    if (delta.type === "thinking_delta") {
-      // Publish delta for ReasoningPart
-      Bus.publish(MessageV2.Event.PartUpdated, {
-        part: parts.get(index)!,
-        delta: delta.thinking,
-      })
-    }
-
-    if (delta.type === "input_json_delta") {
-      // Tool input streaming - update raw field
-      const part = parts.get(index)
-      if (part?.type === "tool") {
-        ; (part.state as MessageV2.ToolStatePending).raw += delta.partial_json
-      }
-    }
   }
 
   /**
@@ -660,6 +779,56 @@ export namespace SDKStream {
       default:
         return String(input.file_path || input.filePath || input.pattern || input.query || input.description || "")
     }
+  }
+
+  /**
+   * Create a Part from a content_block_start event
+   * Used for streaming - creates the part shell with empty content
+   */
+  function createPartFromBlockStart(
+    event: SDKConvert.ContentBlockStartEvent,
+    sessionID: string,
+    messageID: string,
+  ): MessageV2.Part | null {
+    const { content_block } = event
+    const now = Date.now()
+
+    switch (content_block.type) {
+      case "text":
+        return {
+          id: Identifier.ascending("part"),
+          sessionID,
+          messageID,
+          type: "text",
+          text: "",
+          time: { start: now },
+        }
+      case "thinking":
+        return {
+          id: Identifier.ascending("part"),
+          sessionID,
+          messageID,
+          type: "reasoning",
+          text: "",
+          time: { start: now },
+          metadata: content_block.signature ? { signature: content_block.signature } : undefined,
+        }
+      case "tool_use":
+        return {
+          id: Identifier.ascending("part"),
+          sessionID,
+          messageID,
+          type: "tool",
+          callID: content_block.id,
+          tool: content_block.name.toLowerCase(),
+          state: {
+            status: "pending",
+            input: {},
+            raw: "",
+          },
+        }
+    }
+    return null
   }
 
 }

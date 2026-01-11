@@ -193,6 +193,7 @@ export namespace SDK {
           permissionMode: options.permissionMode,
           resume: options.resume,
           systemPrompt: options.systemPrompt,
+          includePartialMessages: true,
         },
       })
 
