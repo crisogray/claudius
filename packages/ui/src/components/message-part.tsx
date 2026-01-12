@@ -591,7 +591,7 @@ PART_MAPPING["redacted-reasoning"] = function RedactedReasoningPartDisplay(props
   return (
     <div data-component="reasoning-part" data-redacted>
       <div data-slot="redacted-thinking-notice">
-        <Icon name="shield" size="small" />
+        <Icon name="brain" size="small" />
         <span>Thinking redacted for safety</span>
       </div>
     </div>

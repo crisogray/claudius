@@ -1,7 +1,9 @@
 import { createStore, produce, reconcile } from "solid-js/store"
 import { batch, createMemo, onCleanup } from "solid-js"
 import { filter, firstBy, flat, groupBy, mapValues, pipe, uniqueBy, values } from "remeda"
-import type { FileContent, FileNode, Model, Provider, File as FileStatus } from "@opencode-ai/sdk/v2"
+import type { FileContent, FileNode, Model, ProviderListResponse, File as FileStatus } from "@opencode-ai/sdk/v2"
+
+type Provider = ProviderListResponse["all"][number]
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useSDK } from "./sdk"
 import { useSync } from "./sync"
@@ -284,7 +286,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
             return store.variant?.[key]
           },
           list() {
-            const m = current()
+            const m = current() as { variants?: Record<string, unknown> } | undefined
             if (!m) return []
             if (!m.variants) return []
             return Object.keys(m.variants)

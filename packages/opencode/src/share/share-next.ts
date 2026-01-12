@@ -8,32 +8,6 @@ import { Storage } from "@/storage/storage"
 import { Log } from "@/util/log"
 import type * as SDK from "@opencode-ai/sdk/v2"
 
-/**
- * Convert our simplified Provider.Model to SDK.Model format
- */
-function toSDKModel(m: Provider.Model): SDK.Model {
-  return {
-    id: m.id,
-    name: m.name,
-    family: m.family,
-    capabilities: {
-      temperature: true,
-      reasoning: m.reasoning,
-      attachment: true,
-      toolcall: true,
-      input: { text: true, audio: false, image: true, video: false, pdf: true },
-      output: { text: true, audio: false, image: false, video: false, pdf: false },
-      interleaved: m.reasoning ? { field: "reasoning_content" } : false,
-    },
-    cost: m.cost,
-    limit: { context: m.context, output: m.context },
-    status: "active",
-    options: {},
-    headers: {},
-    release_date: "2025-01-01",
-  } as SDK.Model
-}
-
 export namespace ShareNext {
   const log = Log.create({ service: "share-next" })
 
@@ -63,7 +37,7 @@ export namespace ShareNext {
           await sync(evt.properties.info.sessionID, [
             {
               type: "model",
-              data: [toSDKModel(model)],
+              data: [model],
             },
           ])
         }
@@ -73,7 +47,7 @@ export namespace ShareNext {
       await sync(evt.properties.part.sessionID, [
         {
           type: "part",
-          data: evt.properties.part as unknown as SDK.Part,
+          data: evt.properties.part,
         },
       ])
     })
@@ -195,7 +169,6 @@ export namespace ShareNext {
       .map((m) => (m.info as MessageV2.User).model)
       .map((m) => Provider.getModel(m.modelID))
       .filter((m): m is Provider.Model => m !== undefined)
-      .map(toSDKModel)
     await sync(sessionID, [
       {
         type: "session",
@@ -205,7 +178,7 @@ export namespace ShareNext {
         type: "message" as const,
         data: x.info,
       })),
-      ...messages.flatMap((x) => x.parts.map((y) => ({ type: "part" as const, data: y as unknown as SDK.Part }))),
+      ...messages.flatMap((x) => x.parts.map((y) => ({ type: "part" as const, data: y }))),
       {
         type: "session_diff",
         data: diffs,

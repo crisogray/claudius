@@ -109,10 +109,10 @@ export const createClient = (config: Config = {}): Client => {
       return opts.responseStyle === "data"
         ? undefined
         : {
-            error: finalError,
-            request,
-            response: undefined as any,
-          }
+          error: finalError,
+          request,
+          response: undefined as any,
+        }
     }
 
     for (const fn of interceptors.response.fns) {
@@ -152,9 +152,9 @@ export const createClient = (config: Config = {}): Client => {
         return opts.responseStyle === "data"
           ? emptyData
           : {
-              data: emptyData,
-              ...result,
-            }
+            data: emptyData,
+            ...result,
+          }
       }
 
       let data: any
@@ -170,9 +170,9 @@ export const createClient = (config: Config = {}): Client => {
           return opts.responseStyle === "data"
             ? response.body
             : {
-                data: response.body,
-                ...result,
-              }
+              data: response.body,
+              ...result,
+            }
       }
 
       if (parseAs === "json") {
@@ -188,9 +188,9 @@ export const createClient = (config: Config = {}): Client => {
       return opts.responseStyle === "data"
         ? data
         : {
-            data,
-            ...result,
-          }
+          data,
+          ...result,
+        }
     }
 
     const textError = await response.text()
@@ -221,9 +221,9 @@ export const createClient = (config: Config = {}): Client => {
     return opts.responseStyle === "data"
       ? undefined
       : {
-          error: finalError,
-          ...result,
-        }
+        error: finalError,
+        ...result,
+      }
   }
 
   const makeMethodFn = (method: Uppercase<HttpMethod>) => (options: RequestOptions) => request({ ...options, method })
@@ -233,7 +233,6 @@ export const createClient = (config: Config = {}): Client => {
     return createSseClient({
       ...opts,
       body: opts.body as BodyInit | null | undefined,
-      headers: opts.headers as unknown as Record<string, string>,
       method,
       onRequest: async (url, init) => {
         let request = new Request(url, init)

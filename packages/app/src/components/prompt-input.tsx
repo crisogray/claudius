@@ -1097,13 +1097,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             permissionMode,
             model: `${model.providerID}/${model.modelID}`,
             variant,
-            parts: images.map((attachment) => ({
-              id: Identifier.ascending("part"),
-              type: "file" as const,
-              mime: attachment.mime,
-              url: attachment.dataUrl,
-              filename: attachment.filename,
-            })),
           })
           .catch((err) => {
             showToast({
@@ -1217,7 +1210,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       ...part,
       sessionID: session.id,
       messageID,
-    })) as unknown as Part[]
+    })) as Part[]
 
     const optimisticMessage: Message = {
       id: messageID,

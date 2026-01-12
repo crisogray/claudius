@@ -3,7 +3,7 @@ import type {
   createOpencodeClient,
   Project,
   Model,
-  Provider,
+  ProviderListResponse,
   PermissionRequest,
   UserMessage,
   Message,
@@ -11,6 +11,8 @@ import type {
   Auth,
   Config,
 } from "@opencode-ai/sdk"
+
+type Provider = ProviderListResponse["all"][number]
 
 import type { BunShell } from "./shell"
 import { type ToolDefinition } from "./tool"
