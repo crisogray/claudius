@@ -82,7 +82,7 @@ export type UserMessage = {
     body?: string
     diffs: Array<FileDiff>
   }
-  agent: string
+  permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
   model: {
     providerID: string
     modelID: string
@@ -152,7 +152,7 @@ export type AssistantMessage = {
   modelID: string
   providerID: string
   mode: string
-  agent: string
+  permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
   path: {
     cwd: string
     root: string
@@ -478,35 +478,6 @@ export type EventMessagePartRemoved = {
   }
 }
 
-export type PermissionRequest = {
-  id: string
-  sessionID: string
-  permission: string
-  patterns: Array<string>
-  metadata: {
-    [key: string]: unknown
-  }
-  always: Array<string>
-  tool?: {
-    messageID: string
-    callID: string
-  }
-}
-
-export type EventPermissionAsked = {
-  type: "permission.asked"
-  properties: PermissionRequest
-}
-
-export type EventPermissionReplied = {
-  type: "permission.replied"
-  properties: {
-    sessionID: string
-    requestID: string
-    reply: "once" | "always" | "reject"
-  }
-}
-
 export type SessionStatus =
   | {
       type: "idle"
@@ -605,6 +576,102 @@ export type EventCommandExecuted = {
   }
 }
 
+export type PermissionRequest = {
+  id: string
+  sessionID: string
+  permission: string
+  patterns: Array<string>
+  metadata: {
+    [key: string]: unknown
+  }
+  always: Array<string>
+  tool?: {
+    messageID: string
+    callID: string
+  }
+}
+
+export type EventPermissionAsked = {
+  type: "permission.asked"
+  properties: PermissionRequest
+}
+
+export type EventPermissionReplied = {
+  type: "permission.replied"
+  properties: {
+    sessionID: string
+    requestID: string
+    reply: "once" | "always" | "reject"
+  }
+}
+
+export type QuestionOption = {
+  /**
+   * Display text (1-5 words, concise)
+   */
+  label: string
+  /**
+   * Explanation of choice
+   */
+  description: string
+}
+
+export type QuestionInfo = {
+  /**
+   * Complete question
+   */
+  question: string
+  /**
+   * Very short label (max 12 chars)
+   */
+  header: string
+  /**
+   * Available choices
+   */
+  options: Array<QuestionOption>
+  /**
+   * Allow selecting multiple choices
+   */
+  multiple?: boolean
+}
+
+export type QuestionRequest = {
+  id: string
+  sessionID: string
+  /**
+   * Questions to ask
+   */
+  questions: Array<QuestionInfo>
+  tool?: {
+    messageID: string
+    callID: string
+  }
+}
+
+export type EventQuestionAsked = {
+  type: "question.asked"
+  properties: QuestionRequest
+}
+
+export type QuestionAnswer = Array<string>
+
+export type EventQuestionReplied = {
+  type: "question.replied"
+  properties: {
+    sessionID: string
+    requestID: string
+    answers: Array<QuestionAnswer>
+  }
+}
+
+export type EventQuestionRejected = {
+  type: "question.rejected"
+  properties: {
+    sessionID: string
+    requestID: string
+  }
+}
+
 export type Todo = {
   /**
    * Brief description of the task
@@ -657,6 +724,14 @@ export type EventSdkError = {
   properties: {
     sessionID: string
     error: string
+  }
+}
+
+export type EventSdkPlanReady = {
+  type: "sdk.plan_ready"
+  properties: {
+    sessionID: string
+    plan?: string
   }
 }
 
@@ -765,73 +840,6 @@ export type EventVcsBranchUpdated = {
   }
 }
 
-export type QuestionOption = {
-  /**
-   * Display text (1-5 words, concise)
-   */
-  label: string
-  /**
-   * Explanation of choice
-   */
-  description: string
-}
-
-export type QuestionInfo = {
-  /**
-   * Complete question
-   */
-  question: string
-  /**
-   * Very short label (max 12 chars)
-   */
-  header: string
-  /**
-   * Available choices
-   */
-  options: Array<QuestionOption>
-  /**
-   * Allow selecting multiple choices
-   */
-  multiple?: boolean
-}
-
-export type QuestionRequest = {
-  id: string
-  sessionID: string
-  /**
-   * Questions to ask
-   */
-  questions: Array<QuestionInfo>
-  tool?: {
-    messageID: string
-    callID: string
-  }
-}
-
-export type EventQuestionAsked = {
-  type: "question.asked"
-  properties: QuestionRequest
-}
-
-export type QuestionAnswer = Array<string>
-
-export type EventQuestionReplied = {
-  type: "question.replied"
-  properties: {
-    sessionID: string
-    requestID: string
-    answers: Array<QuestionAnswer>
-  }
-}
-
-export type EventQuestionRejected = {
-  type: "question.rejected"
-  properties: {
-    sessionID: string
-    requestID: string
-  }
-}
-
 export type Pty = {
   id: string
   title: string
@@ -896,8 +904,6 @@ export type Event =
   | EventMessageRemoved
   | EventMessagePartUpdated
   | EventMessagePartRemoved
-  | EventPermissionAsked
-  | EventPermissionReplied
   | EventSessionStatus
   | EventSessionIdle
   | EventTuiPromptAppend
@@ -906,10 +912,16 @@ export type Event =
   | EventTuiSessionSelect
   | EventMcpToolsChanged
   | EventCommandExecuted
+  | EventPermissionAsked
+  | EventPermissionReplied
+  | EventQuestionAsked
+  | EventQuestionReplied
+  | EventQuestionRejected
   | EventTodoUpdated
   | EventSdkStarted
   | EventSdkCompleted
   | EventSdkError
+  | EventSdkPlanReady
   | EventSessionCreated
   | EventSessionUpdated
   | EventSessionDeleted
@@ -918,9 +930,6 @@ export type Event =
   | EventFileEdited
   | EventFileWatcherUpdated
   | EventVcsBranchUpdated
-  | EventQuestionAsked
-  | EventQuestionReplied
-  | EventQuestionRejected
   | EventPtyCreated
   | EventPtyUpdated
   | EventPtyExited
@@ -1729,16 +1738,6 @@ export type Config = {
   }
 }
 
-export type ToolIds = Array<string>
-
-export type ToolListItem = {
-  id: string
-  description: string
-  parameters: unknown
-}
-
-export type ToolList = Array<ToolListItem>
-
 export type Path = {
   home: string
   state: string
@@ -1833,27 +1832,6 @@ export type File = {
   added: number
   removed: number
   status: "added" | "deleted" | "modified"
-}
-
-export type Agent = {
-  name: string
-  description?: string
-  mode: "subagent" | "primary" | "all"
-  native?: boolean
-  hidden?: boolean
-  topP?: number
-  temperature?: number
-  color?: string
-  permission: PermissionRuleset
-  model?: {
-    modelID: string
-    providerID: string
-  }
-  prompt?: string
-  options: {
-    [key: string]: unknown
-  }
-  steps?: number
 }
 
 export type McpStatusConnected = {
@@ -2272,62 +2250,6 @@ export type ConfigUpdateResponses = {
 }
 
 export type ConfigUpdateResponse = ConfigUpdateResponses[keyof ConfigUpdateResponses]
-
-export type ToolIdsData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-  }
-  url: "/experimental/tool/ids"
-}
-
-export type ToolIdsErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type ToolIdsError = ToolIdsErrors[keyof ToolIdsErrors]
-
-export type ToolIdsResponses = {
-  /**
-   * Tool IDs
-   */
-  200: ToolIds
-}
-
-export type ToolIdsResponse = ToolIdsResponses[keyof ToolIdsResponses]
-
-export type ToolListData = {
-  body?: never
-  path?: never
-  query: {
-    directory?: string
-    provider: string
-    model: string
-  }
-  url: "/experimental/tool"
-}
-
-export type ToolListErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type ToolListError = ToolListErrors[keyof ToolListErrors]
-
-export type ToolListResponses = {
-  /**
-   * Tools
-   */
-  200: ToolList
-}
-
-export type ToolListResponse = ToolListResponses[keyof ToolListResponses]
 
 export type InstanceDisposeData = {
   body?: never
@@ -2976,7 +2898,7 @@ export type SessionPromptData = {
       providerID: string
       modelID: string
     }
-    agent?: string
+    permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
     variant?: string
     parts: Array<
       | {
@@ -3174,7 +3096,7 @@ export type SessionPromptAsyncData = {
       providerID: string
       modelID: string
     }
-    agent?: string
+    permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
     variant?: string
     parts: Array<
       | {
@@ -3234,7 +3156,7 @@ export type SessionPromptAsyncResponse = SessionPromptAsyncResponses[keyof Sessi
 export type SessionCommandData = {
   body?: {
     messageID?: string
-    agent?: string
+    permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
     model?: string
     arguments: string
     command: string
@@ -3279,7 +3201,7 @@ export type SessionCommandResponse = SessionCommandResponses[keyof SessionComman
 
 export type SessionShellData = {
   body?: {
-    agent: string
+    permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
     model?: {
       providerID: string
       modelID: string
@@ -3660,6 +3582,11 @@ export type ConfigProvidersResponses = {
             [key: string]: string
           }
           release_date: string
+          variants?: {
+            [key: string]: {
+              [key: string]: unknown
+            }
+          }
         }
       }
     }>
@@ -3935,23 +3862,27 @@ export type AppLogResponses = {
 
 export type AppLogResponse = AppLogResponses[keyof AppLogResponses]
 
-export type AppAgentsData = {
+export type AppPermissionModesData = {
   body?: never
   path?: never
   query?: {
     directory?: string
   }
-  url: "/agent"
+  url: "/permission-modes"
 }
 
-export type AppAgentsResponses = {
+export type AppPermissionModesResponses = {
   /**
-   * List of agents
+   * List of permission modes
    */
-  200: Array<Agent>
+  200: Array<{
+    id: string
+    name: string
+    description: string
+  }>
 }
 
-export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
+export type AppPermissionModesResponse = AppPermissionModesResponses[keyof AppPermissionModesResponses]
 
 export type McpStatusData = {
   body?: never

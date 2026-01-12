@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store"
-import { batch, createEffect, createMemo } from "solid-js"
+import { batch, createMemo } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { useTheme } from "@tui/context/theme"
 import { uniqueBy } from "remeda"
@@ -12,6 +12,7 @@ import { Provider } from "@/provider/provider"
 import { useArgs } from "./args"
 import { useSDK } from "./sdk"
 import { RGBA } from "@opentui/core"
+import { PERMISSION_MODES, type PermissionMode } from "@/sdk"
 
 export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
   name: "Local",
@@ -33,12 +34,9 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       }
     }
 
-    const agent = iife(() => {
-      const agents = createMemo(() => sync.data.agent.filter((x) => x.mode !== "subagent" && !x.hidden))
-      const [agentStore, setAgentStore] = createStore<{
-        current: string
-      }>({
-        current: agents()[0].name,
+    const permissionMode = iife(() => {
+      const [store, setStore] = createStore<{ current: PermissionMode }>({
+        current: "default",
       })
       const { theme } = useTheme()
       const colors = createMemo(() => [
@@ -51,34 +49,33 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       ])
       return {
         list() {
-          return agents()
+          return PERMISSION_MODES
         },
         current() {
-          return agents().find((x) => x.name === agentStore.current)!
+          return PERMISSION_MODES.find((x) => x.id === store.current) ?? PERMISSION_MODES[0]
         },
-        set(name: string) {
-          if (!agents().some((x) => x.name === name))
+        set(id: PermissionMode) {
+          if (!PERMISSION_MODES.some((x) => x.id === id))
             return toast.show({
               variant: "warning",
-              message: `Agent not found: ${name}`,
+              message: `Mode not found: ${id}`,
               duration: 3000,
             })
-          setAgentStore("current", name)
+          setStore("current", id)
         },
         move(direction: 1 | -1) {
           batch(() => {
-            let next = agents().findIndex((x) => x.name === agentStore.current) + direction
-            if (next < 0) next = agents().length - 1
-            if (next >= agents().length) next = 0
-            const value = agents()[next]
-            setAgentStore("current", value.name)
+            let next = PERMISSION_MODES.findIndex((x) => x.id === store.current) + direction
+            if (next < 0) next = PERMISSION_MODES.length - 1
+            if (next >= PERMISSION_MODES.length) next = 0
+            const value = PERMISSION_MODES[next]
+            setStore("current", value.id)
           })
         },
-        color(name: string) {
-          const all = sync.data.agent
-          const agent = all.find((x) => x.name === name)
-          if (agent?.color) return RGBA.fromHex(agent.color)
-          const index = all.findIndex((x) => x.name === name)
+        color(id: string) {
+          const mode = PERMISSION_MODES.find((x) => x.id === id)
+          if (mode?.color) return RGBA.fromHex(mode.color)
+          const index = PERMISSION_MODES.findIndex((x) => x.id === id)
           if (index === -1) return colors()[0]
           return colors()[index % colors().length]
         },
@@ -178,11 +175,10 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       })
 
       const currentModel = createMemo(() => {
-        const a = agent.current()
+        const mode = permissionMode.current()
         return (
           getFirstValidModel(
-            () => modelStore.model[a.name],
-            () => a.model,
+            () => modelStore.model[mode.id],
             fallbackModel,
           ) ?? undefined
         )
@@ -227,7 +223,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           if (next >= recent.length) next = 0
           const val = recent[next]
           if (!val) return
-          setModelStore("model", agent.current().name, { ...val })
+          setModelStore("model", permissionMode.current().id, { ...val })
         },
         cycleFavorite(direction: 1 | -1) {
           const favorites = modelStore.favorite.filter((item) => isModelValid(item))
@@ -253,7 +249,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           }
           const next = favorites[index]
           if (!next) return
-          setModelStore("model", agent.current().name, { ...next })
+          setModelStore("model", permissionMode.current().id, { ...next })
           const uniq = uniqueBy([next, ...modelStore.recent], (x) => `${x.providerID}/${x.modelID}`)
           if (uniq.length > 10) uniq.pop()
           setModelStore(
@@ -272,7 +268,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
               })
               return
             }
-            setModelStore("model", agent.current().name, model)
+            setModelStore("model", permissionMode.current().id, model)
             if (options?.recent) {
               const uniq = uniqueBy([model, ...modelStore.recent], (x) => `${x.providerID}/${x.modelID}`)
               if (uniq.length > 10) uniq.pop()
@@ -365,27 +361,9 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       },
     }
 
-    // Automatically update model when agent changes
-    createEffect(() => {
-      const value = agent.current()
-      if (value.model) {
-        if (isModelValid(value.model))
-          model.set({
-            providerID: value.model.providerID,
-            modelID: value.model.modelID,
-          })
-        else
-          toast.show({
-            variant: "warning",
-            message: `Agent ${value.name}'s configured model ${value.model.providerID}/${value.model.modelID} is not valid`,
-            duration: 3000,
-          })
-      }
-    })
-
     const result = {
       model,
-      agent,
+      permissionMode,
       mcp,
     }
     return result

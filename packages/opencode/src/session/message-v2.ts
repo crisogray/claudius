@@ -319,7 +319,7 @@ export namespace MessageV2 {
         diffs: Snapshot.FileDiff.array(),
       })
       .optional(),
-    agent: z.string(),
+    permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]),
     model: z.object({
       providerID: z.string(),
       modelID: z.string(),
@@ -375,7 +375,7 @@ export namespace MessageV2 {
      * @deprecated
      */
     mode: z.string(),
-    agent: z.string(),
+    permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]),
     path: z.object({
       cwd: z.string(),
       root: z.string(),

@@ -290,27 +290,7 @@ export function Autocomplete(props: {
     return options
   })
 
-  const agents = createMemo(() => {
-    const agents = sync.data.agent
-    return agents
-      .filter((agent) => !agent.hidden && agent.mode !== "primary")
-      .map(
-        (agent): AutocompleteOption => ({
-          display: "@" + agent.name,
-          onSelect: () => {
-            insertPart(agent.name, {
-              type: "agent",
-              name: agent.name,
-              source: {
-                start: 0,
-                end: 0,
-                value: "",
-              },
-            })
-          },
-        }),
-      )
-  })
+  // Agent @-tagging removed - SDK handles subagents directly via Task tool
 
   const session = createMemo(() => (props.sessionID ? sync.session.get(props.sessionID) : undefined))
   const commands = createMemo((): AutocompleteOption[] => {
@@ -471,11 +451,10 @@ export function Autocomplete(props: {
 
   const options = createMemo((prev: AutocompleteOption[] | undefined) => {
     const filesValue = files()
-    const agentsValue = agents()
     const commandsValue = commands()
 
     const mixed: AutocompleteOption[] = (
-      store.visible === "@" ? [...agentsValue, ...(filesValue || []), ...mcpResources()] : [...commandsValue]
+      store.visible === "@" ? [...(filesValue || []), ...mcpResources()] : [...commandsValue]
     ).filter((x) => x.disabled !== true)
 
     const currentFilter = filter()

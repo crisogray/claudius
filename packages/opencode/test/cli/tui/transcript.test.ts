@@ -13,7 +13,7 @@ describe("transcript", () => {
       id: "msg_123",
       sessionID: "ses_123",
       role: "assistant",
-      agent: "build",
+      permissionMode: "default" as const,
       modelID: "claude-sonnet-4-20250514",
       providerID: "anthropic",
       mode: "",
@@ -40,8 +40,8 @@ describe("transcript", () => {
       expect(result).toBe("## Assistant (Build · claude-sonnet-4-20250514)\n\n")
     })
 
-    test("titlecases agent name", () => {
-      const msg = { ...baseMsg, agent: "plan" }
+    test("titlecases permission mode name", () => {
+      const msg = { ...baseMsg, permissionMode: "plan" as const }
       const result = formatAssistantHeader(msg, true)
       expect(result).toContain("Plan")
     })
@@ -178,7 +178,7 @@ describe("transcript", () => {
         id: "msg_123",
         sessionID: "ses_123",
         role: "user",
-        agent: "build",
+        permissionMode: "default" as const,
         model: { providerID: "anthropic", modelID: "claude-sonnet-4-20250514" },
         time: { created: 1000000 },
       }
@@ -193,7 +193,7 @@ describe("transcript", () => {
         id: "msg_123",
         sessionID: "ses_123",
         role: "assistant",
-        agent: "build",
+        permissionMode: "default" as const,
         modelID: "claude-sonnet-4-20250514",
         providerID: "anthropic",
         mode: "",
@@ -223,7 +223,7 @@ describe("transcript", () => {
             id: "msg_1",
             sessionID: "ses_abc123",
             role: "user" as const,
-            agent: "build",
+            permissionMode: "default" as const,
             model: { providerID: "anthropic", modelID: "claude-sonnet-4-20250514" },
             time: { created: 1000000000000 },
           },
@@ -234,7 +234,7 @@ describe("transcript", () => {
             id: "msg_2",
             sessionID: "ses_abc123",
             role: "assistant" as const,
-            agent: "build",
+            permissionMode: "default" as const,
             modelID: "claude-sonnet-4-20250514",
             providerID: "anthropic",
             mode: "",
@@ -272,7 +272,7 @@ describe("transcript", () => {
             id: "msg_1",
             sessionID: "ses_abc123",
             role: "assistant" as const,
-            agent: "build",
+            permissionMode: "default" as const,
             modelID: "claude-sonnet-4-20250514",
             providerID: "anthropic",
             mode: "",

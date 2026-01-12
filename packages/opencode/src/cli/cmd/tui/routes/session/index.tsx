@@ -1068,7 +1068,7 @@ function UserMessage(props: {
   const { theme } = useTheme()
   const [hover, setHover] = createSignal(false)
   const queued = createMemo(() => props.pending && props.message.id > props.pending)
-  const color = createMemo(() => (queued() ? theme.accent : local.agent.color(props.message.agent)))
+  const color = createMemo(() => (queued() ? theme.accent : local.permissionMode.color(props.message.permissionMode ?? "default")))
   const metadataVisible = createMemo(() => queued() || ctx.showTimestamps())
 
   const compaction = createMemo(() => props.parts.find((x) => x.type === "compaction"))
@@ -1207,7 +1207,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
                   fg:
                     props.message.error?.name === "MessageAbortedError"
                       ? theme.textMuted
-                      : local.agent.color(props.message.agent),
+                      : local.permissionMode.color(props.message.permissionMode ?? "default"),
                 }}
               >
                 ▣{" "}
@@ -1666,8 +1666,8 @@ function Task(props: ToolProps) {
   const { navigate } = useRoute()
   const local = useLocal()
 
-  const current = createMemo(() => props.metadata.summary?.findLast((x) => x.state.status !== "pending"))
-  const color = createMemo(() => local.agent.color(props.input.subagent_type ?? "unknown"))
+  const current = createMemo(() => props.metadata.summary?.findLast((x: any) => x.state.status !== "pending"))
+  const color = createMemo(() => local.permissionMode.color(props.input.subagent_type ?? "unknown"))
 
   return (
     <Switch>
@@ -1732,7 +1732,7 @@ function Edit(props: ToolProps) {
   const diagnostics = createMemo(() => {
     const filePath = Filesystem.normalizePath(props.input.filePath ?? "")
     const arr = props.metadata.diagnostics?.[filePath] ?? []
-    return arr.filter((x) => x.severity === 1).slice(0, 3)
+    return arr.filter((x: any) => x.severity === 1).slice(0, 3)
   })
 
   return (

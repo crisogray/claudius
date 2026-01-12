@@ -140,10 +140,10 @@ export function Prompt(props: PromptProps) {
 
       syncedSessionID = sessionID
 
-      // Only set agent if it's a primary agent (not a subagent)
-      const isPrimaryAgent = local.agent.list().some((x) => x.name === msg.agent)
-      if (msg.agent && isPrimaryAgent) {
-        local.agent.set(msg.agent)
+      // Only set permission mode if it's valid
+      const isValidMode = local.permissionMode.list().some((x) => x.id === msg.permissionMode)
+      if (msg.permissionMode && isValidMode) {
+        local.permissionMode.set(msg.permissionMode)
       }
       if (msg.model) local.model.set(msg.model)
       if (msg.variant) local.model.variant.set(msg.variant)
@@ -534,7 +534,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") {
       sdk.client.session.shell({
         sessionID,
-        agent: local.agent.current().name,
+        permissionMode: local.permissionMode.current().id,
         model: {
           providerID: selectedModel.providerID,
           modelID: selectedModel.modelID,
@@ -555,7 +555,7 @@ export function Prompt(props: PromptProps) {
         sessionID,
         command: command.slice(1),
         arguments: args.join(" "),
-        agent: local.agent.current().name,
+        permissionMode: local.permissionMode.current().id,
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         messageID,
         variant,
@@ -565,7 +565,7 @@ export function Prompt(props: PromptProps) {
         sessionID,
         ...selectedModel,
         messageID,
-        agent: local.agent.current().name,
+        permissionMode: local.permissionMode.current().id,
         model: selectedModel,
         variant,
         parts: [
@@ -686,7 +686,7 @@ export function Prompt(props: PromptProps) {
   const highlight = createMemo(() => {
     if (keybind.leader) return theme.border
     if (store.mode === "shell") return theme.primary
-    return local.agent.color(local.agent.current().name)
+    return local.permissionMode.color(local.permissionMode.current().id)
   })
 
   const showVariant = createMemo(() => {
@@ -697,7 +697,7 @@ export function Prompt(props: PromptProps) {
   })
 
   const spinnerDef = createMemo(() => {
-    const color = local.agent.color(local.agent.current().name)
+    const color = local.permissionMode.color(local.permissionMode.current().id)
     return {
       frames: createFrames({
         color,
@@ -928,7 +928,7 @@ export function Prompt(props: PromptProps) {
             />
             <box flexDirection="row" flexShrink={0} paddingTop={1} gap={1}>
               <text fg={highlight()}>
-                {store.mode === "shell" ? "Shell" : Locale.titlecase(local.agent.current().name)}{" "}
+                {store.mode === "shell" ? "Shell" : local.permissionMode.current().name}{" "}
               </text>
               <Show when={store.mode === "normal"}>
                 <box flexDirection="row" gap={1}>

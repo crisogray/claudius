@@ -9,6 +9,7 @@ import { Todo } from "@/session/todo"
 import { Snapshot } from "@/snapshot"
 import { Log } from "@/util/log"
 import { SDKConvert } from "./convert"
+import { SDK } from "./index"
 
 export namespace SDKStream {
   const log = Log.create({ service: "sdk.stream" })
@@ -28,7 +29,7 @@ export namespace SDKStream {
     sessionID: string,
     context: {
       parentID: string
-      agent: string
+      permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       modelID: string
       providerID: string
     },
@@ -106,7 +107,7 @@ export namespace SDKStream {
         role: "user",
         time: { created: Date.now() },
         model: { modelID: context.modelID, providerID: context.providerID },
-        agent: context.agent,
+        permissionMode: context.permissionMode,
       }
       await Session.updateMessage(userMessage)
 
@@ -221,7 +222,7 @@ export namespace SDKStream {
               parentID,
               modelID: context.modelID,
               providerID: context.providerID,
-              agent: context.agent,
+              permissionMode: context.permissionMode,
               cwd: Instance.directory,
               root: Instance.worktree,
             })
@@ -374,7 +375,7 @@ export namespace SDKStream {
                     parentID,
                     modelID: context.modelID,
                     providerID: context.providerID,
-                    agent: context.agent,
+                    permissionMode: context.permissionMode,
                     cwd: Instance.directory,
                     root: Instance.worktree,
                   },
@@ -645,6 +646,15 @@ export namespace SDKStream {
               Bus.publish(MessageV2.Event.Updated, { info: msg.info })
             }
           }
+        }
+
+        // If this is ExitPlanMode completing, publish event for UI to show approval dialog
+        if (part.tool === "exitplanmode" && !block.is_error) {
+          log.info("ExitPlanMode completed", { sessionID })
+          Bus.publish(SDK.Event.PlanReady, {
+            sessionID,
+            plan: (input as Record<string, unknown>).plan as string | undefined,
+          })
         }
 
         return true

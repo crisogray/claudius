@@ -22,13 +22,12 @@ import { TuiRoute } from "./tui"
 import { Instance } from "../project/instance"
 import { Project } from "../project/project"
 import { Vcs } from "../project/vcs"
-import { Agent } from "../agent/agent"
 import { Auth } from "../auth"
 import { Command } from "../command"
 import { Global } from "../global"
 import { ProjectRoute } from "./project"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { SDK } from "../sdk"
+import { SDK, PERMISSION_MODES } from "../sdk"
 import { SessionRevert } from "../session/revert"
 import { lazy } from "../util/lazy"
 import { Todo } from "../session/todo"
@@ -1400,7 +1399,7 @@ export namespace Server {
             "json",
             z.object({
               messageID: z.string().optional(),
-              agent: z.string().optional(),
+              permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]).optional(),
               model: z.string().optional(),
               arguments: z.string(),
               command: z.string(),
@@ -1415,7 +1414,7 @@ export namespace Server {
             const msg = await SDK.start({
               sessionID,
               messageID: body.messageID,
-              agent: body.agent,
+              permissionMode: body.permissionMode,
               variant: body.variant,
               parts: [{ type: "text", text: prompt }],
             })
@@ -1449,7 +1448,7 @@ export namespace Server {
           validator(
             "json",
             z.object({
-              agent: z.string(),
+              permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]).optional(),
               model: z
                 .object({
                   providerID: z.string(),
@@ -1465,7 +1464,7 @@ export namespace Server {
             // Run shell command via SDK
             const msg = await SDK.start({
               sessionID,
-              agent: body.agent,
+              permissionMode: body.permissionMode,
               model: body.model,
               parts: [{ type: "text", text: body.command }],
             })
@@ -1723,6 +1722,7 @@ export namespace Server {
                                 options: z.record(z.string(), z.unknown()),
                                 headers: z.record(z.string(), z.string()),
                                 release_date: z.string(),
+                                variants: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
                               }),
                             ),
                           })
@@ -1759,6 +1759,8 @@ export namespace Server {
                 options: {},
                 headers: {},
                 release_date: "2025-01-01",
+                // Variants for thinking effort on reasoning models
+                variants: m.reasoning ? { low: {}, medium: {}, high: {} } : undefined,
               }
             }
             return c.json({
@@ -2166,25 +2168,32 @@ export namespace Server {
           },
         )
         .get(
-          "/agent",
+          "/permission-modes",
           describeRoute({
-            summary: "List agents",
-            description: "Get a list of all available AI agents in the OpenCode system.",
-            operationId: "app.agents",
+            summary: "List permission modes",
+            description: "Get a list of available permission modes (build, plan, auto-accept, bypass).",
+            operationId: "app.permissionModes",
             responses: {
               200: {
-                description: "List of agents",
+                description: "List of permission modes",
                 content: {
                   "application/json": {
-                    schema: resolver(Agent.Info.array()),
+                    schema: resolver(
+                      z.array(
+                        z.object({
+                          id: z.string(),
+                          name: z.string(),
+                          description: z.string(),
+                        }),
+                      ),
+                    ),
                   },
                 },
               },
             },
           }),
           async (c) => {
-            const modes = await Agent.list()
-            return c.json(modes)
+            return c.json(PERMISSION_MODES)
           },
         )
         .get(

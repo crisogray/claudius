@@ -10,7 +10,7 @@ import { select } from "@clack/prompts"
 import { createOpencodeClient, type OpencodeClient } from "@opencode-ai/sdk/v2"
 import { Server } from "../../server/server"
 import { Provider } from "../../provider/provider"
-import { Agent } from "../../agent/agent"
+import { PERMISSION_MODES, type PermissionMode } from "../../sdk"
 
 const TOOL: Record<string, [string, string]> = {
   todowrite: ["Todo", UI.Style.TEXT_WARNING_BOLD],
@@ -228,33 +228,25 @@ export const RunCommand = cmd({
         }
       })()
 
-      // Validate agent if specified
-      const resolvedAgent = await (async () => {
+      // Validate permission mode if specified
+      const resolvedMode = (() => {
         if (!args.agent) return undefined
-        const agent = await Agent.get(args.agent)
-        if (!agent) {
+        const validModes = PERMISSION_MODES.map((m) => m.id)
+        if (!validModes.includes(args.agent as PermissionMode)) {
           UI.println(
             UI.Style.TEXT_WARNING_BOLD + "!",
             UI.Style.TEXT_NORMAL,
-            `agent "${args.agent}" not found. Falling back to default agent`,
+            `mode "${args.agent}" not found. Valid modes: ${validModes.join(", ")}. Falling back to default mode`,
           )
           return undefined
         }
-        if (agent.mode === "subagent") {
-          UI.println(
-            UI.Style.TEXT_WARNING_BOLD + "!",
-            UI.Style.TEXT_NORMAL,
-            `agent "${args.agent}" is a subagent, not a primary agent. Falling back to default agent`,
-          )
-          return undefined
-        }
-        return args.agent
+        return args.agent as PermissionMode
       })()
 
       if (args.command) {
         await sdk.session.command({
           sessionID,
-          agent: resolvedAgent,
+          permissionMode: resolvedMode,
           model: args.model,
           command: args.command,
           arguments: message,
@@ -264,7 +256,7 @@ export const RunCommand = cmd({
         const modelParam = args.model ? Provider.parseModel(args.model) : undefined
         await sdk.session.prompt({
           sessionID,
-          agent: resolvedAgent,
+          permissionMode: resolvedMode,
           model: modelParam,
           variant: args.variant,
           parts: [...fileParts, { type: "text", text: message }],

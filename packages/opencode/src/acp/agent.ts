@@ -23,6 +23,7 @@ import { ACPSessionManager } from "./session"
 import type { ACPConfig, ACPSessionState } from "./types"
 import { Provider } from "../provider/provider"
 import { Agent as AgentModule } from "../agent/agent"
+import { PERMISSION_MODES } from "../sdk"
 import { Installation } from "@/installation"
 import { MessageV2 } from "@/session/message-v2"
 import { Config } from "@/config/config"
@@ -673,15 +674,6 @@ export namespace ACP {
         }))
       })
 
-      const agents = await this.config.sdk.app
-        .agents(
-          {
-            directory,
-          },
-          { throwOnError: true },
-        )
-        .then((resp) => resp.data!)
-
       const commands = await this.config.sdk.command
         .list(
           {
@@ -702,16 +694,14 @@ export namespace ACP {
           description: "compact the session",
         })
 
-      const availableModes = agents
-        .filter((agent) => agent.mode !== "subagent" && !agent.hidden)
-        .map((agent) => ({
-          id: agent.name,
-          name: agent.name,
-          description: agent.description,
-        }))
+      const availableModes = PERMISSION_MODES.map((mode) => ({
+        id: mode.id,
+        name: mode.name,
+        description: mode.description,
+      }))
 
-      const defaultAgentName = await AgentModule.defaultAgent()
-      const currentModeId = availableModes.find((m) => m.name === defaultAgentName)?.id ?? availableModes[0].id
+      const defaultMode = await AgentModule.defaultAgent()
+      const currentModeId = availableModes.find((m) => m.id === defaultMode)?.id ?? "default"
 
       const mcpServers: Record<string, Config.Mcp> = {}
       for (const server of params.mcpServers) {
@@ -794,12 +784,11 @@ export namespace ACP {
 
     async setSessionMode(params: SetSessionModeRequest): Promise<SetSessionModeResponse | void> {
       this.sessionManager.get(params.sessionId)
-      await this.config.sdk.app
-        .agents({}, { throwOnError: true })
-        .then((x) => x.data)
-        .then((agent) => {
-          if (!agent) throw new Error(`Agent not found: ${params.modeId}`)
-        })
+      // Validate mode exists in permission modes
+      const validModes = PERMISSION_MODES.map((m) => m.id)
+      if (!validModes.includes(params.modeId as typeof validModes[number])) {
+        throw new Error(`Invalid mode: ${params.modeId}`)
+      }
       this.sessionManager.setMode(params.sessionId, params.modeId)
     }
 
@@ -887,7 +876,7 @@ export namespace ACP {
             modelID: model.modelID,
           },
           parts,
-          agent,
+          permissionMode: agent as "default" | "plan" | "acceptEdits" | "bypassPermissions",
           directory,
         })
         return done
@@ -902,7 +891,7 @@ export namespace ACP {
           command: command.name,
           arguments: cmd.args,
           model: model.providerID + "/" + model.modelID,
-          agent,
+          permissionMode: agent as "default" | "plan" | "acceptEdits" | "bypassPermissions",
           directory,
         })
         return done

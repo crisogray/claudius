@@ -3,9 +3,9 @@
 import { client } from "./client.gen.js"
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from "./client/index.js"
 import type {
-  AppAgentsResponses,
   AppLogErrors,
   AppLogResponses,
+  AppPermissionModesResponses,
   Auth as Auth2,
   AuthSetErrors,
   AuthSetResponses,
@@ -129,10 +129,6 @@ import type {
   SessionUnshareResponses,
   SessionUpdateErrors,
   SessionUpdateResponses,
-  ToolIdsErrors,
-  ToolIdsResponses,
-  ToolListErrors,
-  ToolListResponses,
   TuiAppendPromptErrors,
   TuiAppendPromptResponses,
   TuiClearPromptResponses,
@@ -606,59 +602,6 @@ export class Config extends HeyApiClient {
     const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
     return (options?.client ?? this.client).get<ConfigModelsResponses, unknown, ThrowOnError>({
       url: "/config/models",
-      ...options,
-      ...params,
-    })
-  }
-}
-
-export class Tool extends HeyApiClient {
-  /**
-   * List tool IDs
-   *
-   * Get a list of all available tool IDs, including both built-in tools and dynamically registered tools.
-   */
-  public ids<ThrowOnError extends boolean = false>(
-    parameters?: {
-      directory?: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
-    return (options?.client ?? this.client).get<ToolIdsResponses, ToolIdsErrors, ThrowOnError>({
-      url: "/experimental/tool/ids",
-      ...options,
-      ...params,
-    })
-  }
-
-  /**
-   * List tools
-   *
-   * Get a list of available tools with their JSON schema parameters for a specific provider and model combination.
-   */
-  public list<ThrowOnError extends boolean = false>(
-    parameters: {
-      directory?: string
-      provider: string
-      model: string
-    },
-    options?: Options<never, ThrowOnError>,
-  ) {
-    const params = buildClientParams(
-      [parameters],
-      [
-        {
-          args: [
-            { in: "query", key: "directory" },
-            { in: "query", key: "provider" },
-            { in: "query", key: "model" },
-          ],
-        },
-      ],
-    )
-    return (options?.client ?? this.client).get<ToolListResponses, ToolListErrors, ThrowOnError>({
-      url: "/experimental/tool",
       ...options,
       ...params,
     })
@@ -1325,7 +1268,7 @@ export class Session extends HeyApiClient {
         providerID: string
         modelID: string
       }
-      agent?: string
+      permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       variant?: string
       parts?: Array<
         | {
@@ -1359,7 +1302,7 @@ export class Session extends HeyApiClient {
             { in: "query", key: "directory" },
             { in: "body", key: "messageID" },
             { in: "body", key: "model" },
-            { in: "body", key: "agent" },
+            { in: "body", key: "permissionMode" },
             { in: "body", key: "variant" },
             { in: "body", key: "parts" },
           ],
@@ -1424,7 +1367,7 @@ export class Session extends HeyApiClient {
         providerID: string
         modelID: string
       }
-      agent?: string
+      permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       variant?: string
       parts?: Array<
         | {
@@ -1458,7 +1401,7 @@ export class Session extends HeyApiClient {
             { in: "query", key: "directory" },
             { in: "body", key: "messageID" },
             { in: "body", key: "model" },
-            { in: "body", key: "agent" },
+            { in: "body", key: "permissionMode" },
             { in: "body", key: "variant" },
             { in: "body", key: "parts" },
           ],
@@ -1487,7 +1430,7 @@ export class Session extends HeyApiClient {
       sessionID: string
       directory?: string
       messageID?: string
-      agent?: string
+      permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       model?: string
       arguments?: string
       command?: string
@@ -1503,7 +1446,7 @@ export class Session extends HeyApiClient {
             { in: "path", key: "sessionID" },
             { in: "query", key: "directory" },
             { in: "body", key: "messageID" },
-            { in: "body", key: "agent" },
+            { in: "body", key: "permissionMode" },
             { in: "body", key: "model" },
             { in: "body", key: "arguments" },
             { in: "body", key: "command" },
@@ -1533,7 +1476,7 @@ export class Session extends HeyApiClient {
     parameters: {
       sessionID: string
       directory?: string
-      agent?: string
+      permissionMode?: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       model?: {
         providerID: string
         modelID: string
@@ -1549,7 +1492,7 @@ export class Session extends HeyApiClient {
           args: [
             { in: "path", key: "sessionID" },
             { in: "query", key: "directory" },
-            { in: "body", key: "agent" },
+            { in: "body", key: "permissionMode" },
             { in: "body", key: "model" },
             { in: "body", key: "command" },
           ],
@@ -2206,19 +2149,19 @@ export class App extends HeyApiClient {
   }
 
   /**
-   * List agents
+   * List permission modes
    *
-   * Get a list of all available AI agents in the OpenCode system.
+   * Get a list of available permission modes (build, plan, auto-accept, bypass).
    */
-  public agents<ThrowOnError extends boolean = false>(
+  public permissionModes<ThrowOnError extends boolean = false>(
     parameters?: {
       directory?: string
     },
     options?: Options<never, ThrowOnError>,
   ) {
     const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
-    return (options?.client ?? this.client).get<AppAgentsResponses, unknown, ThrowOnError>({
-      url: "/agent",
+    return (options?.client ?? this.client).get<AppPermissionModesResponses, unknown, ThrowOnError>({
+      url: "/permission-modes",
       ...options,
       ...params,
     })
@@ -2947,8 +2890,6 @@ export class OpencodeClient extends HeyApiClient {
   pty = new Pty({ client: this.client })
 
   config = new Config({ client: this.client })
-
-  tool = new Tool({ client: this.client })
 
   instance = new Instance({ client: this.client })
 

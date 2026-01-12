@@ -1,7 +1,5 @@
 import type {
   Message,
-  Agent,
-  Provider,
   Session,
   Part,
   Config,
@@ -15,8 +13,9 @@ import type {
   FormatterStatus,
   SessionStatus,
   ProviderListResponse,
-  ProviderAuthMethod,
   VcsInfo,
+  ConfigProvidersResponse,
+  ProviderAuthResponse,
 } from "@opencode-ai/sdk/v2"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { useSDK } from "@tui/context/sdk"
@@ -34,11 +33,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   init: () => {
     const [store, setStore] = createStore<{
       status: "loading" | "partial" | "complete"
-      provider: Provider[]
+      provider: ConfigProvidersResponse["providers"]
       provider_default: Record<string, string>
       provider_next: ProviderListResponse
-      provider_auth: Record<string, ProviderAuthMethod[]>
-      agent: Agent[]
+      provider_auth: ProviderAuthResponse
       command: Command[]
       permission: {
         [sessionID: string]: PermissionRequest[]
@@ -82,7 +80,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       provider_auth: {},
       config: {},
       status: "loading",
-      agent: [],
       permission: {},
       question: {},
       command: [],
@@ -330,7 +327,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             setStore("provider_next", reconcile(x.data!))
           })
         }),
-        sdk.client.app.agents({}, { throwOnError: true }).then((x) => setStore("agent", reconcile(x.data ?? []))),
         sdk.client.config.get({}, { throwOnError: true }).then((x) => setStore("config", reconcile(x.data!))),
         ...(args.continue ? [sessionListPromise] : []),
       ]

@@ -105,7 +105,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           sessionID: string
           messageID: string
           parts: Part[]
-          agent: string
+          permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
           model: { providerID: string; modelID: string }
         }) {
           const message: Message = {
@@ -113,7 +113,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             sessionID: input.sessionID,
             role: "user",
             time: { created: Date.now() },
-            agent: input.agent,
+            permissionMode: input.permissionMode,
             model: input.model,
           }
           setStore(

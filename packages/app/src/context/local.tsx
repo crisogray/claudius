@@ -62,49 +62,39 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       }
     }
 
-    const agent = (() => {
-      const list = createMemo(() => sync.data.agent.filter((x) => x.mode !== "subagent" && !x.hidden))
+    /**
+     * Permission modes for SDK - Tab switches between these
+     */
+    type PermissionModeID = "default" | "plan" | "acceptEdits" | "bypassPermissions"
+    type PermissionModeInfo = { id: PermissionModeID; name: string; description: string }
+    const PERMISSION_MODES: PermissionModeInfo[] = [
+      { id: "default", name: "Build", description: "Normal mode with permission prompts" },
+      { id: "plan", name: "Plan", description: "Read-only planning mode" },
+      { id: "acceptEdits", name: "Auto-Accept", description: "Auto-accept file edits" },
+      { id: "bypassPermissions", name: "Bypass", description: "Skip all permission checks" },
+    ]
+
+    const permissionMode = (() => {
       const [store, setStore] = createStore<{
-        current?: string
+        current: PermissionModeID
       }>({
-        current: list()[0]?.name,
+        current: "default",
       })
       return {
-        list,
+        list: () => PERMISSION_MODES,
         current() {
-          const available = list()
-          if (available.length === 0) return undefined
-          return available.find((x) => x.name === store.current) ?? available[0]
+          return PERMISSION_MODES.find((x) => x.id === store.current) ?? PERMISSION_MODES[0]
         },
-        set(name: string | undefined) {
-          const available = list()
-          if (available.length === 0) {
-            setStore("current", undefined)
-            return
-          }
-          if (name && available.some((x) => x.name === name)) {
-            setStore("current", name)
-            return
-          }
-          setStore("current", available[0].name)
+        set(id: PermissionModeID | undefined) {
+          setStore("current", id ?? "default")
         },
         move(direction: 1 | -1) {
-          const available = list()
-          if (available.length === 0) {
-            setStore("current", undefined)
-            return
-          }
-          let next = available.findIndex((x) => x.name === store.current) + direction
-          if (next < 0) next = available.length - 1
-          if (next >= available.length) next = 0
-          const value = available[next]
+          let next = PERMISSION_MODES.findIndex((x) => x.id === store.current) + direction
+          if (next < 0) next = PERMISSION_MODES.length - 1
+          if (next >= PERMISSION_MODES.length) next = 0
+          const value = PERMISSION_MODES[next]
           if (!value) return
-          setStore("current", value.name)
-          if (value.model)
-            model.set({
-              providerID: value.model.providerID,
-              modelID: value.model.modelID,
-            })
+          setStore("current", value.id)
         },
       }
     })()
@@ -210,11 +200,10 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       })
 
       const current = createMemo(() => {
-        const a = agent.current()
-        if (!a) return undefined
+        const p = permissionMode.current()
+        if (!p) return undefined
         const key = getFirstValidModel(
-          () => ephemeral.model[a.name],
-          () => a.model,
+          () => ephemeral.model[p.id],
           fallbackModel,
         )
         if (!key) return undefined
@@ -263,8 +252,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         cycle,
         set(model: ModelKey | undefined, options?: { recent?: boolean }) {
           batch(() => {
-            const currentAgent = agent.current()
-            if (currentAgent) setEphemeral("model", currentAgent.name, model ?? fallbackModel())
+            const currentPermission = permissionMode.current()
+            if (currentPermission) setEphemeral("model", currentPermission.id, model ?? fallbackModel())
             if (model) updateVisibility(model, "show")
             if (options?.recent && model) {
               const uniq = uniqueBy([model, ...store.recent], (x) => x.providerID + x.modelID)
@@ -555,7 +544,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const result = {
       slug: createMemo(() => base64Encode(sdk.directory)),
       model,
-      agent,
+      permissionMode,
       file,
     }
     return result

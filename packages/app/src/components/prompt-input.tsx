@@ -363,11 +363,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   type AtOption = { type: "agent"; name: string; display: string } | { type: "file"; path: string; display: string }
 
-  const agentList = createMemo(() =>
-    sync.data.agent
-      .filter((agent) => !agent.hidden && agent.mode !== "primary")
-      .map((agent): AtOption => ({ type: "agent", name: agent.name, display: agent.name })),
-  )
 
   const handleAtSelect = (option: AtOption | undefined) => {
     if (!option) return
@@ -390,10 +385,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     onKeyDown: atOnKeyDown,
   } = useFilteredList<AtOption>({
     items: async (query) => {
-      const agents = agentList()
       const paths = await files.searchFilesAndDirectories(query)
       const fileOptions: AtOption[] = paths.map((path) => ({ type: "file", path, display: path }))
-      return [...agents, ...fileOptions]
+      return fileOptions
     },
     key: atKey,
     filterKeys: ["display"],
@@ -970,11 +964,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
 
     const currentModel = local.model.current()
-    const currentAgent = local.agent.current()
-    if (!currentModel || !currentAgent) {
+    const currentPermission = local.permissionMode.current()
+    if (!currentModel || !currentPermission) {
       showToast({
-        title: "Select an agent and model",
-        description: "Choose an agent and model before sending a prompt.",
+        title: "Select a mode and model",
+        description: "Choose a permission mode and model before sending a prompt.",
       })
       return
     }
@@ -1050,7 +1044,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       modelID: currentModel.id,
       providerID: currentModel.provider.id,
     }
-    const agent = currentAgent.name
+    const permissionMode = currentPermission.id
     const variant = local.model.variant.current()
 
     const clearInput = () => {
@@ -1075,7 +1069,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       client.session
         .shell({
           sessionID: session.id,
-          agent,
+          permissionMode,
           model,
           command: text,
         })
@@ -1100,7 +1094,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
             sessionID: session.id,
             command: commandName,
             arguments: args.join(" "),
-            agent,
+            permissionMode,
             model: `${model.providerID}/${model.modelID}`,
             variant,
             parts: images.map((attachment) => ({
@@ -1230,7 +1224,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       sessionID: session.id,
       role: "user",
       time: { created: Date.now() },
-      agent,
+      permissionMode,
       model,
     }
 
@@ -1290,7 +1284,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     client.session
       .prompt({
         sessionID: session.id,
-        agent,
+        permissionMode,
         model,
         messageID,
         parts: apiParts,
@@ -1554,11 +1548,14 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 </div>
               </Match>
               <Match when={store.mode === "normal"}>
-                <TooltipKeybind placement="top" title="Cycle agent" keybind={command.keybind("agent.cycle")}>
+                <TooltipKeybind placement="top" title="Cycle mode" keybind={command.keybind("agent.cycle")}>
                   <Select
-                    options={local.agent.list().map((agent) => agent.name)}
-                    current={local.agent.current()?.name ?? ""}
-                    onSelect={local.agent.set}
+                    options={local.permissionMode.list().map((mode) => mode.name)}
+                    current={local.permissionMode.current()?.name ?? ""}
+                    onSelect={(name) => {
+                      const mode = local.permissionMode.list().find((m) => m.name === name)
+                      if (mode) local.permissionMode.set(mode.id)
+                    }}
                     class="capitalize"
                     variant="ghost"
                   />

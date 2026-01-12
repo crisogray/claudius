@@ -14,7 +14,6 @@ import type * as SDK from "@opencode-ai/sdk/v2"
 function toSDKModel(m: Provider.Model): SDK.Model {
   return {
     id: m.id,
-    providerID: "anthropic",
     name: m.name,
     family: m.family,
     capabilities: {
@@ -32,7 +31,7 @@ function toSDKModel(m: Provider.Model): SDK.Model {
     options: {},
     headers: {},
     release_date: "2025-01-01",
-  }
+  } as SDK.Model
 }
 
 export namespace ShareNext {
@@ -114,25 +113,25 @@ export namespace ShareNext {
 
   type Data =
     | {
-        type: "session"
-        data: SDK.Session
-      }
+      type: "session"
+      data: SDK.Session
+    }
     | {
-        type: "message"
-        data: SDK.Message
-      }
+      type: "message"
+      data: SDK.Message
+    }
     | {
-        type: "part"
-        data: SDK.Part
-      }
+      type: "part"
+      data: SDK.Part
+    }
     | {
-        type: "session_diff"
-        data: SDK.FileDiff[]
-      }
+      type: "session_diff"
+      data: SDK.FileDiff[]
+    }
     | {
-        type: "model"
-        data: SDK.Model[]
-      }
+      type: "model"
+      data: SDK.Model[]
+    }
 
   const queue = new Map<string, { timeout: NodeJS.Timeout; data: Map<string, Data> }>()
   async function sync(sessionID: string, data: Data[]) {
@@ -193,7 +192,7 @@ export namespace ShareNext {
     const messages = await Array.fromAsync(MessageV2.stream(sessionID))
     const models = messages
       .filter((m) => m.info.role === "user")
-      .map((m) => (m.info as SDK.UserMessage).model)
+      .map((m) => (m.info as MessageV2.User).model)
       .map((m) => Provider.getModel(m.modelID))
       .filter((m): m is Provider.Model => m !== undefined)
       .map(toSDKModel)

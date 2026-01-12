@@ -392,7 +392,7 @@ export namespace SDKConvert {
       parentID: string
       modelID: string
       providerID: string
-      agent: string
+      permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       cwd: string
       root: string
     },
@@ -408,7 +408,7 @@ export namespace SDKConvert {
       modelID: context.modelID,
       providerID: context.providerID,
       mode: "default",
-      agent: context.agent,
+      permissionMode: context.permissionMode,
       path: {
         cwd: context.cwd,
         root: context.root,
@@ -433,7 +433,7 @@ export namespace SDKConvert {
     sessionID: string,
     context: {
       id?: string
-      agent: string
+      permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       modelID: string
       providerID: string
     },
@@ -442,7 +442,7 @@ export namespace SDKConvert {
       id: context.id ?? Identifier.ascending("message"),
       sessionID,
       role: "user",
-      agent: context.agent,
+      permissionMode: context.permissionMode,
       model: {
         modelID: context.modelID,
         providerID: context.providerID,

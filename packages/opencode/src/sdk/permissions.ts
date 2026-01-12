@@ -55,10 +55,10 @@ export namespace SDKPermissions {
       }
 
       const session = await Session.get(sessionID)
-      const agent = await Agent.get(session.permission ? "build" : "build")
+      const defaultRuleset = await Agent.getDefaultPermissionRuleset()
 
       // Get the permission ruleset for this session
-      const ruleset = PermissionNext.merge(agent.permission, session.permission ?? [])
+      const ruleset = PermissionNext.merge(defaultRuleset, session.permission ?? [])
 
       // Extract pattern from tool input for pattern-based rules
       const pattern = extractPattern(toolName, toolInput)

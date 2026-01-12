@@ -5,6 +5,7 @@ import { RouteProvider, useRoute } from "@tui/context/route"
 import { Switch, Match, createEffect, untrack, ErrorBoundary, createSignal, onMount, batch, Show, on } from "solid-js"
 import { Installation } from "@/installation"
 import { Flag } from "@/flag/flag"
+import type { PermissionMode } from "@/sdk"
 import { DialogProvider, useDialog } from "@tui/ui/dialog"
 import { DialogProvider as DialogProviderList } from "@tui/component/dialog-provider"
 import { SDKProvider, useSDK } from "@tui/context/sdk"
@@ -227,7 +228,7 @@ function App() {
   const args = useArgs()
   onMount(() => {
     batch(() => {
-      if (args.agent) local.agent.set(args.agent)
+      if (args.agent) local.permissionMode.set(args.agent as PermissionMode)
       if (args.model) {
         const { providerID, modelID } = Provider.parseModel(args.model)
         if (!providerID || !modelID)
@@ -372,7 +373,7 @@ function App() {
       category: "Agent",
       disabled: true,
       onSelect: () => {
-        local.agent.move(1)
+        local.permissionMode.move(1)
       },
     },
     {
@@ -391,7 +392,7 @@ function App() {
       category: "Agent",
       disabled: true,
       onSelect: () => {
-        local.agent.move(-1)
+        local.permissionMode.move(-1)
       },
     },
     {

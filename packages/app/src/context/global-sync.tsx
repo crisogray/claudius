@@ -1,6 +1,5 @@
 import {
   type Message,
-  type Agent,
   type Session,
   type Part,
   type Config,
@@ -29,7 +28,6 @@ import { getFilename } from "@opencode-ai/util/path"
 
 type State = {
   status: "loading" | "partial" | "complete"
-  agent: Agent[]
   command: Command[]
   project: string
   provider: ProviderListResponse
@@ -89,7 +87,6 @@ function createGlobalSync() {
         config: {},
         path: { state: "", config: "", worktree: "", directory: "", home: "" },
         status: "loading" as const,
-        agent: [],
         command: [],
         session: [],
         session_status: {},
@@ -158,7 +155,6 @@ function createGlobalSync() {
             })),
           })
         }),
-      agent: () => sdk.app.agents().then((x) => setStore("agent", x.data ?? [])),
       config: () => sdk.config.get().then((x) => setStore("config", x.data!)),
     }
     await Promise.all(Object.values(blockingRequests).map((p) => retry(p).catch((e) => setGlobalStore("error", e))))

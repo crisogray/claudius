@@ -64,7 +64,7 @@ export function formatAssistantHeader(msg: AssistantMessage, includeMetadata: bo
   const duration =
     msg.time.completed && msg.time.created ? ((msg.time.completed - msg.time.created) / 1000).toFixed(1) + "s" : ""
 
-  return `## Assistant (${Locale.titlecase(msg.agent)} · ${msg.modelID}${duration ? ` · ${duration}` : ""})\n\n`
+  return `## Assistant (${Locale.titlecase(msg.permissionMode ?? "default")} · ${msg.modelID}${duration ? ` · ${duration}` : ""})\n\n`
 }
 
 export function formatPart(part: Part, options: TranscriptOptions): string {

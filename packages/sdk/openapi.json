@@ -2145,8 +2145,9 @@
                     },
                     "required": ["providerID", "modelID"]
                   },
-                  "agent": {
-                    "type": "string"
+                  "permissionMode": {
+                    "type": "string",
+                    "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
                   "noReply": {
                     "type": "boolean"
@@ -2521,8 +2522,9 @@
                     },
                     "required": ["providerID", "modelID"]
                   },
-                  "agent": {
-                    "type": "string"
+                  "permissionMode": {
+                    "type": "string",
+                    "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
                   "noReply": {
                     "type": "boolean"
@@ -2653,8 +2655,9 @@
                     "type": "string",
                     "pattern": "^msg.*"
                   },
-                  "agent": {
-                    "type": "string"
+                  "permissionMode": {
+                    "type": "string",
+                    "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
                   "model": {
                     "type": "string"
@@ -2775,8 +2778,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "agent": {
-                    "type": "string"
+                  "permissionMode": {
+                    "type": "string",
+                    "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
                   "model": {
                     "type": "object",
@@ -2794,7 +2798,7 @@
                     "type": "string"
                   }
                 },
-                "required": ["agent", "command"]
+                "required": ["permissionMode", "command"]
               }
             }
           }
@@ -5809,8 +5813,9 @@
             },
             "required": ["diffs"]
           },
-          "agent": {
-            "type": "string"
+          "permissionMode": {
+            "type": "string",
+            "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
           },
           "model": {
             "type": "object",
@@ -5840,7 +5845,7 @@
             "type": "string"
           }
         },
-        "required": ["id", "sessionID", "role", "time", "agent", "model"]
+        "required": ["id", "sessionID", "role", "time", "permissionMode", "model"]
       },
       "ProviderAuthError": {
         "type": "object",
@@ -6018,8 +6023,9 @@
           "mode": {
             "type": "string"
           },
-          "agent": {
-            "type": "string"
+          "permissionMode": {
+            "type": "string",
+            "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
           },
           "path": {
             "type": "object",
@@ -6079,7 +6085,7 @@
           "modelID",
           "providerID",
           "mode",
-          "agent",
+          "permissionMode",
           "path",
           "cost",
           "tokens"

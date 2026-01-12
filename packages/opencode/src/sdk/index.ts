@@ -1,6 +1,5 @@
 import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
-import { Agent } from "@/agent/agent"
 import { Config } from "@/config/config"
 import { Instance } from "@/project/instance"
 import { Session } from "@/session"
@@ -8,7 +7,6 @@ import { MessageV2 } from "@/session/message-v2"
 import { SessionStatus } from "@/session/status"
 import { Log } from "@/util/log"
 import z from "zod"
-import { SDKAgents } from "./agents"
 import { SDKCommands } from "./commands"
 import { SDKConvert } from "./convert"
 import { SDKMCP } from "./mcp"
@@ -19,6 +17,22 @@ import { Identifier } from "@/id/id"
 import { SessionRevert } from "@/session/revert"
 // Real Claude Agent SDK
 import { query, type Query } from "@anthropic-ai/claude-agent-sdk"
+import type { HookCallback, PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk"
+
+/**
+ * SDK Permission modes - maps to SDK's permissionMode option
+ */
+export type PermissionMode = "default" | "plan" | "acceptEdits" | "bypassPermissions"
+
+/**
+ * Permission mode display info for UI
+ */
+export const PERMISSION_MODES = [
+  { id: "default" as const, name: "Build", description: "Normal mode with permission prompts", color: "#3B82F6" },
+  { id: "plan" as const, name: "Plan", description: "Read-only planning mode", color: "#8B5CF6" },
+  { id: "acceptEdits" as const, name: "Auto-Accept", description: "Auto-accept file edits", color: "#22C55E" },
+  { id: "bypassPermissions" as const, name: "Bypass", description: "Skip all permission checks", color: "#F59E0B" },
+] as const
 
 export namespace SDK {
   const log = Log.create({ service: "sdk" })
@@ -46,6 +60,13 @@ export namespace SDK {
         error: z.string(),
       }),
     ),
+    PlanReady: BusEvent.define(
+      "sdk.plan_ready",
+      z.object({
+        sessionID: z.string(),
+        plan: z.string().optional(),
+      }),
+    ),
   }
 
   // Active query state per session
@@ -66,7 +87,7 @@ export namespace SDK {
         modelID: z.string(),
       })
       .optional(),
-    agent: z.string().optional(),
+    permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]).optional(),
     variant: z.string().optional(),
     parts: z.array(
       z.discriminatedUnion("type", [
@@ -105,12 +126,8 @@ export namespace SDK {
     const { prompt, command } = await SDKCommands.expandCommand(rawPrompt)
     log.info("expanded command", { hasCommand: !!command })
 
-    // Get agent - priority: command > input > config > default
-    const agentName = command?.agent ?? input.agent ?? config.default_agent ?? "build"
-    const agent = await Agent.get(agentName)
-    if (!agent) {
-      throw new Error(`Agent not found: ${agentName}`)
-    }
+    // Get permission mode - priority: input > default
+    const permissionMode: PermissionMode = input.permissionMode ?? "default"
 
     // Get model - priority: command > input > config > default
     const modelID = command?.model
@@ -127,7 +144,7 @@ export namespace SDK {
     const userMessageID = input.messageID ?? Identifier.ascending("message")
     const userMessage = SDKConvert.createUserMessage(input.sessionID, {
       id: userMessageID,
-      agent: agentName,
+      permissionMode,
       modelID,
       providerID,
     })
@@ -178,7 +195,7 @@ export namespace SDK {
     const options = await buildSDKOptions({
       config,
       session,
-      agent,
+      permissionMode,
       modelID,
       variant: input.variant,
     })
@@ -194,9 +211,11 @@ export namespace SDK {
           mcpServers: options.mcpServers,
           maxThinkingTokens: options.maxThinkingTokens,
           permissionMode: options.permissionMode,
+          hooks: options.hooks,
           canUseTool: options.canUseTool,
           resume: options.resume,
           systemPrompt: options.systemPrompt,
+          settingSources: ["project"],
           includePartialMessages: true,
         },
       })
@@ -209,7 +228,7 @@ export namespace SDK {
         input.sessionID,
         {
           parentID: userMessageID,
-          agent: agentName,
+          permissionMode,
           modelID,
           providerID,
         },
@@ -294,35 +313,70 @@ export namespace SDK {
   }
 
   /**
+   * Build hooks for plan mode that whitelist plan file writes
+   */
+  function buildPlanModeHooks() {
+    const planFileHook: HookCallback = async (input, _toolUseId, _context) => {
+      const preInput = input as PreToolUseHookInput
+      const toolInput = preInput.tool_input as Record<string, unknown> | undefined
+      const filePath = toolInput?.file_path as string | undefined
+
+      // Allow writes to .opencode/plan/*.md files
+      if (filePath?.includes(".opencode/plan/") && filePath.endsWith(".md")) {
+        return {
+          hookSpecificOutput: {
+            hookEventName: "PreToolUse" as const,
+            permissionDecision: "allow" as const,
+            permissionDecisionReason: "Plan file write allowed",
+          },
+        }
+      }
+
+      // Continue to plan mode (will deny other writes)
+      return {}
+    }
+
+    return {
+      PreToolUse: [
+        {
+          matcher: "Write|Edit",
+          hooks: [planFileHook],
+        },
+      ],
+    }
+  }
+
+  /**
    * Build SDK options from config and context
    */
   async function buildSDKOptions(input: {
     config: Config.Info
     session: Session.Info
-    agent: Agent.Info
+    permissionMode: PermissionMode
     modelID: string
     variant?: string
   }) {
-    const { config, session, agent, modelID, variant } = input
+    const { config, session, permissionMode, modelID, variant } = input
 
     // Get MCP servers
     const mcpServers = await SDKMCP.getMcpServers()
 
-    // Get agents for subagent support
-    const agents = await SDKAgents.getSDKAgents()
+    // Get custom instructions from config
+    const customInstructions = await getCustomInstructions()
 
-    // Get custom instructions
-    const customInstructions = await getCustomInstructions(agent)
+    // Plan mode needs hooks to whitelist plan file writes
+    const isPlanMode = permissionMode === "plan"
 
     return {
       model: modelID,
       cwd: Instance.directory,
       tools: { type: "preset" as const, preset: "claude_code" as const },
       mcpServers,
-      agents,
       maxThinkingTokens: variantToThinkingBudget(variant),
       enableFileCheckpointing: true,
-      permissionMode: "default" as const,
+      // Pass permission mode directly to SDK
+      permissionMode,
+      hooks: isPlanMode ? buildPlanModeHooks() : undefined,
       canUseTool: SDKPermissions.createPermissionHandler(session.id),
       // Resume using stored SDK session ID (if exists)
       resume: (session as any).sdk?.sessionId,
@@ -342,15 +396,10 @@ export namespace SDK {
   }
 
   /**
-   * Get custom instructions to append to system prompt
+   * Get custom instructions to append to system prompt from config
    */
-  async function getCustomInstructions(agent: Agent.Info): Promise<string> {
+  async function getCustomInstructions(): Promise<string> {
     const parts: string[] = []
-
-    // Add agent's prompt
-    if (agent.prompt) {
-      parts.push(agent.prompt)
-    }
 
     // Add user's custom instructions from config
     const config = await Config.get()
@@ -471,7 +520,6 @@ export namespace SDK {
 }
 
 // Re-export submodules
-export { SDKAgents } from "./agents"
 export { SDKCommands } from "./commands"
 export { SDKConvert } from "./convert"
 export { SDKCustomTools } from "./custom-tools"

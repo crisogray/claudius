@@ -298,7 +298,7 @@ export default function Page() {
       () => {
         const msg = lastUserMessage()
         if (!msg) return
-        if (msg.agent) local.agent.set(msg.agent)
+        if (msg.permissionMode) local.permissionMode.set(msg.permissionMode)
         if (msg.model) local.model.set(msg.model)
       },
     ),
@@ -510,20 +510,20 @@ export default function Page() {
     },
     {
       id: "agent.cycle",
-      title: "Cycle agent",
-      description: "Switch to the next agent",
-      category: "Agent",
+      title: "Cycle mode",
+      description: "Switch to the next permission mode",
+      category: "Mode",
       keybind: "mod+.",
-      slash: "agent",
-      onSelect: () => local.agent.move(1),
+      slash: "mode",
+      onSelect: () => local.permissionMode.move(1),
     },
     {
       id: "agent.cycle.reverse",
-      title: "Cycle agent backwards",
-      description: "Switch to the previous agent",
-      category: "Agent",
+      title: "Cycle mode backwards",
+      description: "Switch to the previous permission mode",
+      category: "Mode",
       keybind: "shift+mod+.",
-      onSelect: () => local.agent.move(-1),
+      onSelect: () => local.permissionMode.move(-1),
     },
     {
       id: "model.variant.cycle",

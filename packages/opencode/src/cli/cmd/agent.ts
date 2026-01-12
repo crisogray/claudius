@@ -11,8 +11,6 @@ import { Instance } from "../../project/instance"
 import { EOL } from "os"
 import type { Argv } from "yargs"
 
-type AgentMode = "all" | "primary" | "subagent"
-
 const AVAILABLE_TOOLS = [
   "bash",
   "read",
@@ -40,11 +38,6 @@ const AgentCreateCommand = cmd({
         type: "string",
         describe: "what the agent should do",
       })
-      .option("mode", {
-        type: "string",
-        describe: "agent mode",
-        choices: ["all", "primary", "subagent"] as const,
-      })
       .option("tools", {
         type: "string",
         describe: `comma-separated list of tools to enable (default: all). Available: "${AVAILABLE_TOOLS.join(", ")}"`,
@@ -60,10 +53,9 @@ const AgentCreateCommand = cmd({
       async fn() {
         const cliPath = args.path
         const cliDescription = args.description
-        const cliMode = args.mode as AgentMode | undefined
         const cliTools = args.tools
 
-        const isFullyNonInteractive = cliPath && cliDescription && cliMode && cliTools !== undefined
+        const isFullyNonInteractive = cliPath && cliDescription && cliTools !== undefined
 
         if (!isFullyNonInteractive) {
           UI.empty()
@@ -72,10 +64,10 @@ const AgentCreateCommand = cmd({
 
         const project = Instance.project
 
-        // Determine scope/path
+        // Determine scope/path - SDK uses .claude/agents/ for subagents
         let targetPath: string
         if (cliPath) {
-          targetPath = path.join(cliPath, "agent")
+          targetPath = path.join(cliPath, "agents")
         } else {
           let scope: "global" | "project" = "global"
           if (project.vcs === "git") {
@@ -97,9 +89,10 @@ const AgentCreateCommand = cmd({
             if (prompts.isCancel(scopeResult)) throw new UI.CancelledError()
             scope = scopeResult
           }
+          // SDK convention: .claude/agents/ for subagents
           targetPath = path.join(
-            scope === "global" ? Global.Path.config : path.join(Instance.worktree, ".opencode"),
-            "agent",
+            scope === "global" ? Global.Path.config : path.join(Instance.worktree, ".claude"),
+            "agents",
           )
         }
 
@@ -145,55 +138,20 @@ const AgentCreateCommand = cmd({
           selectedTools = result
         }
 
-        // Get mode
-        let mode: AgentMode
-        if (cliMode) {
-          mode = cliMode
-        } else {
-          const modeResult = await prompts.select({
-            message: "Agent mode",
-            options: [
-              {
-                label: "All",
-                value: "all" as const,
-                hint: "Can function in both primary and subagent roles",
-              },
-              {
-                label: "Primary",
-                value: "primary" as const,
-                hint: "Acts as a primary/main agent",
-              },
-              {
-                label: "Subagent",
-                value: "subagent" as const,
-                hint: "Can be used as a subagent by other agents",
-              },
-            ],
-            initialValue: "all" as const,
-          })
-          if (prompts.isCancel(modeResult)) throw new UI.CancelledError()
-          mode = modeResult
-        }
-
-        // Build tools config
-        const tools: Record<string, boolean> = {}
-        for (const tool of AVAILABLE_TOOLS) {
-          if (!selectedTools.includes(tool)) {
-            tools[tool] = false
-          }
-        }
-
-        // Build frontmatter
+        // Build SDK-format frontmatter
+        // SDK uses: name (required), description, tools (comma-separated string)
         const frontmatter: {
+          name: string
           description: string
-          mode: AgentMode
-          tools?: Record<string, boolean>
+          tools?: string
         } = {
+          name: generated.identifier,
           description: generated.whenToUse,
-          mode,
         }
-        if (Object.keys(tools).length > 0) {
-          frontmatter.tools = tools
+        // Only include tools if not all tools are selected
+        if (selectedTools.length < AVAILABLE_TOOLS.length) {
+          // SDK format: comma-separated tool names
+          frontmatter.tools = selectedTools.join(", ")
         }
 
         // Write file
