@@ -1,5 +1,6 @@
 import { Agent } from "@/agent/agent"
 import { PermissionNext } from "@/permission/next"
+import { PlanApproval } from "@/plan"
 import { Question } from "@/question"
 import { Session } from "@/session"
 import { Log } from "@/util/log"
@@ -52,6 +53,11 @@ export namespace SDKPermissions {
       // Handle AskUserQuestion specially - route to Question module
       if (toolName === "AskUserQuestion") {
         return handleAskUserQuestion(sessionID, toolInput, options)
+      }
+
+      // Handle ExitPlanMode specially - route to PlanApproval module
+      if (toolName === "ExitPlanMode") {
+        return handleExitPlanMode(sessionID, toolInput, options)
       }
 
       const session = await Session.get(sessionID)
@@ -180,6 +186,56 @@ export namespace SDKPermissions {
       // User dismissed the question
       if (error instanceof Question.RejectedError) {
         return { behavior: "deny", message: "User dismissed the question" }
+      }
+      // Check if aborted
+      if (options.signal.aborted) {
+        return { behavior: "deny", message: "Aborted" }
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Handle ExitPlanMode tool - routes to PlanApproval module
+   *
+   * The SDK's ExitPlanMode tool is mapped to opencode's PlanApproval module.
+   * Plan approval requests are published via bus events and responses are collected from UI.
+   */
+  async function handleExitPlanMode(
+    sessionID: string,
+    input: Record<string, unknown>,
+    options: { signal: AbortSignal },
+  ): Promise<PermissionResult> {
+    log.info("handling ExitPlanMode", { sessionID })
+
+    const plan = (input.plan as string) ?? ""
+
+    try {
+      // Ask for plan approval via PlanApproval module (publishes events for UI)
+      const approved = await PlanApproval.ask({
+        sessionID,
+        plan,
+      })
+
+      log.info("ExitPlanMode answered", { approved })
+
+      return {
+        behavior: "allow",
+        updatedInput: {
+          plan,
+          approved,
+        },
+      }
+    } catch (error) {
+      // User dismissed/rejected the plan
+      if (error instanceof PlanApproval.RejectedError) {
+        return {
+          behavior: "allow",
+          updatedInput: {
+            plan,
+            approved: false,
+          },
+        }
       }
       // Check if aborted
       if (options.signal.aborted) {

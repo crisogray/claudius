@@ -648,15 +648,6 @@ export namespace SDKStream {
           }
         }
 
-        // If this is ExitPlanMode completing, publish event for UI to show approval dialog
-        if (part.tool === "exitplanmode" && !block.is_error) {
-          log.info("ExitPlanMode completed", { sessionID })
-          Bus.publish(SDK.Event.PlanReady, {
-            sessionID,
-            plan: (input as Record<string, unknown>).plan as string | undefined,
-          })
-        }
-
         return true
       }
     }

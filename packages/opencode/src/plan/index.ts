@@ -1,0 +1,130 @@
+import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
+import { Identifier } from "@/id/id"
+import { Instance } from "@/project/instance"
+import { Log } from "@/util/log"
+import z from "zod"
+
+export namespace PlanApproval {
+  const log = Log.create({ service: "plan" })
+
+  export const Request = z
+    .object({
+      id: Identifier.schema("plan"),
+      sessionID: Identifier.schema("session"),
+      plan: z.string().describe("The plan content for approval"),
+    })
+    .meta({
+      ref: "PlanRequest",
+    })
+  export type Request = z.infer<typeof Request>
+
+  export const Reply = z.object({
+    approved: z.boolean().describe("Whether the user approved the plan"),
+  })
+  export type Reply = z.infer<typeof Reply>
+
+  export const Event = {
+    Asked: BusEvent.define("plan.asked", Request),
+    Replied: BusEvent.define(
+      "plan.replied",
+      z.object({
+        sessionID: z.string(),
+        requestID: z.string(),
+        approved: z.boolean(),
+      }),
+    ),
+    Rejected: BusEvent.define(
+      "plan.rejected",
+      z.object({
+        sessionID: z.string(),
+        requestID: z.string(),
+      }),
+    ),
+  }
+
+  const state = Instance.state(async () => {
+    const pending: Record<
+      string,
+      {
+        info: Request
+        resolve: (approved: boolean) => void
+        reject: (e: any) => void
+      }
+    > = {}
+
+    return {
+      pending,
+    }
+  })
+
+  export async function ask(input: { sessionID: string; plan: string }): Promise<boolean> {
+    const s = await state()
+    const id = Identifier.ascending("plan")
+
+    log.info("asking for plan approval", { id })
+
+    return new Promise<boolean>((resolve, reject) => {
+      const info: Request = {
+        id,
+        sessionID: input.sessionID,
+        plan: input.plan,
+      }
+      s.pending[id] = {
+        info,
+        resolve,
+        reject,
+      }
+      Bus.publish(Event.Asked, info)
+    })
+  }
+
+  export async function reply(input: { requestID: string; approved: boolean }): Promise<void> {
+    const s = await state()
+    const existing = s.pending[input.requestID]
+    if (!existing) {
+      log.warn("reply for unknown plan request", { requestID: input.requestID })
+      return
+    }
+    delete s.pending[input.requestID]
+
+    log.info("plan replied", { requestID: input.requestID, approved: input.approved })
+
+    Bus.publish(Event.Replied, {
+      sessionID: existing.info.sessionID,
+      requestID: existing.info.id,
+      approved: input.approved,
+    })
+
+    existing.resolve(input.approved)
+  }
+
+  export async function reject(requestID: string): Promise<void> {
+    const s = await state()
+    const existing = s.pending[requestID]
+    if (!existing) {
+      log.warn("reject for unknown plan request", { requestID })
+      return
+    }
+    delete s.pending[requestID]
+
+    log.info("plan rejected", { requestID })
+
+    Bus.publish(Event.Rejected, {
+      sessionID: existing.info.sessionID,
+      requestID: existing.info.id,
+    })
+
+    existing.reject(new RejectedError())
+  }
+
+  export class RejectedError extends Error {
+    constructor() {
+      super("The user dismissed the plan approval request")
+    }
+  }
+
+  export async function list() {
+    return state().then((x) => Object.values(x.pending).map((x) => x.info))
+  }
+}

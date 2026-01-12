@@ -605,6 +605,37 @@ export type EventPermissionReplied = {
   }
 }
 
+export type PlanRequest = {
+  id: string
+  sessionID: string
+  /**
+   * The plan content for approval
+   */
+  plan: string
+}
+
+export type EventPlanAsked = {
+  type: "plan.asked"
+  properties: PlanRequest
+}
+
+export type EventPlanReplied = {
+  type: "plan.replied"
+  properties: {
+    sessionID: string
+    requestID: string
+    approved: boolean
+  }
+}
+
+export type EventPlanRejected = {
+  type: "plan.rejected"
+  properties: {
+    sessionID: string
+    requestID: string
+  }
+}
+
 export type QuestionOption = {
   /**
    * Display text (1-5 words, concise)
@@ -724,14 +755,6 @@ export type EventSdkError = {
   properties: {
     sessionID: string
     error: string
-  }
-}
-
-export type EventSdkPlanReady = {
-  type: "sdk.plan_ready"
-  properties: {
-    sessionID: string
-    plan?: string
   }
 }
 
@@ -914,6 +937,9 @@ export type Event =
   | EventCommandExecuted
   | EventPermissionAsked
   | EventPermissionReplied
+  | EventPlanAsked
+  | EventPlanReplied
+  | EventPlanRejected
   | EventQuestionAsked
   | EventQuestionReplied
   | EventQuestionRejected
@@ -921,7 +947,6 @@ export type Event =
   | EventSdkStarted
   | EventSdkCompleted
   | EventSdkError
-  | EventSdkPlanReady
   | EventSessionCreated
   | EventSessionUpdated
   | EventSessionDeleted
@@ -3490,6 +3515,90 @@ export type QuestionRejectResponses = {
 
 export type QuestionRejectResponse = QuestionRejectResponses[keyof QuestionRejectResponses]
 
+export type PlanListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/plan"
+}
+
+export type PlanListResponses = {
+  /**
+   * List of pending plan approvals
+   */
+  200: Array<PlanRequest>
+}
+
+export type PlanListResponse = PlanListResponses[keyof PlanListResponses]
+
+export type PlanApproveData = {
+  body?: never
+  path: {
+    requestID: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/plan/{requestID}/approve"
+}
+
+export type PlanApproveErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type PlanApproveError = PlanApproveErrors[keyof PlanApproveErrors]
+
+export type PlanApproveResponses = {
+  /**
+   * Plan approved successfully
+   */
+  200: boolean
+}
+
+export type PlanApproveResponse = PlanApproveResponses[keyof PlanApproveResponses]
+
+export type PlanRejectData = {
+  body?: never
+  path: {
+    requestID: string
+  }
+  query?: {
+    directory?: string
+  }
+  url: "/plan/{requestID}/reject"
+}
+
+export type PlanRejectErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type PlanRejectError = PlanRejectErrors[keyof PlanRejectErrors]
+
+export type PlanRejectResponses = {
+  /**
+   * Plan rejected successfully
+   */
+  200: boolean
+}
+
+export type PlanRejectResponse = PlanRejectResponses[keyof PlanRejectResponses]
+
 export type CommandListData = {
   body?: never
   path?: never
@@ -3651,7 +3760,44 @@ export type ProviderListResponses = {
    * List of providers
    */
   200: {
-    all: Array<unknown>
+    all: Array<{
+      id: string
+      name: string
+      env: Array<string>
+      models: {
+        [key: string]: {
+          id: string
+          name: string
+          family?: string
+          status: "active" | "deprecated"
+          release_date: string
+          cost: {
+            input: number
+            output: number
+            [key: string]: unknown | number
+          }
+          limit: {
+            context: number
+            [key: string]: unknown | number
+          }
+          [key: string]:
+            | unknown
+            | string
+            | "active"
+            | "deprecated"
+            | {
+                input: number
+                output: number
+                [key: string]: unknown | number
+              }
+            | {
+                context: number
+                [key: string]: unknown | number
+              }
+            | undefined
+        }
+      }
+    }>
     default: {
       [key: string]: string
     }

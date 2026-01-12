@@ -62,6 +62,11 @@ import type {
   PermissionRespondErrors,
   PermissionRespondResponses,
   PermissionRuleset,
+  PlanApproveErrors,
+  PlanApproveResponses,
+  PlanListResponses,
+  PlanRejectErrors,
+  PlanRejectResponses,
   ProjectCurrentResponses,
   ProjectListResponses,
   ProjectUpdateErrors,
@@ -1843,6 +1848,87 @@ export class Question extends HeyApiClient {
   }
 }
 
+export class Plan extends HeyApiClient {
+  /**
+   * List pending plan approvals
+   *
+   * Get all pending plan approval requests across all sessions.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams([parameters], [{ args: [{ in: "query", key: "directory" }] }])
+    return (options?.client ?? this.client).get<PlanListResponses, unknown, ThrowOnError>({
+      url: "/plan",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Approve plan
+   *
+   * Approve a plan from the AI assistant.
+   */
+  public approve<ThrowOnError extends boolean = false>(
+    parameters: {
+      requestID: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "requestID" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<PlanApproveResponses, PlanApproveErrors, ThrowOnError>({
+      url: "/plan/{requestID}/approve",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Reject plan
+   *
+   * Reject a plan from the AI assistant.
+   */
+  public reject<ThrowOnError extends boolean = false>(
+    parameters: {
+      requestID: string
+      directory?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "requestID" },
+            { in: "query", key: "directory" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<PlanRejectResponses, PlanRejectErrors, ThrowOnError>({
+      url: "/plan/{requestID}/reject",
+      ...options,
+      ...params,
+    })
+  }
+}
+
 export class Command extends HeyApiClient {
   /**
    * List commands
@@ -2906,6 +2992,8 @@ export class OpencodeClient extends HeyApiClient {
   permission = new Permission({ client: this.client })
 
   question = new Question({ client: this.client })
+
+  plan = new Plan({ client: this.client })
 
   command = new Command({ client: this.client })
 

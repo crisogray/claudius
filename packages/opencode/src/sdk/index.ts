@@ -60,13 +60,6 @@ export namespace SDK {
         error: z.string(),
       }),
     ),
-    PlanReady: BusEvent.define(
-      "sdk.plan_ready",
-      z.object({
-        sessionID: z.string(),
-        plan: z.string().optional(),
-      }),
-    ),
   }
 
   // Active query state per session

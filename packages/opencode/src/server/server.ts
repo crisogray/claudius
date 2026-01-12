@@ -44,6 +44,7 @@ import { errors } from "./error"
 import { Pty } from "@/pty"
 import { PermissionNext } from "@/permission/next"
 import { QuestionRoute } from "./question"
+import { PlanRoute } from "./plan"
 import { Installation } from "@/installation"
 import { MDNS } from "./mdns"
 import { Worktree } from "../worktree"
@@ -1632,6 +1633,7 @@ export namespace Server {
           },
         )
         .route("/question", QuestionRoute)
+        .route("/plan", PlanRoute)
         .get(
           "/command",
           describeRoute({
@@ -1843,7 +1845,36 @@ export namespace Server {
                   "application/json": {
                     schema: resolver(
                       z.object({
-                        all: z.array(z.unknown()),
+                        all: z.array(
+                          z.object({
+                            id: z.string(),
+                            name: z.string(),
+                            env: z.array(z.string()),
+                            models: z.record(
+                              z.string(),
+                              z
+                                .object({
+                                  id: z.string(),
+                                  name: z.string(),
+                                  family: z.string().optional(),
+                                  status: z.enum(["active", "deprecated"]),
+                                  release_date: z.string(),
+                                  cost: z
+                                    .object({
+                                      input: z.number(),
+                                      output: z.number(),
+                                    })
+                                    .passthrough(),
+                                  limit: z
+                                    .object({
+                                      context: z.number(),
+                                    })
+                                    .passthrough(),
+                                })
+                                .passthrough(),
+                            ),
+                          }),
+                        ),
                         default: z.record(z.string(), z.string()),
                         connected: z.array(z.string()),
                       }),

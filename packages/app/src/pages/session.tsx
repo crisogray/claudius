@@ -31,6 +31,8 @@ import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { DialogSelectFile } from "@/components/dialog-select-file"
 import { DialogSelectModel } from "@/components/dialog-select-model"
 import { DialogSelectMcp } from "@/components/dialog-select-mcp"
+import { DialogQuestion } from "@/components/dialog-question"
+import { DialogPlanApproval } from "@/components/dialog-plan-approval"
 import { useCommand } from "@/context/command"
 import { useNavigate, useParams } from "@solidjs/router"
 import { UserMessage } from "@opencode-ai/sdk/v2"
@@ -303,6 +305,32 @@ export default function Page() {
       },
     ),
   )
+
+  // Show question dialog when a question request comes in
+  const shownQuestionIds = new Set<string>()
+  createEffect(() => {
+    const sessionID = params.id
+    if (!sessionID) return
+    const questions = sync.data.question[sessionID]
+    if (!questions?.length) return
+    const request = questions[0]
+    if (shownQuestionIds.has(request.id)) return
+    shownQuestionIds.add(request.id)
+    dialog.show(() => <DialogQuestion request={request} />)
+  })
+
+  // Show plan approval dialog when a plan request comes in
+  const shownPlanIds = new Set<string>()
+  createEffect(() => {
+    const sessionID = params.id
+    if (!sessionID) return
+    const plans = sync.data.plan[sessionID]
+    if (!plans?.length) return
+    const request = plans[0]
+    if (shownPlanIds.has(request.id)) return
+    shownPlanIds.add(request.id)
+    dialog.show(() => <DialogPlanApproval request={request} />)
+  })
 
   const [store, setStore] = createStore({
     activeDraggable: undefined as string | undefined,

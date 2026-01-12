@@ -15,6 +15,8 @@ import {
   type LspStatus,
   type VcsInfo,
   type PermissionRequest,
+  type QuestionRequest,
+  type PlanRequest,
   createOpencodeClient,
 } from "@opencode-ai/sdk/v2/client"
 import { createStore, produce, reconcile } from "solid-js/store"
@@ -45,6 +47,12 @@ type State = {
   }
   permission: {
     [sessionID: string]: PermissionRequest[]
+  }
+  question: {
+    [sessionID: string]: QuestionRequest[]
+  }
+  plan: {
+    [sessionID: string]: PlanRequest[]
   }
   mcp: {
     [name: string]: McpStatus
@@ -93,6 +101,8 @@ function createGlobalSync() {
         session_diff: {},
         todo: {},
         permission: {},
+        question: {},
+        plan: {},
         mcp: {},
         lsp: [],
         vcs: undefined,
@@ -382,6 +392,78 @@ function createGlobalSync() {
         if (!result.found) break
         setStore(
           "permission",
+          event.properties.sessionID,
+          produce((draft) => {
+            draft.splice(result.index, 1)
+          }),
+        )
+        break
+      }
+      case "question.asked": {
+        const request = event.properties
+        const requests = store.question[request.sessionID]
+        if (!requests) {
+          setStore("question", request.sessionID, [request])
+          break
+        }
+        const result = Binary.search(requests, request.id, (r) => r.id)
+        if (result.found) {
+          setStore("question", request.sessionID, result.index, reconcile(request))
+          break
+        }
+        setStore(
+          "question",
+          request.sessionID,
+          produce((draft) => {
+            draft.splice(result.index, 0, request)
+          }),
+        )
+        break
+      }
+      case "question.replied":
+      case "question.rejected": {
+        const requests = store.question[event.properties.sessionID]
+        if (!requests) break
+        const result = Binary.search(requests, event.properties.requestID, (r) => r.id)
+        if (!result.found) break
+        setStore(
+          "question",
+          event.properties.sessionID,
+          produce((draft) => {
+            draft.splice(result.index, 1)
+          }),
+        )
+        break
+      }
+      case "plan.asked": {
+        const request = event.properties
+        const requests = store.plan[request.sessionID]
+        if (!requests) {
+          setStore("plan", request.sessionID, [request])
+          break
+        }
+        const result = Binary.search(requests, request.id, (r) => r.id)
+        if (result.found) {
+          setStore("plan", request.sessionID, result.index, reconcile(request))
+          break
+        }
+        setStore(
+          "plan",
+          request.sessionID,
+          produce((draft) => {
+            draft.splice(result.index, 0, request)
+          }),
+        )
+        break
+      }
+      case "plan.replied":
+      case "plan.rejected": {
+        const requests = store.plan[event.properties.sessionID]
+        if (!requests) break
+        const result = Binary.search(requests, event.properties.requestID, (r) => r.id)
+        if (!result.found) break
+        setStore(
+          "plan",
           event.properties.sessionID,
           produce((draft) => {
             draft.splice(result.index, 1)
