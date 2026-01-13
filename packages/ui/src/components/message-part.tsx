@@ -22,6 +22,8 @@ import {
   ToolPart,
   UserMessage,
   Todo,
+  QuestionRequest,
+  PlanRequest,
 } from "@opencode-ai/sdk/v2"
 import { useData } from "../context"
 import { useDiffComponent } from "../context/diff"
@@ -40,6 +42,8 @@ import { getDirectory as _getDirectory, getFilename } from "@opencode-ai/util/pa
 import { checksum } from "@opencode-ai/util/encode"
 import { Tooltip } from "./tooltip"
 import { IconButton } from "./icon-button"
+import { InlineQuestion } from "./inline-question"
+import { InlinePlanApproval } from "./inline-plan-approval"
 import { createAutoScroll } from "../hooks"
 
 interface Diagnostic {
@@ -237,6 +241,12 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
       return {
         icon: "checklist",
         title: "Read to-dos",
+      }
+    case "askuserquestion":
+      return {
+        icon: "speech-bubble",
+        title: "Question",
+        subtitle: input.questions?.[0]?.question,
       }
     default:
       return {
@@ -438,6 +448,12 @@ export interface ToolProps {
   hideDetails?: boolean
   defaultOpen?: boolean
   forceOpen?: boolean
+  questionRequest?: QuestionRequest
+  onQuestionReply?: (answers: string[][]) => void
+  onQuestionReject?: () => void
+  planRequest?: () => PlanRequest | undefined
+  onPlanApprove?: () => void
+  onPlanReject?: (message?: string) => void
 }
 
 export type ToolComponent = Component<ToolProps>
@@ -475,6 +491,30 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
     return next
   })
 
+  // Find matching question request for this tool call
+  // Match by: tool is askuserquestion, tool is pending (no output), and there's a question for this session
+  const questionRequest = createMemo(() => {
+    if (part.tool !== "askuserquestion") return undefined
+    if (part.state.status === "completed") return undefined
+    if ("output" in part.state && part.state.output) return undefined
+    const questions = data.store.question?.[props.message.sessionID] ?? []
+    // Return the first pending question for this session
+    return questions[0]
+  })
+
+  // Find matching plan approval request for this tool call
+  // Match by: tool is exitplanmode, and there's a plan for this session
+  // Prefer pending plans (no approved field) over answered ones
+  const planRequest = createMemo(() => {
+    if (part.tool !== "exitplanmode") return undefined
+    const plans = data.store.plan?.[props.message.sessionID] ?? []
+    // First look for a pending plan (no approved field yet)
+    const pending = plans.find((p: any) => typeof p.approved !== "boolean")
+    if (pending) return pending
+    // If no pending plan, return the most recent answered one for status display
+    return plans[plans.length - 1]
+  })
+
   const [showPermission, setShowPermission] = createSignal(false)
 
   createEffect(() => {
@@ -489,7 +529,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
 
   const [forceOpen, setForceOpen] = createSignal(false)
   createEffect(() => {
-    if (permission()) setForceOpen(true)
+    if (permission() || questionRequest() || planRequest()) setForceOpen(true)
   })
 
   const respond = (response: "once" | "always" | "reject") => {
@@ -502,6 +542,46 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
     })
   }
 
+  const handleQuestionReply = (answers: string[][]) => {
+    const req = questionRequest()
+    if (!req || !data.respondToQuestion) return
+    data.respondToQuestion({
+      sessionID: req.sessionID,
+      requestID: req.id,
+      answers,
+    })
+  }
+
+  const handleQuestionReject = () => {
+    const req = questionRequest()
+    if (!req || !data.rejectQuestion) return
+    data.rejectQuestion({
+      sessionID: req.sessionID,
+      requestID: req.id,
+    })
+  }
+
+  const handlePlanApprove = () => {
+    const req = planRequest()
+    if (!req || !data.respondToPlan) return
+    data.respondToPlan({
+      sessionID: req.sessionID,
+      requestID: req.id,
+      approved: true,
+    })
+  }
+
+  const handlePlanReject = (message?: string) => {
+    const req = planRequest()
+    if (!req || !data.respondToPlan) return
+    data.respondToPlan({
+      sessionID: req.sessionID,
+      requestID: req.id,
+      approved: false,
+      message,
+    })
+  }
+
   const emptyInput: Record<string, any> = {}
   const emptyMetadata: Record<string, any> = {}
 
@@ -511,8 +591,16 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
 
   const render = ToolRegistry.render(part.tool) ?? GenericTool
 
+  // Use data-permission for sticky behavior (includes permission, question, and plan states)
+  // For plans, only show attention state when pending (not yet answered)
+  const hasPendingPlan = () => {
+    const plan = planRequest() as any
+    return !!plan && typeof plan.approved !== "boolean"
+  }
+  const needsAttention = () => showPermission() || !!questionRequest() || hasPendingPlan()
+
   return (
-    <div data-component="tool-part-wrapper" data-permission={showPermission()}>
+    <div data-component="tool-part-wrapper" data-permission={needsAttention()}>
       <Switch>
         <Match when={part.state.status === "error" && part.state.error}>
           {(error) => {
@@ -550,6 +638,12 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
             hideDetails={props.hideDetails}
             forceOpen={forceOpen()}
             defaultOpen={props.defaultOpen}
+            questionRequest={questionRequest()}
+            onQuestionReply={handleQuestionReply}
+            onQuestionReject={handleQuestionReject}
+            planRequest={planRequest}
+            onPlanApprove={handlePlanApprove}
+            onPlanReject={handlePlanReject}
           />
         </Match>
       </Switch>
@@ -1049,6 +1143,139 @@ ToolRegistry.register({
               )}
             </For>
           </div>
+        </Show>
+      </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
+  name: "askuserquestion",
+  render(props) {
+    const question = () => props.input.questions?.[0]?.question ?? ""
+    const hasPendingQuestion = () => !!props.questionRequest
+
+    // Convert answered data to string[][] indexed by question
+    // Answers are in output as plaintext: "question"="answer"
+    const selectedAnswers = createMemo(() => {
+      const questions = props.input.questions as Array<{ question: string }> | undefined
+      if (!questions) return undefined
+
+      // Try input.answers first (Record<string, string>)
+      const inputAnswers = props.input.answers as Record<string, string> | undefined
+      if (inputAnswers && Object.keys(inputAnswers).length > 0) {
+        return questions.map((q) => {
+          const answer = inputAnswers[q.question]
+          return answer ? answer.split(", ") : []
+        })
+      }
+
+      // Parse from output plaintext format: "question"="answer"
+      if (props.output) {
+        const answersMap: Record<string, string> = {}
+        // Match patterns like "question text"="answer text"
+        const regex = /"([^"]+)"="([^"]+)"/g
+        let match
+        while ((match = regex.exec(props.output)) !== null) {
+          answersMap[match[1]] = match[2]
+        }
+        if (Object.keys(answersMap).length > 0) {
+          return questions.map((q) => {
+            const answer = answersMap[q.question]
+            return answer ? answer.split(", ") : []
+          })
+        }
+      }
+
+      return undefined
+    })
+
+    const isCompleted = () => {
+      // Show readonly when: no pending question AND (has answers OR status is completed)
+      if (hasPendingQuestion()) return false
+      if (selectedAnswers()) return true
+      return props.status === "completed"
+    }
+
+    return (
+      <BasicTool
+        {...props}
+        icon="speech-bubble"
+        trigger={{
+          title: "Question",
+          subtitle: question(),
+        }}
+        forceOpen={hasPendingQuestion()}
+      >
+        {/* Pending question - interactive */}
+        <Show when={props.questionRequest}>
+          {(request) => (
+            <InlineQuestion
+              questions={request().questions}
+              onReply={(answers) => props.onQuestionReply?.(answers)}
+              onReject={() => props.onQuestionReject?.()}
+            />
+          )}
+        </Show>
+
+        {/* Completed question - readonly */}
+        <Show when={isCompleted()}>
+          <InlineQuestion
+            questions={props.input.questions}
+            selectedAnswers={selectedAnswers() ?? props.input.questions?.map(() => []) ?? []}
+          />
+        </Show>
+      </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
+  name: "exitplanmode",
+  render(props) {
+    // Check if plan is pending (exists but not yet answered)
+    const hasPendingPlan = () => {
+      const plan = props.planRequest?.() as any
+      return !!plan && typeof plan.approved !== "boolean"
+    }
+
+    // Parse approval result from planRequest (updated by plan.replied event)
+    const approvalResult = createMemo(() => {
+      const plan = props.planRequest?.() as any
+      if (plan && typeof plan.approved === "boolean") {
+        return plan.approved
+      }
+      return undefined
+    })
+
+    // Build subtitle with rejection message if present
+    const subtitle = () => {
+      if (hasPendingPlan()) return "Awaiting approval"
+      if (approvalResult() === true) return "Approved"
+      if (approvalResult() === false) {
+        const plan = props.planRequest?.() as any
+        const msg = plan?.message
+        return msg ? `Rejected - ${msg}` : "Rejected"
+      }
+      return undefined
+    }
+
+    return (
+      <BasicTool
+        {...props}
+        icon="checklist"
+        trigger={{
+          title: "Plan",
+          subtitle: subtitle(),
+        }}
+        forceOpen={hasPendingPlan()}
+      >
+        <Show when={hasPendingPlan()}>
+          <InlinePlanApproval
+            plan={props.planRequest?.()?.plan ?? ""}
+            onApprove={() => props.onPlanApprove?.()}
+            onReject={(message) => props.onPlanReject?.(message)}
+          />
         </Show>
       </BasicTool>
     )

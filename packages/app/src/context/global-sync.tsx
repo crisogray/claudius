@@ -456,7 +456,24 @@ function createGlobalSync() {
         )
         break
       }
-      case "plan.replied":
+      case "plan.replied": {
+        const requests = store.plan[event.properties.sessionID]
+        if (!requests) break
+        const result = Binary.search(requests, event.properties.requestID, (r) => r.id)
+        if (!result.found) break
+        // Update the plan with approval result instead of removing
+        const props = event.properties as typeof event.properties & { message?: string }
+        setStore(
+          "plan",
+          event.properties.sessionID,
+          result.index,
+          produce((draft) => {
+            ;(draft as any).approved = props.approved
+            ;(draft as any).message = props.message
+          }),
+        )
+        break
+      }
       case "plan.rejected": {
         const requests = store.plan[event.properties.sessionID]
         if (!requests) break

@@ -1,4 +1,4 @@
-import type { Message, Session, Part, FileDiff, SessionStatus, PermissionRequest } from "@opencode-ai/sdk/v2"
+import type { Message, Session, Part, FileDiff, SessionStatus, PermissionRequest, QuestionRequest, PlanRequest } from "@opencode-ai/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 
@@ -16,6 +16,12 @@ type Data = {
   permission?: {
     [sessionID: string]: PermissionRequest[]
   }
+  question?: {
+    [sessionID: string]: QuestionRequest[]
+  }
+  plan?: {
+    [sessionID: string]: PlanRequest[]
+  }
   message: {
     [sessionID: string]: Message[]
   }
@@ -30,6 +36,24 @@ export type PermissionRespondFn = (input: {
   response: "once" | "always" | "reject"
 }) => void
 
+export type QuestionRespondFn = (input: {
+  sessionID: string
+  requestID: string
+  answers: string[][]
+}) => void
+
+export type QuestionRejectFn = (input: {
+  sessionID: string
+  requestID: string
+}) => void
+
+export type PlanRespondFn = (input: {
+  sessionID: string
+  requestID: string
+  approved: boolean
+  message?: string
+}) => void
+
 export type NavigateToSessionFn = (sessionID: string) => void
 
 export const { use: useData, provider: DataProvider } = createSimpleContext({
@@ -38,6 +62,9 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
     data: Data
     directory: string
     onPermissionRespond?: PermissionRespondFn
+    onQuestionRespond?: QuestionRespondFn
+    onQuestionReject?: QuestionRejectFn
+    onPlanRespond?: PlanRespondFn
     onNavigateToSession?: NavigateToSessionFn
   }) => {
     return {
@@ -48,6 +75,9 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
         return props.directory
       },
       respondToPermission: props.onPermissionRespond,
+      respondToQuestion: props.onQuestionRespond,
+      rejectQuestion: props.onQuestionReject,
+      respondToPlan: props.onPlanRespond,
       navigateToSession: props.onNavigateToSession,
     }
   },

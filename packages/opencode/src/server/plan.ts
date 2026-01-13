@@ -85,9 +85,20 @@ export const PlanRoute = new Hono()
         requestID: z.string(),
       }),
     ),
+    validator(
+      "json",
+      z.object({
+        message: z.string().optional(),
+      }),
+    ),
     async (c) => {
       const params = c.req.valid("param")
-      await PlanApproval.reject(params.requestID)
+      const body = c.req.valid("json")
+      await PlanApproval.reply({
+        requestID: params.requestID,
+        approved: false,
+        message: body.message,
+      })
       return c.json(true)
     },
   )

@@ -32,6 +32,7 @@ export namespace PlanApproval {
         sessionID: z.string(),
         requestID: z.string(),
         approved: z.boolean(),
+        message: z.string().optional(),
       }),
     ),
     Rejected: BusEvent.define(
@@ -43,12 +44,17 @@ export namespace PlanApproval {
     ),
   }
 
+  export type AskResult = {
+    approved: boolean
+    message?: string
+  }
+
   const state = Instance.state(async () => {
     const pending: Record<
       string,
       {
         info: Request
-        resolve: (approved: boolean) => void
+        resolve: (result: AskResult) => void
         reject: (e: any) => void
       }
     > = {}
@@ -58,13 +64,13 @@ export namespace PlanApproval {
     }
   })
 
-  export async function ask(input: { sessionID: string; plan: string }): Promise<boolean> {
+  export async function ask(input: { sessionID: string; plan: string }): Promise<AskResult> {
     const s = await state()
     const id = Identifier.ascending("plan")
 
     log.info("asking for plan approval", { id })
 
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<AskResult>((resolve, reject) => {
       const info: Request = {
         id,
         sessionID: input.sessionID,
@@ -79,7 +85,7 @@ export namespace PlanApproval {
     })
   }
 
-  export async function reply(input: { requestID: string; approved: boolean }): Promise<void> {
+  export async function reply(input: { requestID: string; approved: boolean; message?: string }): Promise<void> {
     const s = await state()
     const existing = s.pending[input.requestID]
     if (!existing) {
@@ -88,15 +94,16 @@ export namespace PlanApproval {
     }
     delete s.pending[input.requestID]
 
-    log.info("plan replied", { requestID: input.requestID, approved: input.approved })
+    log.info("plan replied", { requestID: input.requestID, approved: input.approved, message: input.message })
 
     Bus.publish(Event.Replied, {
       sessionID: existing.info.sessionID,
       requestID: existing.info.id,
       approved: input.approved,
+      message: input.message,
     })
 
-    existing.resolve(input.approved)
+    existing.resolve({ approved: input.approved, message: input.message })
   }
 
   export async function reject(requestID: string): Promise<void> {

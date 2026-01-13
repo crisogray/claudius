@@ -212,30 +212,29 @@ export namespace SDKPermissions {
 
     try {
       // Ask for plan approval via PlanApproval module (publishes events for UI)
-      const approved = await PlanApproval.ask({
+      const result = await PlanApproval.ask({
         sessionID,
         plan,
       })
 
-      log.info("ExitPlanMode answered", { approved })
+      log.info("ExitPlanMode answered", { approved: result.approved, message: result.message })
 
-      return {
-        behavior: "allow",
-        updatedInput: {
-          plan,
-          approved,
-        },
+      // If plan was approved, allow the tool to proceed
+      if (result.approved) {
+        return { behavior: "allow", updatedInput: input }
       }
+
+      // Plan was rejected - deny the tool call so the SDK knows
+      // The rejection message is passed to the assistant
+      const rejectionMessage = result.message
+        ? `User rejected the plan: ${result.message}`
+        : "User rejected the plan: Please revise based on their feedback."
+
+      return { behavior: "deny", message: rejectionMessage }
     } catch (error) {
-      // User dismissed/rejected the plan
+      // User dismissed the plan approval dialog
       if (error instanceof PlanApproval.RejectedError) {
-        return {
-          behavior: "allow",
-          updatedInput: {
-            plan,
-            approved: false,
-          },
-        }
+        return { behavior: "deny", message: "User dismissed the plan approval request" }
       }
       // Check if aborted
       if (options.signal.aborted) {

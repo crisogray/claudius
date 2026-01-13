@@ -15,6 +15,24 @@ export namespace SDKStream {
   const log = Log.create({ service: "sdk.stream" })
 
   /**
+   * Normalize tool input for consistent storage
+   * Converts SDK snake_case params to camelCase for UI compatibility
+   */
+  function normalizeToolInput(input: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(input)) {
+      // Convert snake_case to camelCase
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+      result[camelKey] = value
+      // Also keep original key for tools that expect snake_case
+      if (camelKey !== key) {
+        result[key] = value
+      }
+    }
+    return result
+  }
+
+  /**
    * Process SDK stream and convert to MessageV2/Parts
    *
    * This is the core conversion layer that:
@@ -481,7 +499,7 @@ export namespace SDKStream {
                   // Parse accumulated JSON into input
                   const state = part.state as MessageV2.ToolStatePending
                   try {
-                    state.input = JSON.parse(state.raw || "{}")
+                    state.input = normalizeToolInput(JSON.parse(state.raw || "{}"))
                   } catch {
                     state.input = {}
                   }
