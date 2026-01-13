@@ -14,6 +14,7 @@ Based on thorough research of the Claude Agent SDK documentation (January 2026) 
 | **Session Resume** | `resume: sessionId` working |
 | **Resume at Specific Message** | `resumeSessionAt` via revert system |
 | **Session Forking** | `forkSession: true` via fork dialog |
+| **Settings Sources Control** | `settingSources: ["project"]` - loads CLAUDE.md |
 | **MCP Servers** | Both stdio and SSE transports |
 | **Custom Tools** | LSP tool via SDK MCP server pattern |
 | **Subagents** | Child sessions, parent tracking, tool summaries |
@@ -76,15 +77,7 @@ options: {
 ```
 **Use case**: Security hardening without external sandbox-runtime.
 
-### 5. Settings Sources Control (`settingSources`)
-```typescript
-options: {
-  settingSources: ['project']  // Only load .claude/settings.json, ignore user settings
-}
-```
-**Use case**: CI/CD consistency, isolated testing environments.
-
-### 6. CLAUDE.md Loading
+### 5. CLAUDE.md Loading
 ```typescript
 options: {
   systemPrompt: { type: 'preset', preset: 'claude_code' },
@@ -93,7 +86,7 @@ options: {
 ```
 **Use case**: We're not loading CLAUDE.md files from projects - this is likely missing.
 
-### 7. SDK Plugins (`plugins`)
+### 6. SDK Plugins (`plugins`)
 ```typescript
 options: {
   plugins: [
@@ -103,7 +96,7 @@ options: {
 ```
 **Use case**: Load Claude Code-style plugins with commands, agents, skills, hooks.
 
-### 8. Context Beta Flag (`betas`)
+### 7. Context Beta Flag (`betas`)
 ```typescript
 options: {
   betas: ['context-1m-2025-08-07']  // 1M token context
@@ -111,7 +104,7 @@ options: {
 ```
 **Use case**: Enable extended context window for large codebases.
 
-### 9. Query Helper Methods
+### 8. Query Helper Methods
 ```typescript
 const q = query({ prompt, options });
 await q.setMaxThinkingTokens(50000);  // We have setModel, not this
@@ -120,7 +113,7 @@ await q.accountInfo();  // Account details
 await q.supportedCommands();  // Slash commands
 ```
 
-### 10. Notification Hook (TypeScript SDK only)
+### 9. Notification Hook (TypeScript SDK only)
 ```typescript
 hooks: {
   Notification: [{ hooks: [async (input) => {
@@ -139,16 +132,15 @@ hooks: {
 ### High Value, Low Effort
 1. **`maxTurns`** - Simple guardrail, prevents infinite loops
 2. **`maxBudgetUsd`** - Cost protection
-3. **`settingSources: ['project']`** - Load CLAUDE.md files
-4. **Per-model usage tracking** - Better cost visibility
+3. **Per-model usage tracking** - Better cost visibility
 
 ### High Value, Medium Effort
-5. **Structured Outputs** - Reliable JSON for automation workflows
+4. **Structured Outputs** - Reliable JSON for automation workflows
 
 ### Future Consideration
-6. **Sandbox settings** - If we want programmatic sandbox control
-7. **Plugins** - If we want Claude Code plugin compatibility
-8. **1M context beta** - For large codebase support
+5. **Sandbox settings** - If we want programmatic sandbox control
+6. **Plugins** - If we want Claude Code plugin compatibility
+7. **1M context beta** - For large codebase support
 
 ---
 
