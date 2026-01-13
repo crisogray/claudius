@@ -327,6 +327,12 @@ export namespace MessageV2 {
     system: z.string().optional(),
     tools: z.record(z.string(), z.boolean()).optional(),
     variant: z.string().optional(),
+    // SDK-specific fields for fork support
+    sdk: z
+      .object({
+        uuid: z.string().optional(), // SDK message UUID (captured from replay)
+      })
+      .optional(),
   }).meta({
     ref: "UserMessage",
   })

@@ -84,6 +84,7 @@ export namespace Session {
           partID: z.string().optional(),
           snapshot: z.string().optional(),
           diff: z.string().optional(),
+          sdkUuid: z.string().optional(), // SDK message UUID to resume at
         })
         .optional(),
       // SDK-specific fields for session resume
@@ -92,6 +93,16 @@ export namespace Session {
           sessionId: z.string().optional(), // Claude Agent SDK session ID
           model: z.string().optional(), // Model used by SDK
           tools: z.string().array().optional(), // Tools available in SDK session
+        })
+        .optional(),
+      // Fork context - set when this session was forked from another
+      fork: z
+        .object({
+          fromSessionID: z.string(), // Original session ID
+          fromMessageID: z.string(), // Message ID that was selected for fork
+          sdkForkPoint: z.string().optional(), // SDK message UUID to resume at
+          originalSdkSessionId: z.string().optional(), // Original session's SDK ID
+          gitRef: z.string().optional(), // Commit/ref to checkout in new worktree
         })
         .optional(),
     })
@@ -166,37 +177,54 @@ export namespace Session {
   export const fork = fn(
     z.object({
       sessionID: Identifier.schema("session"),
-      messageID: Identifier.schema("message").optional(),
+      messageID: Identifier.schema("message"),
     }),
     async (input) => {
+      const originalSession = await get(input.sessionID)
+      const msgs = await messages({ sessionID: input.sessionID })
+      const forkMsg = msgs.find((m) => m.info.id === input.messageID)
+
+      // Get SDK UUID from the selected message
+      const sdkForkPoint = forkMsg?.info.sdk?.uuid
+      const originalSdkSessionId = originalSession.sdk?.sessionId
+
+      if (!originalSdkSessionId || !sdkForkPoint) {
+        throw new Error("Cannot fork: session missing SDK context")
+      }
+
+      // Capture current git HEAD for future worktree support
+      const { $ } = await import("bun")
+      const gitRef = await $`git rev-parse HEAD`
+        .quiet()
+        .nothrow()
+        .cwd(Instance.directory)
+        .text()
+        .then((x) => x.trim() || undefined)
+        .catch(() => undefined)
+
+      // Create empty session with fork context (SDK handles history via resumeSessionAt)
       const session = await createNext({
         directory: Instance.directory,
       })
-      const msgs = await messages({ sessionID: input.sessionID })
-      const idMap = new Map<string, string>()
 
-      for (const msg of msgs) {
-        if (input.messageID && msg.info.id >= input.messageID) break
-        const newID = Identifier.ascending("message")
-        idMap.set(msg.info.id, newID)
-
-        const parentID = msg.info.role === "assistant" && msg.info.parentID ? idMap.get(msg.info.parentID) : undefined
-        const cloned = await updateMessage({
-          ...msg.info,
-          sessionID: session.id,
-          id: newID,
-          ...(parentID && { parentID }),
-        })
-
-        for (const part of msg.parts) {
-          await updatePart({
-            ...part,
-            id: Identifier.ascending("part"),
-            messageID: cloned.id,
-            sessionID: session.id,
-          })
+      await update(session.id, (draft) => {
+        draft.fork = {
+          fromSessionID: input.sessionID,
+          fromMessageID: input.messageID,
+          sdkForkPoint,
+          originalSdkSessionId,
+          gitRef,
         }
-      }
+      })
+
+      log.info("fork created", {
+        sessionID: session.id,
+        fromSessionID: input.sessionID,
+        fromMessageID: input.messageID,
+        sdkForkPoint,
+        gitRef,
+      })
+
       return session
     },
   )

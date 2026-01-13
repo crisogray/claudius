@@ -12,6 +12,7 @@ Based on thorough research of the Claude Agent SDK documentation (January 2026) 
 | **Permission Handling** | `canUseTool` callback with approval flows |
 | **Streaming Input** | Full `AsyncIterable<SDKUserMessage>` support |
 | **Session Resume** | `resume: sessionId` working |
+| **Resume at Specific Message** | `resumeSessionAt` via revert system |
 | **MCP Servers** | Both stdio and SSE transports |
 | **Custom Tools** | LSP tool via SDK MCP server pattern |
 | **Subagents** | Child sessions, parent tracking, tool summaries |
@@ -62,16 +63,7 @@ options: {
 ```
 **Use case**: Graceful degradation if primary model unavailable.
 
-### 4. Resume at Specific Message (`resumeSessionAt`)
-```typescript
-options: {
-  resume: sessionId,
-  resumeSessionAt: 'message-uuid'  // Resume from specific point
-}
-```
-**Use case**: Time-travel debugging, "try again from here".
-
-### 5. Max Turns Limit (`maxTurns`)
+### 4. Max Turns Limit (`maxTurns`)
 ```typescript
 options: {
   maxTurns: 10  // Prevent infinite loops
@@ -79,7 +71,7 @@ options: {
 ```
 **Use case**: Guardrail against agent getting stuck.
 
-### 6. Sandbox Configuration (programmatic)
+### 5. Sandbox Configuration (programmatic)
 ```typescript
 options: {
   sandbox: {
@@ -92,7 +84,7 @@ options: {
 ```
 **Use case**: Security hardening without external sandbox-runtime.
 
-### 7. Settings Sources Control (`settingSources`)
+### 6. Settings Sources Control (`settingSources`)
 ```typescript
 options: {
   settingSources: ['project']  // Only load .claude/settings.json, ignore user settings
@@ -100,7 +92,7 @@ options: {
 ```
 **Use case**: CI/CD consistency, isolated testing environments.
 
-### 8. CLAUDE.md Loading
+### 7. CLAUDE.md Loading
 ```typescript
 options: {
   systemPrompt: { type: 'preset', preset: 'claude_code' },
@@ -109,7 +101,7 @@ options: {
 ```
 **Use case**: We're not loading CLAUDE.md files from projects - this is likely missing.
 
-### 9. SDK Plugins (`plugins`)
+### 8. SDK Plugins (`plugins`)
 ```typescript
 options: {
   plugins: [
@@ -119,7 +111,7 @@ options: {
 ```
 **Use case**: Load Claude Code-style plugins with commands, agents, skills, hooks.
 
-### 10. Context Beta Flag (`betas`)
+### 9. Context Beta Flag (`betas`)
 ```typescript
 options: {
   betas: ['context-1m-2025-08-07']  // 1M token context
@@ -127,7 +119,7 @@ options: {
 ```
 **Use case**: Enable extended context window for large codebases.
 
-### 11. Query Helper Methods
+### 10. Query Helper Methods
 ```typescript
 const q = query({ prompt, options });
 await q.setMaxThinkingTokens(50000);  // We have setModel, not this
@@ -136,7 +128,7 @@ await q.accountInfo();  // Account details
 await q.supportedCommands();  // Slash commands
 ```
 
-### 12. Notification Hook (TypeScript SDK only)
+### 11. Notification Hook (TypeScript SDK only)
 ```typescript
 hooks: {
   Notification: [{ hooks: [async (input) => {
@@ -161,12 +153,11 @@ hooks: {
 ### High Value, Medium Effort
 5. **Session Forking** - Great UX for exploration
 6. **Structured Outputs** - Reliable JSON for automation workflows
-7. **`resumeSessionAt`** - "Try again from here" feature
 
 ### Future Consideration
-8. **Sandbox settings** - If we want programmatic sandbox control
-9. **Plugins** - If we want Claude Code plugin compatibility
-10. **1M context beta** - For large codebase support
+7. **Sandbox settings** - If we want programmatic sandbox control
+8. **Plugins** - If we want Claude Code plugin compatibility
+9. **1M context beta** - For large codebase support
 
 ---
 

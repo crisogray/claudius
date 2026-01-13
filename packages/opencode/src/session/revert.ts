@@ -57,6 +57,13 @@ export namespace SessionRevert {
       revert.snapshot = session.revert?.snapshot ?? (await Snapshot.track())
       await Snapshot.revert(patches)
       if (revert.snapshot) revert.diff = await Snapshot.diff(revert.snapshot)
+
+      // Capture SDK UUID for resumeSessionAt
+      const revertMsg = all.find((m) => m.info.id === revert.messageID)
+      if (revertMsg?.info.sdk?.uuid) {
+        revert.sdkUuid = revertMsg.info.sdk.uuid
+      }
+
       return Session.update(input.sessionID, (draft) => {
         draft.revert = revert
       })

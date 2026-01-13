@@ -107,6 +107,10 @@ export namespace SDK {
     log.info("starting SDK", { sessionID: input.sessionID, variant: input.variant })
 
     const session = await Session.get(input.sessionID)
+
+    // Capture revert context BEFORE cleanup clears it
+    const revertSdkUuid = session.revert?.sdkUuid
+
     await SessionRevert.cleanup(session)
 
     const config = await Config.get()
@@ -193,6 +197,31 @@ export namespace SDK {
       variant: input.variant,
     })
 
+    // Handle fork context - use SDK-native forking
+    let forkOptions: { resume?: string; resumeSessionAt?: string; forkSession?: boolean } = {}
+    if (session.fork) {
+      const { originalSdkSessionId, sdkForkPoint } = session.fork
+      if (originalSdkSessionId && sdkForkPoint) {
+        forkOptions = {
+          resume: originalSdkSessionId,
+          resumeSessionAt: sdkForkPoint,
+          forkSession: true,
+        }
+        log.info("SDK fork", { from: originalSdkSessionId, at: sdkForkPoint })
+      }
+      // Clear fork context after use
+      await Session.update(input.sessionID, (draft) => {
+        draft.fork = undefined
+      })
+    }
+
+    // Handle revert context - resume same session at earlier point
+    let revertOptions: { resumeSessionAt?: string } = {}
+    if (revertSdkUuid && !session.fork) {
+      revertOptions = { resumeSessionAt: revertSdkUuid }
+      log.info("SDK revert resume", { sessionID: input.sessionID, at: revertSdkUuid })
+    }
+
     try {
       // Start real SDK query
       const activeQuery = query({
@@ -206,7 +235,9 @@ export namespace SDK {
           permissionMode: options.permissionMode,
           hooks: options.hooks,
           canUseTool: options.canUseTool,
-          resume: options.resume,
+          resume: forkOptions.resume ?? options.resume,
+          resumeSessionAt: forkOptions.resumeSessionAt ?? revertOptions.resumeSessionAt,
+          forkSession: forkOptions.forkSession,
           systemPrompt: options.systemPrompt,
           settingSources: ["project"],
           includePartialMessages: true,

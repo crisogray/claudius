@@ -180,6 +180,8 @@ export namespace SDKConvert {
 
   export interface SDKUserMessage {
     type: "user"
+    uuid?: string // Optional when sending, required when replayed
+    session_id?: string // SDK session ID
     message: {
       content: ContentBlock[]
     }

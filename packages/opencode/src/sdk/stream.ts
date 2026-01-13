@@ -294,6 +294,33 @@ export namespace SDKStream {
           }
 
           case "user": {
+            // Capture UUID for user message replays (during session resume)
+            // This enables SDK-native forking via resumeSessionAt
+            if (message.uuid) {
+              const msgs = await Session.messages({ sessionID })
+              // Find user messages without SDK UUID and match by content
+              const firstTextContent = message.message.content.find((b) => b.type === "text")
+              if (firstTextContent && firstTextContent.type === "text") {
+                const targetText = firstTextContent.text
+                for (const msg of msgs) {
+                  if (msg.info.role !== "user") continue
+                  if (msg.info.sdk?.uuid) continue // Already has UUID
+
+                  // Check if this message has matching text content
+                  const textPart = msg.parts.find((p) => p.type === "text" && !("synthetic" in p && p.synthetic))
+                  if (textPart && textPart.type === "text" && textPart.text === targetText) {
+                    // Found matching message - update with SDK UUID
+                    await Session.updateMessage({
+                      ...msg.info,
+                      sdk: { uuid: message.uuid },
+                    } as MessageV2.User)
+                    log.info("captured user message UUID", { messageID: msg.info.id, uuid: message.uuid })
+                    break
+                  }
+                }
+              }
+            }
+
             // Tool results come as user messages with tool_result content
             // Note: tool_result messages don't have parent_tool_use_id, but the tool_use_id
             // tells us which tool completed. We need to find the right session.
