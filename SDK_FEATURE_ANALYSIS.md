@@ -13,6 +13,7 @@ Based on thorough research of the Claude Agent SDK documentation (January 2026) 
 | **Streaming Input** | Full `AsyncIterable<SDKUserMessage>` support |
 | **Session Resume** | `resume: sessionId` working |
 | **Resume at Specific Message** | `resumeSessionAt` via revert system |
+| **Session Forking** | `forkSession: true` via fork dialog |
 | **MCP Servers** | Both stdio and SSE transports |
 | **Custom Tools** | LSP tool via SDK MCP server pattern |
 | **Subagents** | Child sessions, parent tracking, tool summaries |
@@ -37,16 +38,7 @@ Based on thorough research of the Claude Agent SDK documentation (January 2026) 
 
 ## NOT IMPLEMENTED - OPPORTUNITIES
 
-### 1. Session Forking (`forkSession: true`)
-```typescript
-options: {
-  resume: sessionId,
-  forkSession: true  // Creates new branch, preserves original
-}
-```
-**Use case**: Let users explore different approaches from same starting point without losing original conversation.
-
-### 2. Budget Limits (`maxBudgetUsd`)
+### 1. Budget Limits (`maxBudgetUsd`)
 ```typescript
 options: {
   maxBudgetUsd: 5.00  // Hard stop at $5
@@ -54,7 +46,7 @@ options: {
 ```
 **Use case**: Prevent runaway costs, especially for hosted/multi-tenant scenarios.
 
-### 3. Fallback Model (`fallbackModel`)
+### 2. Fallback Model (`fallbackModel`)
 ```typescript
 options: {
   model: 'claude-opus-4-5-20251101',
@@ -63,7 +55,7 @@ options: {
 ```
 **Use case**: Graceful degradation if primary model unavailable.
 
-### 4. Max Turns Limit (`maxTurns`)
+### 3. Max Turns Limit (`maxTurns`)
 ```typescript
 options: {
   maxTurns: 10  // Prevent infinite loops
@@ -71,7 +63,7 @@ options: {
 ```
 **Use case**: Guardrail against agent getting stuck.
 
-### 5. Sandbox Configuration (programmatic)
+### 4. Sandbox Configuration (programmatic)
 ```typescript
 options: {
   sandbox: {
@@ -84,7 +76,7 @@ options: {
 ```
 **Use case**: Security hardening without external sandbox-runtime.
 
-### 6. Settings Sources Control (`settingSources`)
+### 5. Settings Sources Control (`settingSources`)
 ```typescript
 options: {
   settingSources: ['project']  // Only load .claude/settings.json, ignore user settings
@@ -92,7 +84,7 @@ options: {
 ```
 **Use case**: CI/CD consistency, isolated testing environments.
 
-### 7. CLAUDE.md Loading
+### 6. CLAUDE.md Loading
 ```typescript
 options: {
   systemPrompt: { type: 'preset', preset: 'claude_code' },
@@ -101,7 +93,7 @@ options: {
 ```
 **Use case**: We're not loading CLAUDE.md files from projects - this is likely missing.
 
-### 8. SDK Plugins (`plugins`)
+### 7. SDK Plugins (`plugins`)
 ```typescript
 options: {
   plugins: [
@@ -111,7 +103,7 @@ options: {
 ```
 **Use case**: Load Claude Code-style plugins with commands, agents, skills, hooks.
 
-### 9. Context Beta Flag (`betas`)
+### 8. Context Beta Flag (`betas`)
 ```typescript
 options: {
   betas: ['context-1m-2025-08-07']  // 1M token context
@@ -119,7 +111,7 @@ options: {
 ```
 **Use case**: Enable extended context window for large codebases.
 
-### 10. Query Helper Methods
+### 9. Query Helper Methods
 ```typescript
 const q = query({ prompt, options });
 await q.setMaxThinkingTokens(50000);  // We have setModel, not this
@@ -128,7 +120,7 @@ await q.accountInfo();  // Account details
 await q.supportedCommands();  // Slash commands
 ```
 
-### 11. Notification Hook (TypeScript SDK only)
+### 10. Notification Hook (TypeScript SDK only)
 ```typescript
 hooks: {
   Notification: [{ hooks: [async (input) => {
@@ -151,13 +143,12 @@ hooks: {
 4. **Per-model usage tracking** - Better cost visibility
 
 ### High Value, Medium Effort
-5. **Session Forking** - Great UX for exploration
-6. **Structured Outputs** - Reliable JSON for automation workflows
+5. **Structured Outputs** - Reliable JSON for automation workflows
 
 ### Future Consideration
-7. **Sandbox settings** - If we want programmatic sandbox control
-8. **Plugins** - If we want Claude Code plugin compatibility
-9. **1M context beta** - For large codebase support
+6. **Sandbox settings** - If we want programmatic sandbox control
+7. **Plugins** - If we want Claude Code plugin compatibility
+8. **1M context beta** - For large codebase support
 
 ---
 
