@@ -220,6 +220,30 @@ export function InlineQuestion(props: InlineQuestionProps) {
         </For>
       </div>
 
+      {/* Navigation for readonly multi-question */}
+      <Show when={readonly() && total() > 1}>
+        <div data-slot="question-actions">
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => setStore("tab", store.tab - 1)}
+            disabled={store.tab === 0}
+          >
+            Back
+          </Button>
+          <div data-slot="question-actions-spacer" />
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => setStore("tab", store.tab + 1)}
+            disabled={isLast()}
+          >
+            Next
+          </Button>
+        </div>
+      </Show>
+
+      {/* Actions for answering */}
       <Show when={!readonly()}>
         <div data-slot="question-actions">
           <Show when={total() > 1 && store.tab > 0}>
