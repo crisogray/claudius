@@ -13,7 +13,7 @@ import { AsyncStorage } from "@solid-primitives/storage"
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http"
 import { Store } from "@tauri-apps/plugin-store"
 import { Logo } from "@opencode-ai/ui/logo"
-import { Suspense, createResource, ParentProps } from "solid-js"
+import { Suspense, createResource, type JSX, type Accessor } from "solid-js"
 
 import { UPDATER_ENABLED } from "./updater"
 import { createMenu } from "./menu"
@@ -257,6 +257,15 @@ const platform: Platform = {
 
   // @ts-expect-error
   fetch: tauriFetch,
+
+  getDefaultServerUrl: async () => {
+    const result = await invoke<string | null>("get_default_server_url").catch(() => null)
+    return result
+  },
+
+  setDefaultServerUrl: async (url: string | null) => {
+    await invoke("set_default_server_url", { url })
+  },
 }
 
 createMenu()
@@ -273,25 +282,22 @@ render(() => {
         <div class="mx-px bg-background-base border-b border-border-weak-base h-8" data-tauri-drag-region />
       )}
       <AppBaseProviders>
-        <ServerGate>
-          <AppInterface />
-        </ServerGate>
+        <ServerGate>{(url) => <AppInterface defaultUrl={url()} />}</ServerGate>
       </AppBaseProviders>
     </PlatformProvider>
   )
 }, root!)
 
 // Gate component that waits for the server to be ready
-function ServerGate(props: ParentProps) {
-  const [status] = createResource(async () => {
-    if (window.__OPENCODE__?.serverReady) return
-    return await invoke("ensure_server_started")
+function ServerGate(props: { children: (url: Accessor<string>) => JSX.Element }) {
+  const [url] = createResource(async () => {
+    return await invoke<string>("ensure_server_ready")
   })
 
   return (
     // Not using suspense as not all components are compatible with it (undefined refs)
     <Show
-      when={status.state !== "pending"}
+      when={url.state !== "pending" && url()}
       fallback={
         <div class="h-screen w-screen flex flex-col items-center justify-center bg-background-base">
           <Logo class="w-xl opacity-12 animate-pulse" />
@@ -299,9 +305,7 @@ function ServerGate(props: ParentProps) {
         </div>
       }
     >
-      {/* Trigger error boundary without rendering the returned value */}
-      {(status(), null)}
-      {props.children}
+      {props.children(() => url()!)}
     </Show>
   )
 }

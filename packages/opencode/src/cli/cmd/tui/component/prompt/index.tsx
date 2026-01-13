@@ -317,6 +317,38 @@ export function Prompt(props: PromptProps) {
 
   onMount(() => {
     promptPartTypeId = input.extmarks.registerType("prompt-part")
+    props.ref?.({
+      get focused() {
+        return input.focused
+      },
+      get current() {
+        return store.prompt
+      },
+      focus() {
+        input.focus()
+      },
+      blur() {
+        input.blur()
+      },
+      set(prompt) {
+        input.setText(prompt.input)
+        setStore("prompt", prompt)
+        restoreExtmarksFromParts(prompt.parts)
+        input.gotoBufferEnd()
+      },
+      reset() {
+        input.clear()
+        input.extmarks.clear()
+        setStore("prompt", {
+          input: "",
+          parts: [],
+        })
+        setStore("extmarkToPartIndex", new Map())
+      },
+      submit() {
+        submit()
+      },
+    })
   })
 
   function restoreExtmarksFromParts(parts: PromptInfo["parts"]) {
@@ -451,39 +483,6 @@ export function Prompt(props: PromptProps) {
       },
     },
   ])
-
-  props.ref?.({
-    get focused() {
-      return input.focused
-    },
-    get current() {
-      return store.prompt
-    },
-    focus() {
-      input.focus()
-    },
-    blur() {
-      input.blur()
-    },
-    set(prompt) {
-      input.setText(prompt.input)
-      setStore("prompt", prompt)
-      restoreExtmarksFromParts(prompt.parts)
-      input.gotoBufferEnd()
-    },
-    reset() {
-      input.clear()
-      input.extmarks.clear()
-      setStore("prompt", {
-        input: "",
-        parts: [],
-      })
-      setStore("extmarkToPartIndex", new Map())
-    },
-    submit() {
-      submit()
-    },
-  })
 
   async function submit() {
     if (props.disabled) return
@@ -911,7 +910,6 @@ export function Prompt(props: PromptProps) {
                 // Force layout update and render for the pasted content
                 setTimeout(() => {
                   input.getLayoutNode().markDirty()
-                  input.gotoBufferEnd()
                   renderer.requestRender()
                 }, 0)
               }}
@@ -1058,7 +1056,10 @@ export function Prompt(props: PromptProps) {
               <Switch>
                 <Match when={store.mode === "normal"}>
                   <text fg={theme.text}>
-                    {keybind.print("agent_cycle")} <span style={{ fg: theme.textMuted }}>switch agent</span>
+                    {keybind.print("variant_cycle")} <span style={{ fg: theme.textMuted }}>variants</span>
+                  </text>
+                  <text fg={theme.text}>
+                    {keybind.print("agent_cycle")} <span style={{ fg: theme.textMuted }}>agents</span>
                   </text>
                   <text fg={theme.text}>
                     {keybind.print("command_list")} <span style={{ fg: theme.textMuted }}>commands</span>

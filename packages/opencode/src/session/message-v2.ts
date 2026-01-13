@@ -532,6 +532,7 @@ export namespace MessageV2 {
           responseBody?: string
           responseHeaders?: Record<string, string>
           isRetryable?: boolean
+          url?: string
         }
         const message = iife(() => {
           let msg = apiError.message
@@ -570,6 +571,7 @@ export namespace MessageV2 {
           ).toObject()
         }
 
+        const metadata = apiError.url ? { url: apiError.url } : undefined
         return new MessageV2.APIError(
           {
             message,
@@ -577,6 +579,7 @@ export namespace MessageV2 {
             isRetryable: apiError.isRetryable ?? (apiError.statusCode ? apiError.statusCode >= 500 : false),
             responseHeaders: apiError.responseHeaders,
             responseBody: apiError.responseBody,
+            metadata,
           },
           { cause: e },
         ).toObject()

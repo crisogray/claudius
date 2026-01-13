@@ -1,5 +1,55 @@
+use serde::Deserialize;
+use std::process::Command;
+use tauri::Manager;
+
 const CLI_INSTALL_DIR: &str = ".opencode/bin";
 const CLI_BINARY_NAME: &str = "opencode";
+
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub server: Option<ServerConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ServerConfig {
+    pub hostname: Option<String>,
+    pub port: Option<u32>,
+}
+
+pub fn get_user_shell() -> String {
+    std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+}
+
+pub fn create_command(sidecar_path: &std::path::Path) -> Command {
+    #[cfg(target_os = "windows")]
+    {
+        Command::new(sidecar_path)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let shell = get_user_shell();
+        let mut cmd = Command::new(&shell);
+        cmd.arg("-il").arg("-c").arg(format!(
+            "\"{}\" \"$@\"",
+            sidecar_path.display()
+        )).arg("--");
+        cmd
+    }
+}
+
+pub fn get_config(sidecar_path: &std::path::Path) -> Option<Config> {
+    let mut cmd = create_command(sidecar_path);
+    cmd.args(["debug", "config"]);
+
+    let output = cmd.output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    serde_json::from_str(&stdout).ok()
+}
 
 fn get_cli_install_path() -> Option<std::path::PathBuf> {
     std::env::var("HOME").ok().map(|home| {
@@ -9,9 +59,10 @@ fn get_cli_install_path() -> Option<std::path::PathBuf> {
     })
 }
 
-pub fn get_sidecar_path() -> std::path::PathBuf {
-    tauri::utils::platform::current_exe()
-        .expect("Failed to get current exe")
+pub fn get_sidecar_path(app: &tauri::AppHandle) -> std::path::PathBuf {
+    // Get binary with symlinks support
+    tauri::process::current_binary(&app.env())
+        .expect("Failed to get current binary")
         .parent()
         .expect("Failed to get parent dir")
         .join("opencode-cli")
@@ -26,12 +77,12 @@ fn is_cli_installed() -> bool {
 const INSTALL_SCRIPT: &str = include_str!("../../../../install");
 
 #[tauri::command]
-pub fn install_cli() -> Result<String, String> {
+pub fn install_cli(app: tauri::AppHandle) -> Result<String, String> {
     if cfg!(not(unix)) {
         return Err("CLI installation is only supported on macOS & Linux".to_string());
     }
 
-    let sidecar = get_sidecar_path();
+    let sidecar = get_sidecar_path(&app);
     if !sidecar.exists() {
         return Err("Sidecar binary not found".to_string());
     }
@@ -108,7 +159,7 @@ pub fn sync_cli(app: tauri::AppHandle) -> Result<(), String> {
         cli_version, app_version
     );
 
-    install_cli()?;
+    install_cli(app)?;
 
     println!("Synced installed CLI");
 

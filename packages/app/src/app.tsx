@@ -33,21 +33,9 @@ const Loading = () => <div class="size-full flex items-center justify-center tex
 
 declare global {
   interface Window {
-    __OPENCODE__?: { updaterEnabled?: boolean; port?: number; serverReady?: boolean }
+    __OPENCODE__?: { updaterEnabled?: boolean }
   }
 }
-
-const defaultServerUrl = iife(() => {
-  const param = new URLSearchParams(document.location.search).get("url")
-  if (param) return param
-
-  if (location.hostname.includes("opencode.ai")) return "http://localhost:4096"
-  if (window.__OPENCODE__) return `http://127.0.0.1:${window.__OPENCODE__.port}`
-  if (import.meta.env.DEV)
-    return `http://${import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
-
-  return window.location.origin
-})
 
 export function AppBaseProviders(props: ParentProps) {
   return (
@@ -77,7 +65,27 @@ function ServerKey(props: ParentProps) {
   )
 }
 
-export function AppInterface() {
+export function AppInterface(props: { defaultUrl?: string }) {
+  // Compute defaultServerUrl, preferring prop from desktop if provided
+  const defaultServerUrl = iife(() => {
+    // Desktop passes URL directly via prop
+    if (props.defaultUrl) return props.defaultUrl
+
+    // URL param override
+    const param = new URLSearchParams(document.location.search).get("url")
+    if (param) return param
+
+    // Hosted version connects to localhost
+    if (location.hostname.includes("opencode.ai")) return "http://localhost:4096"
+
+    // Development mode
+    if (import.meta.env.DEV)
+      return `http://${import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
+
+    // Web app served from same origin
+    return window.location.origin
+  })
+
   return (
     <ServerProvider defaultUrl={defaultServerUrl}>
       <ServerKey>
