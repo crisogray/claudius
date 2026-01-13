@@ -223,6 +223,24 @@ export default function Layout(props: ParentProps) {
     })
     onCleanup(unsub)
 
+    // Listen for toast.show events from the server
+    const unsubToast = globalSDK.event.listen((e) => {
+      if (e.details?.type !== "toast.show") return
+      const props = e.details.properties as {
+        title?: string
+        message: string
+        variant: "info" | "success" | "warning" | "error"
+        duration?: number
+      }
+      showToast({
+        title: props.title,
+        description: props.message,
+        variant: props.variant === "warning" || props.variant === "info" ? "default" : props.variant,
+        duration: props.duration ?? 5000,
+      })
+    })
+    onCleanup(unsubToast)
+
     createEffect(() => {
       const currentDir = params.dir ? base64Decode(params.dir) : undefined
       const currentSession = params.id
