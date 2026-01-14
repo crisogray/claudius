@@ -50,6 +50,7 @@ export namespace SDKStream {
       permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
       modelID: string
       providerID: string
+      initialSnapshot?: string
     },
     onMessageID?: (messageID: string | null) => void,
   ): Promise<{ messageID: string | null; error?: Error }> {
@@ -200,8 +201,8 @@ export namespace SDKStream {
         switch (message.type) {
           case "system": {
             if (message.subtype === "init") {
-              // Capture initial snapshot for diff computation
-              initialSnapshot = await Snapshot.track()
+              // Use pre-captured snapshot if provided, otherwise capture now
+              initialSnapshot = context.initialSnapshot ?? await Snapshot.track()
 
               // Update session with SDK session ID for resume
               if (message.session_id) {

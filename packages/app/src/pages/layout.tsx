@@ -845,19 +845,24 @@ export default function Layout(props: ParentProps) {
     const notifications = createMemo(() => notification.session.unseen(props.session.id))
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const [sessionStore] = globalSync.child(props.session.directory)
-    const hasPermissions = createMemo(() => {
-      const permissions = sessionStore.permission?.[props.session.id] ?? []
-      if (permissions.length > 0) return true
-      const childSessions = sessionStore.session.filter((s) => s.parentID === props.session.id)
+    const hasUserRequest = createMemo(() => {
+      const sessionID = props.session.id
+      // Check permissions, questions, and plans
+      if ((sessionStore.permission?.[sessionID] ?? []).length > 0) return true
+      if ((sessionStore.question?.[sessionID] ?? []).length > 0) return true
+      if ((sessionStore.plan?.[sessionID] ?? []).length > 0) return true
+      // Check child sessions
+      const childSessions = sessionStore.session.filter((s) => s.parentID === sessionID)
       for (const child of childSessions) {
-        const childPermissions = sessionStore.permission?.[child.id] ?? []
-        if (childPermissions.length > 0) return true
+        if ((sessionStore.permission?.[child.id] ?? []).length > 0) return true
+        if ((sessionStore.question?.[child.id] ?? []).length > 0) return true
+        if ((sessionStore.plan?.[child.id] ?? []).length > 0) return true
       }
       return false
     })
     const isWorking = createMemo(() => {
       if (props.session.id === params.id) return false
-      if (hasPermissions()) return false
+      if (hasUserRequest()) return false
       const status = sessionStore.session_status[props.session.id]
       return status?.type === "busy" || status?.type === "retry"
     })
@@ -889,7 +894,7 @@ export default function Layout(props: ParentProps) {
                     <Match when={isWorking()}>
                       <Spinner class="size-2.5 mr-0.5" />
                     </Match>
-                    <Match when={hasPermissions()}>
+                    <Match when={hasUserRequest()}>
                       <div class="size-1.5 mr-1.5 rounded-full bg-surface-warning-strong" />
                     </Match>
                     <Match when={hasError()}>

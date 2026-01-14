@@ -10,6 +10,7 @@ import { EventSessionError } from "@opencode-ai/sdk/v2"
 import { makeAudioPlayer } from "@solid-primitives/audio"
 import idleSound from "@opencode-ai/ui/audio/staplebops-00.aac"
 import errorSound from "@opencode-ai/ui/audio/nope-03.aac"
+import requestSound from "@opencode-ai/ui/audio/staplebops-02.aac"
 import { Persist, persisted } from "@/utils/persist"
 
 type NotificationBase = {
@@ -46,10 +47,12 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
   init: () => {
     let idlePlayer: ReturnType<typeof makeAudioPlayer> | undefined
     let errorPlayer: ReturnType<typeof makeAudioPlayer> | undefined
+    let requestPlayer: ReturnType<typeof makeAudioPlayer> | undefined
 
     try {
       idlePlayer = makeAudioPlayer(idleSound)
       errorPlayer = makeAudioPlayer(errorSound)
+      requestPlayer = makeAudioPlayer(requestSound)
     } catch (err) {
       console.log("Failed to load audio", err)
     }
@@ -124,6 +127,21 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
           const description = session?.title ?? (typeof error === "string" ? error : "An error occurred")
           const href = sessionID ? `/${base64Encode(directory)}/session/${sessionID}` : `/${base64Encode(directory)}`
           void platform.notify("Session error", description, href)
+          break
+        }
+        case "permission.asked":
+        case "question.asked":
+        case "plan.asked": {
+          const sessionID = event.properties.sessionID
+          const [syncStore] = globalSync.child(directory)
+          const match = Binary.search(syncStore.session, sessionID, (s) => s.id)
+          const session = match.found ? syncStore.session[match.index] : undefined
+          if (session?.parentID) break
+          try {
+            requestPlayer?.play()
+          } catch {}
+          const href = `/${base64Encode(directory)}/session/${sessionID}`
+          void platform.notify("Input needed", session?.title ?? sessionID, href)
           break
         }
       }

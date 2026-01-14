@@ -1278,8 +1278,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       if (part.type === "file") {
         // Convert url to path, removing file:// prefix if present
         const url = (part as any).url as string
+        const mime = (part as any).mime as string | undefined
         const path = url.startsWith("file://") ? url.slice(7) : url
-        return { type: "file" as const, path }
+        return { type: "file" as const, path, mime }
       }
       if (part.type === "agent") {
         return { type: "agent" as const }

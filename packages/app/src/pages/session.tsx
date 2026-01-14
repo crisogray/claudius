@@ -770,51 +770,12 @@ export default function Page() {
 
   let scrollSpyFrame: number | undefined
   let scrollSpyTarget: HTMLDivElement | undefined
-  let sessionScrollFrame: number | undefined
-  let sessionScrollPending: { x: number; y: number } | undefined
 
   const anchor = (id: string) => `message-${id}`
-
-  const restoreSessionScroll = (retries = 0) => {
-    const el = scroller
-    if (!el) return
-
-    const s = view().scroll("session")
-    if (!s) return
-
-    // Wait for content to be scrollable
-    if (el.scrollHeight <= el.clientHeight && retries < 10) {
-      requestAnimationFrame(() => restoreSessionScroll(retries + 1))
-      return
-    }
-
-    if (el.scrollTop !== s.y) el.scrollTop = s.y
-    if (el.scrollLeft !== s.x) el.scrollLeft = s.x
-  }
-
-  const handleSessionScroll = (e: Event & { currentTarget: HTMLDivElement }) => {
-    autoScroll.handleScroll()
-    scheduleScrollSpy(e.currentTarget)
-
-    sessionScrollPending = {
-      x: e.currentTarget.scrollLeft,
-      y: e.currentTarget.scrollTop,
-    }
-    if (sessionScrollFrame !== undefined) return
-
-    sessionScrollFrame = requestAnimationFrame(() => {
-      sessionScrollFrame = undefined
-      const next = sessionScrollPending
-      sessionScrollPending = undefined
-      if (!next) return
-      view().setScroll("session", next)
-    })
-  }
 
   const setScrollRef = (el: HTMLDivElement | undefined) => {
     scroller = el
     autoScroll.scrollRef(el)
-    if (el) restoreSessionScroll()
   }
 
   const turnInit = 20
@@ -1063,7 +1024,6 @@ export default function Page() {
     cancelTurnBackfill()
     document.removeEventListener("keydown", handleKeyDown)
     if (scrollSpyFrame !== undefined) cancelAnimationFrame(scrollSpyFrame)
-    if (sessionScrollFrame !== undefined) cancelAnimationFrame(sessionScrollFrame)
   })
 
   return (
@@ -1316,7 +1276,12 @@ export default function Page() {
                 </div>
 
                 {/* Session tab content */}
-                <Tabs.Content value="session" class="relative flex-1 min-h-0 !overflow-hidden">
+                <Tabs.Content
+                  value="session"
+                  forceMount
+                  class="relative flex-1 min-h-0 !overflow-hidden"
+                  classList={{ hidden: activeTab() !== "session" }}
+                >
                   <Show
                     when={params.id && activeMessage()}
                     fallback={
@@ -1351,7 +1316,10 @@ export default function Page() {
                         </div>
                         <div
                           ref={setScrollRef}
-                          onScroll={handleSessionScroll}
+                          onScroll={(e) => {
+                            autoScroll.handleScroll()
+                            scheduleScrollSpy(e.currentTarget)
+                          }}
                           onClick={autoScroll.handleInteraction}
                           class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
                         >
@@ -1424,8 +1392,8 @@ export default function Page() {
                                         content:
                                           "flex flex-col justify-between !overflow-visible [&_[data-slot=session-turn-message-header]]:top-[-32px]",
                                         container:
-                                          "px-4 md:px-6" +
-                                          (visibleUserMessages().length > 1 ? "md:pr-6 md:pl-24" : ""),
+                                          "px-4 md:px-6 " +
+                                          (visibleUserMessages().length > 1 ? "md:pr-8 md:pl-24" : ""),
                                       }}
                                     />
                                   </div>
@@ -1737,7 +1705,7 @@ export default function Page() {
         </Show>
       </div>
 
-      <Show when={isDesktop() && view().terminal.opened()}>
+      <Show when={isDesktop() && params.id && view().terminal.opened()}>
         <div
           class="relative w-full flex-col shrink-0 border-t border-border-weak-base"
           style={{ height: `${layout.terminal.height()}px` }}

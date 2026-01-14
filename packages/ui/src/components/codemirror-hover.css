@@ -9,7 +9,7 @@
 
 /* Hover tooltip background */
 .cm-tooltip:has(.cm-tooltip-hover) {
-  background-color: var(--surface-raised-stronger) !important;
+  background-color: var(--surface-raised-stronger-non-alpha) !important;
 }
 
 .cm-tooltip-hover {

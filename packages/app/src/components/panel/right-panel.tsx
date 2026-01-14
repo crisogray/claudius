@@ -74,6 +74,7 @@ export function RightPanel() {
                 path="."
                 filter={filter()}
                 gitStatuses={git.fileStatuses()}
+                folderStatuses={git.folderStatuses()}
                 onFileClick={handleFileClick}
                 onContextMenu={contextMenu.open}
               />

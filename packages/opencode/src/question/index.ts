@@ -155,12 +155,27 @@ export namespace Question {
       requestID: existing.info.id,
     })
 
-    existing.reject(new RejectedError())
+    existing.reject(new RejectedError("User dismissed this question"))
+  }
+
+  export async function rejectBySession(sessionID: string): Promise<void> {
+    const s = await state()
+    for (const [requestID, pending] of Object.entries(s.pending)) {
+      if (pending.info.sessionID === sessionID) {
+        delete s.pending[requestID]
+        log.info("question rejected by session interrupt", { requestID, sessionID })
+        Bus.publish(Event.Rejected, {
+          sessionID: pending.info.sessionID,
+          requestID: pending.info.id,
+        })
+        pending.reject(new RejectedError("User stopped generation"))
+      }
+    }
   }
 
   export class RejectedError extends Error {
-    constructor() {
-      super("The user dismissed this question")
+    constructor(message: string) {
+      super(message)
     }
   }
 

@@ -204,7 +204,7 @@ export namespace SDKPermissions {
   async function handleExitPlanMode(
     sessionID: string,
     input: Record<string, unknown>,
-    options: { signal: AbortSignal },
+    options: { signal: AbortSignal; toolUseID: string },
   ): Promise<PermissionResult> {
     log.info("handling ExitPlanMode", { sessionID })
 
@@ -214,6 +214,7 @@ export namespace SDKPermissions {
       // Ask for plan approval via PlanApproval module (publishes events for UI)
       const result = await PlanApproval.ask({
         sessionID,
+        callID: options.toolUseID,
         plan,
       })
 

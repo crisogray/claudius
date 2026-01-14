@@ -208,6 +208,12 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         title: "Webfetch",
         subtitle: input.url,
       }
+    case "websearch":
+      return {
+        icon: "magnifying-glass-menu",
+        title: "Web Search",
+        subtitle: input.query,
+      }
     case "task":
       return {
         icon: "task",
@@ -444,6 +450,7 @@ export interface ToolProps {
   metadata: Record<string, any>
   tool: string
   output?: string
+  error?: string
   status?: string
   hideDetails?: boolean
   defaultOpen?: boolean
@@ -503,16 +510,11 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   })
 
   // Find matching plan approval request for this tool call
-  // Match by: tool is exitplanmode, and there's a plan for this session
-  // Prefer pending plans (no approved field) over answered ones
+  // Match by callID - only this specific tool call's plan
   const planRequest = createMemo(() => {
     if (part.tool !== "exitplanmode") return undefined
     const plans = data.store.plan?.[props.message.sessionID] ?? []
-    // First look for a pending plan (no approved field yet)
-    const pending = plans.find((p: any) => typeof p.approved !== "boolean")
-    if (pending) return pending
-    // If no pending plan, return the most recent answered one for status display
-    return plans[plans.length - 1]
+    return plans.find((p: any) => p.callID === part.callID)
   })
 
   const [showPermission, setShowPermission] = createSignal(false)
@@ -602,9 +604,9 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   return (
     <div data-component="tool-part-wrapper" data-permission={needsAttention()}>
       <Switch>
-        <Match when={part.state.status === "error" && part.state.error}>
+        <Match when={part.state.status === "error" && part.tool !== "exitplanmode" && part.state.error}>
           {(error) => {
-            const cleaned = error().replace("Error: ", "")
+            const cleaned = String(error()).replace("Error: ", "")
             const [title, ...rest] = cleaned.split(": ")
             return (
               <Card variant="error">
@@ -634,6 +636,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
             metadata={metadata()}
             // @ts-expect-error
             output={part.state.output}
+            error={part.state.error}
             status={part.state.status}
             hideDetails={props.hideDetails}
             forceOpen={forceOpen()}
@@ -757,7 +760,7 @@ ToolRegistry.register({
         icon="magnifying-glass-menu"
         trigger={{
           title: "Glob",
-          subtitle: getDirectory(props.input.path || "/"),
+          subtitle: `${props.input.pattern} in ${getDirectory(props.input.path || "/")}`,
           args: props.input.pattern ? ["pattern=" + props.input.pattern] : [],
         }}
       >
@@ -785,7 +788,7 @@ ToolRegistry.register({
         icon="magnifying-glass-menu"
         trigger={{
           title: "Grep",
-          subtitle: getDirectory(props.input.path || "/"),
+          subtitle: `${props.input.pattern} in ${getDirectory(props.input.path || "/")}`,
           args,
         }}
       >
@@ -817,6 +820,32 @@ ToolRegistry.register({
               <Icon name="square-arrow-top-right" size="small" />
             </div>
           ),
+        }}
+      >
+        <Show when={props.output}>
+          {(output) => (
+            <div data-component="tool-output" data-scrollable>
+              <Markdown text={output()} />
+            </div>
+          )}
+        </Show>
+      </BasicTool>
+    )
+  },
+})
+
+ToolRegistry.register({
+  name: "websearch",
+  render(props) {
+    const numResults = props.metadata?.numResults as number | undefined
+    return (
+      <BasicTool
+        {...props}
+        icon="magnifying-glass-menu"
+        trigger={{
+          title: "Web Search",
+          subtitle: props.input.query || "",
+          args: numResults !== undefined ? [`${numResults} results`] : [],
         }}
       >
         <Show when={props.output}>
@@ -1233,28 +1262,25 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "exitplanmode",
   render(props) {
-    // Check if plan is pending (exists but not yet answered)
+    // Check if plan is pending (plan request exists and tool not yet completed)
     const hasPendingPlan = () => {
-      const plan = props.planRequest?.() as any
-      return !!plan && typeof plan.approved !== "boolean"
+      return !!props.planRequest?.() && props.status !== "completed" && props.status !== "error"
     }
 
-    // Parse approval result from planRequest (updated by plan.replied event)
-    const approvalResult = createMemo(() => {
-      const plan = props.planRequest?.() as any
-      if (plan && typeof plan.approved === "boolean") {
-        return plan.approved
-      }
-      return undefined
-    })
+    // Parse rejection message from error (format: "User rejected the plan: ${message}")
+    const rejectionMessage = () => {
+      if (props.status !== "error") return undefined
+      const error = String(props.error ?? "")
+      const match = error.match(/User rejected the plan: (.+)/)
+      return match?.[1]
+    }
 
-    // Build subtitle with rejection message if present
+    // Build subtitle from tool state
     const subtitle = () => {
       if (hasPendingPlan()) return "Awaiting approval"
-      if (approvalResult() === true) return "Approved"
-      if (approvalResult() === false) {
-        const plan = props.planRequest?.() as any
-        const msg = plan?.message
+      if (props.status === "completed") return "Approved"
+      if (props.status === "error") {
+        const msg = rejectionMessage()
         return msg ? `Rejected - ${msg}` : "Rejected"
       }
       return undefined

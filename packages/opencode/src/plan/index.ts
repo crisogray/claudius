@@ -12,6 +12,7 @@ export namespace PlanApproval {
     .object({
       id: Identifier.schema("plan"),
       sessionID: Identifier.schema("session"),
+      callID: z.string().describe("The tool_use_id of the ExitPlanMode call"),
       plan: z.string().describe("The plan content for approval"),
     })
     .meta({
@@ -64,7 +65,7 @@ export namespace PlanApproval {
     }
   })
 
-  export async function ask(input: { sessionID: string; plan: string }): Promise<AskResult> {
+  export async function ask(input: { sessionID: string; callID: string; plan: string }): Promise<AskResult> {
     const s = await state()
     const id = Identifier.ascending("plan")
 
@@ -74,6 +75,7 @@ export namespace PlanApproval {
       const info: Request = {
         id,
         sessionID: input.sessionID,
+        callID: input.callID,
         plan: input.plan,
       }
       s.pending[id] = {
@@ -122,12 +124,27 @@ export namespace PlanApproval {
       requestID: existing.info.id,
     })
 
-    existing.reject(new RejectedError())
+    existing.reject(new RejectedError("User dismissed the plan approval request"))
+  }
+
+  export async function rejectBySession(sessionID: string): Promise<void> {
+    const s = await state()
+    for (const [requestID, pending] of Object.entries(s.pending)) {
+      if (pending.info.sessionID === sessionID) {
+        delete s.pending[requestID]
+        log.info("plan rejected by session interrupt", { requestID, sessionID })
+        Bus.publish(Event.Rejected, {
+          sessionID: pending.info.sessionID,
+          requestID: pending.info.id,
+        })
+        pending.reject(new RejectedError("User stopped generation"))
+      }
+    }
   }
 
   export class RejectedError extends Error {
-    constructor() {
-      super("The user dismissed the plan approval request")
+    constructor(message: string) {
+      super(message)
     }
   }
 

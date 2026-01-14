@@ -9,14 +9,14 @@ import type { GitFileStatus } from "@/context/git"
 // Git status badge component
 function GitBadge(props: { status: GitFileStatus }) {
   const statusConfig: Record<string, { letter: string; class: string }> = {
-    modified: { letter: "M", class: "text-yellow-500" },
-    added: { letter: "A", class: "text-green-500" },
-    deleted: { letter: "D", class: "text-red-500" },
-    untracked: { letter: "?", class: "text-gray-400" },
-    renamed: { letter: "R", class: "text-blue-500" },
-    copied: { letter: "C", class: "text-blue-500" },
+    modified: { letter: "M", class: "text-icon-warning-base" },
+    added: { letter: "A", class: "text-text-diff-add-base" },
+    deleted: { letter: "D", class: "text-text-diff-delete-base" },
+    untracked: { letter: "?", class: "text-text-weak" },
+    renamed: { letter: "R", class: "text-text-interactive-base" },
+    copied: { letter: "C", class: "text-text-interactive-base" },
   }
-  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-gray-400" }
+  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-text-weak" }
 
   return (
     <span class={`ml-auto mr-1 text-[10px] font-mono font-medium ${config().class}`}>
@@ -32,6 +32,7 @@ export default function FileTree(props: {
   level?: number
   filter?: string
   gitStatuses?: Map<string, GitFileStatus>
+  folderStatuses?: Map<string, Set<string>>
   onFileClick?: (file: LocalFile) => void
   onContextMenu?: (file: LocalFile, e: MouseEvent) => void
 }) {
@@ -58,62 +59,79 @@ export default function FileTree(props: {
     })
   }
 
-  const Node = (p: ParentProps & ComponentProps<"div"> & { node: LocalFile; as?: "div" | "button" }) => (
-    <Dynamic
-      component={p.as ?? "div"}
-      classList={{
-        "h-6 w-full flex items-center justify-start gap-x-2 hover:bg-background-element text-left": true,
-        // "bg-background-element": local.file.active()?.path === p.node.path,
-        [props.nodeClass ?? ""]: !!props.nodeClass,
-      }}
-      style={`padding-left: ${level * 10}px`}
-      draggable={true}
-      onContextMenu={(e: MouseEvent) => {
-        e.preventDefault()
-        props.onContextMenu?.(p.node, e)
-      }}
-      onDragStart={(e: any) => {
-        const evt = e as globalThis.DragEvent
-        evt.dataTransfer!.effectAllowed = "copy"
-        evt.dataTransfer!.setData("text/plain", `file:${p.node.path}`)
+  const Node = (p: ParentProps & ComponentProps<"div"> & { node: LocalFile; as?: "div" | "button" }) => {
+    // Helper function to determine folder git status color
+    const getFolderColor = () => {
+      if (p.node.type !== "directory") return null
+      const statuses = props.folderStatuses?.get(p.node.path)
+      if (!statuses) return null
 
-        // Create custom drag image without margins
-        const dragImage = document.createElement("div")
-        dragImage.className =
-          "flex items-center gap-x-2 px-2 py-1 bg-background-element rounded-md border border-border-1"
-        dragImage.style.position = "absolute"
-        dragImage.style.top = "-1000px"
+      // Priority: deleted > modified > added
+      if (statuses.has("deleted")) return "deleted"
+      if (statuses.has("modified")) return "modified"
+      if (statuses.has("added") || statuses.has("untracked")) return "added"
+      return null
+    }
 
-        // Copy only the icon and text content without padding
-        const icon = e.currentTarget.querySelector("svg")
-        const text = e.currentTarget.querySelector("span")
-        if (icon && text) {
-          dragImage.innerHTML = icon.outerHTML + text.outerHTML
-        }
-
-        document.body.appendChild(dragImage)
-        evt.dataTransfer!.setDragImage(dragImage, 0, 12)
-        setTimeout(() => document.body.removeChild(dragImage), 0)
-      }}
-      {...p}
-    >
-      {p.children}
-      <span
+    return (
+      <Dynamic
+        component={p.as ?? "div"}
         classList={{
-          "text-xs whitespace-nowrap truncate flex-1": true,
-          "text-text-muted/40": p.node.ignored,
-          "text-text-muted/80": !p.node.ignored,
-          // "!text-text": local.file.active()?.path === p.node.path,
-          // "!text-primary": local.file.changed(p.node.path),
+          "h-6 w-full flex items-center justify-start gap-x-2 hover:bg-background-element text-left": true,
+          // "bg-background-element": local.file.active()?.path === p.node.path,
+          [props.nodeClass ?? ""]: !!props.nodeClass,
         }}
+        style={`padding-left: ${level * 10}px`}
+        draggable={true}
+        onContextMenu={(e: MouseEvent) => {
+          e.preventDefault()
+          props.onContextMenu?.(p.node, e)
+        }}
+        onDragStart={(e: any) => {
+          const evt = e as globalThis.DragEvent
+          evt.dataTransfer!.effectAllowed = "copy"
+          evt.dataTransfer!.setData("text/plain", `file:${p.node.path}`)
+
+          // Create custom drag image without margins
+          const dragImage = document.createElement("div")
+          dragImage.className =
+            "flex items-center gap-x-2 px-2 py-1 bg-background-element rounded-md border border-border-1"
+          dragImage.style.position = "absolute"
+          dragImage.style.top = "-1000px"
+
+          // Copy only the icon and text content without padding
+          const icon = e.currentTarget.querySelector("svg")
+          const text = e.currentTarget.querySelector("span")
+          if (icon && text) {
+            dragImage.innerHTML = icon.outerHTML + text.outerHTML
+          }
+
+          document.body.appendChild(dragImage)
+          evt.dataTransfer!.setDragImage(dragImage, 0, 12)
+          setTimeout(() => document.body.removeChild(dragImage), 0)
+        }}
+        {...p}
       >
-        {p.node.name}
-      </span>
-      <Show when={props.gitStatuses?.get(p.node.path)}>
-        {(status) => <GitBadge status={status()} />}
-      </Show>
-    </Dynamic>
-  )
+        {p.children}
+        <span
+          classList={{
+            "text-xs whitespace-nowrap truncate flex-1": true,
+            "text-text-muted/40": p.node.ignored,
+            "text-text-muted/80": !p.node.ignored && !getFolderColor(),
+            // Folder git status colors
+            "text-icon-warning-base": getFolderColor() === "modified",
+            "text-text-diff-add-base": getFolderColor() === "added",
+            "text-text-diff-delete-base": getFolderColor() === "deleted",
+          }}
+        >
+          {p.node.name}
+        </span>
+        <Show when={props.gitStatuses?.get(p.node.path)}>
+          {(status) => <GitBadge status={status()} />}
+        </Show>
+      </Dynamic>
+    )
+  }
 
   return (
     <div class={`flex flex-col ${props.class}`}>
@@ -140,7 +158,7 @@ export default function FileTree(props: {
                     </Node>
                   </Collapsible.Trigger>
                   <Collapsible.Content>
-                    <FileTree path={node.path} level={level + 1} filter={props.filter} gitStatuses={props.gitStatuses} onFileClick={props.onFileClick} onContextMenu={props.onContextMenu} />
+                    <FileTree path={node.path} level={level + 1} filter={props.filter} gitStatuses={props.gitStatuses} folderStatuses={props.folderStatuses} onFileClick={props.onFileClick} onContextMenu={props.onContextMenu} />
                   </Collapsible.Content>
                 </Collapsible>
               </Match>

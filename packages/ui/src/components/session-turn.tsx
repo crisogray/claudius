@@ -49,6 +49,7 @@ function computeStatusFromPart(part: PartType | undefined): string | undefined {
       case "glob":
         return "Searching the codebase"
       case "webfetch":
+      case "websearch":
         return "Searching the web"
       case "edit":
       case "write":

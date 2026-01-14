@@ -265,12 +265,14 @@ function createGlobalSync() {
           setStore("session", result.index, reconcile(event.properties.info))
           break
         }
-        setStore(
-          "session",
-          produce((draft) => {
-            draft.splice(result.index, 0, event.properties.info)
-          }),
-        )
+        if (!event.properties.info.time?.archived) {
+          setStore(
+            "session",
+            produce((draft) => {
+              draft.splice(result.index, 0, event.properties.info)
+            }),
+          )
+        }
         break
       }
       case "session.diff":
@@ -457,15 +459,11 @@ function createGlobalSync() {
         if (!requests) break
         const result = Binary.search(requests, event.properties.requestID, (r) => r.id)
         if (!result.found) break
-        // Update the plan with approval result instead of removing
-        const props = event.properties as typeof event.properties & { message?: string }
         setStore(
           "plan",
           event.properties.sessionID,
-          result.index,
           produce((draft) => {
-            ;(draft as any).approved = props.approved
-            ;(draft as any).message = props.message
+            draft.splice(result.index, 1)
           }),
         )
         break

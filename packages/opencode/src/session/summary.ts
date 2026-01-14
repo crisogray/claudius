@@ -66,8 +66,16 @@ export namespace SessionSummary {
     if (!msgWithParts) {
       return
     }
+    // Get files actually modified by this message turn (filters out changes from parallel agents)
+    const files = new Set(
+      messages
+        .flatMap((x) => x.parts)
+        .filter((x) => x.type === "patch")
+        .flatMap((x) => x.files)
+        .map((x) => path.relative(Instance.worktree, x)),
+    )
     const userMsg = msgWithParts.info as MessageV2.User
-    const diffs = await computeDiff({ messages })
+    const diffs = await computeDiff({ messages }).then((x) => x.filter((d) => files.has(d.file)))
     userMsg.summary = {
       ...userMsg.summary,
       diffs,
@@ -166,30 +174,42 @@ export namespace SessionSummary {
   )
 
   async function computeDiff(input: { messages: MessageV2.WithParts[] }) {
-    let from: string | undefined
-    let to: string | undefined
+    const fileDiffMap = new Map<string, Snapshot.FileDiff>()
 
-    // scan assistant messages to find earliest from and latest to
-    // snapshot
-    for (const item of input.messages) {
-      if (!from) {
-        for (const part of item.parts) {
-          if (part.type === "step-start" && part.snapshot) {
-            from = part.snapshot
-            break
-          }
+    // Process each assistant message's turn individually
+    // This excludes external changes made while the conversation is idle
+    for (const msg of input.messages) {
+      if (msg.info.role !== "assistant") continue
+
+      let turnFrom: string | undefined
+      let turnTo: string | undefined
+
+      for (const part of msg.parts) {
+        if (part.type === "step-start" && part.snapshot && !turnFrom) {
+          turnFrom = part.snapshot
+        }
+        if (part.type === "step-finish" && part.snapshot) {
+          turnTo = part.snapshot
         }
       }
 
-      for (const part of item.parts) {
-        if (part.type === "step-finish" && part.snapshot) {
-          to = part.snapshot
-          break
+      if (!turnFrom || !turnTo) continue
+
+      // Get diff for this turn only
+      const turnDiffs = await Snapshot.diffFull(turnFrom, turnTo)
+
+      // Aggregate into map (sum additions/deletions per file)
+      for (const diff of turnDiffs) {
+        const existing = fileDiffMap.get(diff.file)
+        if (existing) {
+          existing.additions += diff.additions
+          existing.deletions += diff.deletions
+        } else {
+          fileDiffMap.set(diff.file, { ...diff })
         }
       }
     }
 
-    if (from && to) return Snapshot.diffFull(from, to)
-    return []
+    return Array.from(fileDiffMap.values())
   }
 }

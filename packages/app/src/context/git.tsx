@@ -151,6 +151,31 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       return map
     })
 
+    // Create a map of folder paths to the types of changes they contain
+    const folderStatuses = createMemo(() => {
+      const folderMap = new Map<string, Set<string>>()
+      if (!store.status) return folderMap
+
+      const allFiles = [
+        ...store.status.staged,
+        ...store.status.unstaged,
+        ...store.status.untracked,
+      ]
+
+      for (const file of allFiles) {
+        const parts = file.path.split("/")
+        for (let i = 0; i < parts.length - 1; i++) {
+          const dirPath = parts.slice(0, i + 1).join("/")
+          if (!folderMap.has(dirPath)) {
+            folderMap.set(dirPath, new Set())
+          }
+          folderMap.get(dirPath)!.add(file.status)
+        }
+      }
+
+      return folderMap
+    })
+
     return {
       get status() {
         return store.status
@@ -165,6 +190,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         return store.error
       },
       fileStatuses,
+      folderStatuses,
       refresh,
       stage,
       unstage,

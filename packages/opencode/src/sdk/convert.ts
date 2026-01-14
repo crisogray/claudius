@@ -38,6 +38,15 @@ export namespace SDKConvert {
     is_error?: boolean
   }
 
+  export interface ImageBlock {
+    type: "image"
+    source: {
+      type: "base64"
+      media_type: string
+      data: string
+    }
+  }
+
   /**
    * Extract text from CallToolResult content
    * Handles both string content and structured array format
@@ -164,7 +173,7 @@ export namespace SDKConvert {
     return parts
   }
 
-  export type ContentBlock = TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ToolResultBlock
+  export type ContentBlock = TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock
 
   // SDK message types
   export interface SDKAssistantMessage {

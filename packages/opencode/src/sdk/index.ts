@@ -14,7 +14,10 @@ import { SDKModels } from "./models"
 import { SDKPermissions } from "./permissions"
 import { SDKStream } from "./stream"
 import { Identifier } from "@/id/id"
+import { PlanApproval } from "@/plan"
+import { Question } from "@/question"
 import { SessionRevert } from "@/session/revert"
+import { Snapshot } from "@/snapshot"
 // Real Claude Agent SDK
 import { query, type Query } from "@anthropic-ai/claude-agent-sdk"
 import type { HookCallback, PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk"
@@ -85,7 +88,7 @@ export namespace SDK {
     parts: z.array(
       z.discriminatedUnion("type", [
         z.object({ type: z.literal("text"), text: z.string() }).passthrough(),
-        z.object({ type: z.literal("file"), path: z.string() }).passthrough(),
+        z.object({ type: z.literal("file"), path: z.string(), mime: z.string().optional() }).passthrough(),
         z.object({ type: z.literal("agent") }).passthrough(),
         z.object({ type: z.literal("subtask") }).passthrough(),
       ]),
@@ -122,6 +125,41 @@ export namespace SDK {
     // Expand commands
     const { prompt, command } = await SDKCommands.expandCommand(rawPrompt)
     log.info("expanded command", { hasCommand: !!command })
+
+    // Build content array for streaming input (includes images)
+    type ImageSource = { type: "base64"; media_type: string; data: string }
+    type ContentBlock = { type: "text"; text: string } | { type: "image"; source: ImageSource }
+    const contentBlocks: ContentBlock[] = []
+    let hasImages = false
+
+    for (const part of input.parts) {
+      if (part.type === "text") {
+        contentBlocks.push({ type: "text", text: part.text })
+      } else if (part.type === "file") {
+        const filePath = (part as any).path as string
+        if (filePath.startsWith("data:")) {
+          // Parse data URL: data:image/png;base64,ABC123...
+          const match = filePath.match(/^data:([^;]+);base64,(.+)$/)
+          if (match) {
+            const [, mediaType, data] = match
+            contentBlocks.push({
+              type: "image",
+              source: { type: "base64", media_type: mediaType, data },
+            })
+            hasImages = true
+          }
+        }
+      }
+    }
+
+    // If we have text content expanded (like /command), update content blocks
+    if (prompt !== rawPrompt && contentBlocks.length > 0) {
+      // Find and update text blocks with expanded prompt
+      const textBlockIndex = contentBlocks.findIndex((b) => b.type === "text")
+      if (textBlockIndex >= 0) {
+        contentBlocks[textBlockIndex] = { type: "text", text: prompt }
+      }
+    }
 
     // Get permission mode - priority: input > default
     const permissionMode: PermissionMode = input.permissionMode ?? "default"
@@ -185,6 +223,9 @@ export namespace SDK {
     Bus.publish(MessageV2.Event.Updated, { info: userMessage })
     Bus.publish(Event.Started, { sessionID: input.sessionID, prompt })
 
+    // Capture initial snapshot at user message time (before SDK startup delay)
+    const initialSnapshot = await Snapshot.track()
+
     // Set session status to busy
     SessionStatus.set(input.sessionID, { type: "busy" })
 
@@ -223,9 +264,20 @@ export namespace SDK {
     }
 
     try {
-      // Start real SDK query
+      // Create message generator for streaming input (required for images)
+      // Type matches SDK's SDKUserMessage interface for streaming input
+      async function* createMessageGenerator(): AsyncGenerator<SDKConvert.SDKUserMessage> {
+        yield {
+          type: "user" as const,
+          message: {
+            content: contentBlocks as SDKConvert.ContentBlock[],
+          },
+        }
+      }
+
+      // Start real SDK query - use generator when we have images, string otherwise
       const activeQuery = query({
-        prompt,
+        prompt: hasImages ? (createMessageGenerator() as any) : prompt,
         options: {
           model: options.model,
           cwd: options.cwd,
@@ -255,6 +307,7 @@ export namespace SDK {
           permissionMode,
           modelID,
           providerID,
+          initialSnapshot,
         },
         // Callback to track current message ID for interrupt cleanup
         (messageID) => {
@@ -285,6 +338,9 @@ export namespace SDK {
     } finally {
       activeQueries.delete(input.sessionID)
       currentMessages.delete(input.sessionID)
+      // Clean up any pending plan/question requests for this session
+      await PlanApproval.rejectBySession(input.sessionID)
+      await Question.rejectBySession(input.sessionID)
       // Set session status back to idle
       SessionStatus.set(input.sessionID, { type: "idle" })
     }
@@ -306,6 +362,10 @@ export namespace SDK {
 
       // Immediately set session status to idle (stops the timer)
       SessionStatus.set(sessionID, { type: "idle" })
+
+      // Clean up any pending plan/question requests for this session
+      await PlanApproval.rejectBySession(sessionID)
+      await Question.rejectBySession(sessionID)
 
       // Complete the current message
       const messageID = currentMessages.get(sessionID)

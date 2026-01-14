@@ -9,7 +9,7 @@ import { FileIcon } from "@opencode-ai/ui/file-icon"
 function ActionButton(props: { icon: "plus" | "close"; onClick: (e: MouseEvent) => void; title: string }) {
   return (
     <button
-      class="size-4 flex items-center justify-center rounded hover:bg-background-element text-text-muted hover:text-text"
+      class="size-4 flex items-center justify-center rounded hover:bg-background-element text-text-muted cursor-pointer"
       onClick={props.onClick}
       title={props.title}
     >
@@ -20,20 +20,20 @@ function ActionButton(props: { icon: "plus" | "close"; onClick: (e: MouseEvent) 
 
 function GitStatusBadge(props: { status: GitFileStatus }) {
   const statusConfig = {
-    modified: { letter: "M", class: "text-yellow-500" },
-    added: { letter: "A", class: "text-green-500" },
-    deleted: { letter: "D", class: "text-red-500" },
-    untracked: { letter: "U", class: "text-green-500" },
-    renamed: { letter: "R", class: "text-blue-500" },
-    copied: { letter: "C", class: "text-blue-500" },
+    modified: { letter: "M", class: "text-icon-warning-base" },
+    added: { letter: "A", class: "text-text-diff-add-base" },
+    deleted: { letter: "D", class: "text-text-diff-delete-base" },
+    untracked: { letter: "U", class: "text-text-diff-add-base" },
+    renamed: { letter: "R", class: "text-text-interactive-base" },
+    copied: { letter: "C", class: "text-text-interactive-base" },
   }
 
-  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-gray-400" }
+  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-text-weak" }
 
   return (
     <span
       class={`text-[10px] font-mono font-medium ${config().class}`}
-      classList={{ "bg-green-500/20 px-0.5 rounded": props.status.staged }}
+      classList={{ "bg-surface-success-weak px-0.5 rounded": props.status.staged }}
     >
       {config().letter}
     </span>
@@ -122,15 +122,25 @@ export function GitTab() {
   const [committing, setCommitting] = createSignal(false)
 
   const hasStaged = createMemo(() => (git.status?.staged.length ?? 0) > 0)
+  const hasUnstaged = createMemo(
+    () => (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0,
+  )
   const hasChanges = createMemo(
     () =>
       (git.status?.staged.length ?? 0) + (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0,
   )
 
   const handleCommit = async () => {
-    if (!hasStaged() || !commitMessage().trim()) return
+    if (!commitMessage().trim()) return
+    // Need either staged changes, or unstaged changes to stage first
+    if (!hasStaged() && !hasUnstaged()) return
+
     setCommitting(true)
     try {
+      // If nothing staged but there are unstaged changes, stage all first
+      if (!hasStaged() && hasUnstaged()) {
+        await git.stageAll()
+      }
       await git.commit(commitMessage(), { amend: amend() })
       setCommitMessage("")
       setAmend(false)
@@ -242,7 +252,7 @@ export function GitTab() {
             <Button
               size="small"
               class="ml-auto"
-              disabled={!hasStaged() || !commitMessage().trim() || committing()}
+              disabled={(!hasStaged() && !hasUnstaged()) || !commitMessage().trim() || committing()}
               onClick={handleCommit}
             >
               {committing() ? "Committing..." : "Commit"}
