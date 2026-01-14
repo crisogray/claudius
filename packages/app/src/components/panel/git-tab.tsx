@@ -175,59 +175,68 @@ export function GitTab() {
       {/* File sections */}
       <Show when={git.status}>
         <div class="flex-1 overflow-y-auto no-scrollbar">
-          {/* Staged */}
-          <GitFileSection
-            title="Staged Changes"
-            files={git.status?.staged ?? []}
-            actions={(f) => (
-              <ActionButton
-                icon="close"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  git.unstage([f.path])
-                }}
-                title="Unstage"
-              />
-            )}
-            headerActions={
-              <Show when={(git.status?.staged.length ?? 0) > 0}>
-                <ActionButton icon="close" onClick={() => git.unstageAll()} title="Unstage all" />
-              </Show>
+          <Show
+            when={hasChanges()}
+            fallback={
+              <div class="h-full flex items-center justify-center p-4">
+                <span class="text-xs text-text-muted text-center">No changes</span>
+              </div>
             }
-          />
-
-          {/* Changes (unstaged + untracked) */}
-          <GitFileSection
-            title="Changes"
-            files={[...(git.status?.unstaged ?? []), ...(git.status?.untracked ?? [])]}
-            actions={(f) => (
-              <>
+          >
+            {/* Staged */}
+            <GitFileSection
+              title="Staged Changes"
+              files={git.status?.staged ?? []}
+              actions={(f) => (
                 <ActionButton
-                  icon="plus"
+                  icon="close"
                   onClick={(e) => {
                     e.stopPropagation()
-                    git.stage([f.path])
+                    git.unstage([f.path])
                   }}
-                  title="Stage"
+                  title="Unstage"
                 />
-                <Show when={f.status !== "untracked"}>
+              )}
+              headerActions={
+                <Show when={(git.status?.staged.length ?? 0) > 0}>
+                  <ActionButton icon="close" onClick={() => git.unstageAll()} title="Unstage all" />
+                </Show>
+              }
+            />
+
+            {/* Changes (unstaged + untracked) */}
+            <GitFileSection
+              title="Changes"
+              files={[...(git.status?.unstaged ?? []), ...(git.status?.untracked ?? [])]}
+              actions={(f) => (
+                <>
                   <ActionButton
-                    icon="close"
+                    icon="plus"
                     onClick={(e) => {
                       e.stopPropagation()
-                      git.discard([f.path])
+                      git.stage([f.path])
                     }}
-                    title="Discard"
+                    title="Stage"
                   />
+                  <Show when={f.status !== "untracked"}>
+                    <ActionButton
+                      icon="close"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        git.discard([f.path])
+                      }}
+                      title="Discard"
+                    />
+                  </Show>
+                </>
+              )}
+              headerActions={
+                <Show when={(git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0}>
+                  <ActionButton icon="plus" onClick={() => git.stageAll()} title="Stage all" />
                 </Show>
-              </>
-            )}
-            headerActions={
-              <Show when={(git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0}>
-                <ActionButton icon="plus" onClick={() => git.stageAll()} title="Stage all" />
-              </Show>
-            }
-          />
+              }
+            />
+          </Show>
         </div>
 
         {/* Commit form */}
@@ -288,13 +297,6 @@ export function GitTab() {
             </Collapsible.Content>
           </Collapsible>
         </Show>
-      </Show>
-
-      {/* Empty state */}
-      <Show when={git.status && !hasChanges() && !git.loading}>
-        <div class="flex-1 flex items-center justify-center p-4">
-          <span class="text-xs text-text-muted text-center">No changes</span>
-        </div>
       </Show>
     </div>
   )

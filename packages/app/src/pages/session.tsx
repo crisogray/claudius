@@ -887,23 +887,29 @@ export default function Page() {
   const scrollToMessage = (message: UserMessage, behavior: ScrollBehavior = "smooth") => {
     setActiveMessage(message)
 
+    const scrollToElement = () => {
+      const el = document.getElementById(anchor(message.id))
+      if (!el || !scroller) return
+      // Calculate position relative to scroller to avoid scrolling the whole page
+      const elRect = el.getBoundingClientRect()
+      const scrollerRect = scroller.getBoundingClientRect()
+      const targetTop = scroller.scrollTop + (elRect.top - scrollerRect.top)
+      scroller.scrollTo({ top: targetTop, behavior })
+    }
+
     const msgs = visibleUserMessages()
     const index = msgs.findIndex((m) => m.id === message.id)
     if (index !== -1 && index < store.turnStart) {
       setStore("turnStart", index)
       scheduleTurnBackfill()
 
-      requestAnimationFrame(() => {
-        const el = document.getElementById(anchor(message.id))
-        if (el) el.scrollIntoView({ behavior, block: "start" })
-      })
+      requestAnimationFrame(scrollToElement)
 
       updateHash(message.id)
       return
     }
 
-    const el = document.getElementById(anchor(message.id))
-    if (el) el.scrollIntoView({ behavior, block: "start" })
+    scrollToElement()
     updateHash(message.id)
   }
 
@@ -954,8 +960,11 @@ export default function Page() {
       }
 
       const hashTarget = document.getElementById(hash)
-      if (hashTarget) {
-        hashTarget.scrollIntoView({ behavior: "auto", block: "start" })
+      if (hashTarget && scroller) {
+        const elRect = hashTarget.getBoundingClientRect()
+        const scrollerRect = scroller.getBoundingClientRect()
+        const targetTop = scroller.scrollTop + (elRect.top - scrollerRect.top)
+        scroller.scrollTo({ top: targetTop, behavior: "auto" })
         return
       }
 
