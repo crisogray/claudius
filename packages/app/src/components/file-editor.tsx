@@ -1,4 +1,4 @@
-import { createMemo, createEffect, on, onMount, onCleanup, Show } from "solid-js"
+import { createMemo, createEffect, onMount, onCleanup, Show } from "solid-js"
 import { CodeMirrorEditor } from "@opencode-ai/ui/codemirror-editor"
 import { lspExtension, type LspOptions } from "@opencode-ai/ui/codemirror-lsp"
 import { useFile } from "@/context/file"
@@ -101,7 +101,7 @@ export function FileEditor(props: FileEditorProps) {
         lsp!.changeDocument(props.path, text)
       },
       diagnostics: getDiagnostics(),
-      parseMarkdown: (md) => marked.parse(md),
+      parseMarkdown: async (md) => marked.parse(md),
     }
   })
 

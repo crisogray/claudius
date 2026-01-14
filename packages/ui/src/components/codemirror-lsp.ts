@@ -4,6 +4,7 @@ import { EditorView, keymap, type ViewUpdate } from "@codemirror/view"
 import { linter, type Diagnostic as CMLintDiagnostic } from "@codemirror/lint"
 import type { Extension } from "@codemirror/state"
 import DOMPurify from "dompurify"
+import "./codemirror-hover.css"
 
 // LSP CompletionItemKind to CodeMirror completion type mapping
 const completionKindMap: Record<number, string> = {
@@ -224,6 +225,7 @@ export function lspExtension(options: LspOptions): Extension[] {
             create: () => {
               const dom = document.createElement("div")
               dom.className = "cm-tooltip-hover"
+              dom.setAttribute("data-component", "markdown")
               dom.style.cssText =
                 "max-width: 500px; max-height: 300px; overflow: auto; padding: 8px 12px; font-family: var(--font-mono); font-size: 12px;"
 

@@ -59,8 +59,8 @@ function GitFileSection(props: {
   title: string
   files: GitFileStatus[]
   onFileClick?: (file: GitFileStatus) => void
-  actions?: (file: GitFileStatus) => any
-  headerActions?: any
+  actions?: (file: GitFileStatus) => JSX.Element
+  headerActions?: JSX.Element
 }) {
   return (
     <Show when={props.files.length > 0}>
@@ -141,25 +141,6 @@ export function GitTab() {
 
   return (
     <div class="h-full flex flex-col text-sm">
-      {/* Branch header */}
-      <div class="p-2 border-b border-border-base flex items-center gap-2">
-        <Icon name="branch" size="small" class="text-text-muted" />
-        <span class="font-medium text-xs">{git.status?.branch ?? "detached"}</span>
-        <Show when={git.status?.ahead || git.status?.behind}>
-          <span class="text-[10px] text-text-muted">
-            {git.status?.ahead ? `\u2191${git.status.ahead}` : ""}
-            {git.status?.behind ? `\u2193${git.status.behind}` : ""}
-          </span>
-        </Show>
-        <button
-          class="ml-auto p-1 rounded hover:bg-background-element text-text-muted hover:text-text"
-          onClick={() => git.refresh()}
-          title="Refresh"
-        >
-          <Icon name="chevron-grabber-vertical" size="small" />
-        </button>
-      </div>
-
       {/* Loading state */}
       <Show when={git.loading && !git.status}>
         <div class="flex-1 flex items-center justify-center">
@@ -240,11 +221,11 @@ export function GitTab() {
         </div>
 
         {/* Commit form */}
-        <div class="p-2 border-t border-border-base">
+        <div class="p-2 border-t border-border-base bg-surface-base">
           <textarea
             placeholder="Commit message..."
             class="w-full px-2 py-1.5 text-xs bg-background-element rounded-md border border-border-base resize-none focus:border-primary focus:outline-none"
-            rows={3}
+            rows={2}
             value={commitMessage()}
             onInput={(e) => setCommitMessage(e.currentTarget.value)}
           />
@@ -269,11 +250,30 @@ export function GitTab() {
           </div>
         </div>
 
+        {/* Branch header */}
+        <div class="p-2 border-t border-border-base flex items-center gap-2 bg-surface-base">
+          <Icon name="branch" size="small" class="text-text-muted" />
+          <span class="font-medium text-xs">{git.status?.branch ?? "detached"}</span>
+          <Show when={git.status?.ahead || git.status?.behind}>
+            <span class="text-[10px] text-text-muted">
+              {git.status?.ahead ? `\u2191${git.status.ahead}` : ""}
+              {git.status?.behind ? `\u2193${git.status.behind}` : ""}
+            </span>
+          </Show>
+          <button
+            class="ml-auto p-1 rounded hover:bg-background-element text-text-muted hover:text-text"
+            onClick={() => git.refresh()}
+            title="Refresh"
+          >
+            <Icon name="chevron-grabber-vertical" size="small" />
+          </button>
+        </div>
+
         {/* History */}
         <Show when={git.log.length > 0}>
-          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-base rounded-none bg-surface-base">
+          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-base rounded-none bg-background-strong">
             <Collapsible.Trigger class="w-full">
-              <div class="w-full p-2 flex items-center gap-2">
+              <div class="w-full p-2 flex items-center gap-2 border-b border-border-base">
                 <Collapsible.Arrow class="text-text-muted/60" />
                 <span class="text-xs font-medium">History</span>
               </div>

@@ -2,11 +2,11 @@ import { EditorView } from "@codemirror/view"
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language"
 import { tags } from "@lezer/highlight"
 
-// Theme colors using CSS variables from the app's design system
+// Theme colors
 const colors = {
   // UI colors
-  bg: "var(--background-base)",
-  bgAlt: "var(--background-element)",
+  bg: "var(--background-strong)",
+  bgAlt: "var(--background-strong)",
   fg: "var(--text-base)",
   fgMuted: "var(--text-weak)",
   fgStrong: "var(--text-strong)",
@@ -37,19 +37,19 @@ export const opencodeDarkTheme = EditorView.theme(
       height: "100%",
     },
     ".cm-content": {
-      caretColor: "#fff",
+      caretColor: "var(--text-strong)",
       fontFamily: "var(--font-mono), ui-monospace, monospace",
       padding: "8px 0",
     },
     ".cm-cursor, .cm-dropCursor": {
-      borderLeftColor: "#fff",
+      borderLeftColor: "var(--text-strong)",
       borderLeftWidth: "2px",
     },
     "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
-      backgroundColor: "rgba(59, 130, 246, 0.3)",
+      backgroundColor: "var(--surface-base-interactive-active)",
     },
     ".cm-activeLine": {
-      backgroundColor: "rgba(255, 255, 255, 0.03)",
+      backgroundColor: "var(--surface-base)",
     },
     ".cm-gutters": {
       backgroundColor: colors.bg,
@@ -62,7 +62,7 @@ export const opencodeDarkTheme = EditorView.theme(
       minWidth: "40px",
     },
     ".cm-activeLineGutter": {
-      backgroundColor: "rgba(255, 255, 255, 0.03)",
+      backgroundColor: "var(--surface-base)",
       color: colors.fg,
     },
     ".cm-foldPlaceholder": {
@@ -86,7 +86,7 @@ export const opencodeDarkTheme = EditorView.theme(
       },
       "& > ul > li[aria-selected]": {
         backgroundColor: colors.primary,
-        color: "#fff",
+        color: "var(--text-on-interactive-base)",
       },
     },
     ".cm-panels": {
@@ -94,10 +94,10 @@ export const opencodeDarkTheme = EditorView.theme(
       borderBottom: `1px solid ${colors.border}`,
     },
     ".cm-searchMatch": {
-      backgroundColor: "rgba(234, 179, 8, 0.3)",
+      backgroundColor: "var(--surface-warning-base)",
     },
     ".cm-searchMatch.cm-searchMatch-selected": {
-      backgroundColor: "rgba(234, 179, 8, 0.5)",
+      backgroundColor: "var(--surface-warning-strong)",
     },
   },
   { dark: true },

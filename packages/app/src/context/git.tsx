@@ -1,8 +1,7 @@
-import { createEffect, createMemo, onCleanup, onMount } from "solid-js"
-import { createStore, reconcile } from "solid-js/store"
+import { createMemo, onCleanup, onMount } from "solid-js"
+import { createStore } from "solid-js/store"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useSDK } from "./sdk"
-import { useSync } from "./sync"
 
 // Types matching the backend Git namespace
 export type GitFileStatus = {
