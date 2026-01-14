@@ -37,6 +37,8 @@ type SessionView = {
   reviewPanelOpened?: boolean
 }
 
+export type RightPanelTab = "files" | "git"
+
 export type LocalProject = Partial<Project> & { worktree: string; expanded: boolean }
 
 export type ReviewDiffStyle = "unified" | "split"
@@ -65,6 +67,10 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         },
         mobileSidebar: {
           opened: false,
+        },
+        rightPanel: {
+          opened: true,
+          activeTab: "files" as RightPanelTab,
         },
         sessionTabs: {} as Record<string, SessionTabs>,
         sessionView: {} as Record<string, SessionView>,
@@ -341,6 +347,22 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         },
         toggle() {
           setStore("mobileSidebar", "opened", (x) => !x)
+        },
+      },
+      rightPanel: {
+        opened: createMemo(() => store.rightPanel?.opened ?? true),
+        activeTab: createMemo(() => store.rightPanel?.activeTab ?? "files"),
+        open() {
+          setStore("rightPanel", "opened", true)
+        },
+        close() {
+          setStore("rightPanel", "opened", false)
+        },
+        toggle() {
+          setStore("rightPanel", "opened", (x) => !x)
+        },
+        setActiveTab(tab: RightPanelTab) {
+          setStore("rightPanel", "activeTab", tab)
         },
       },
       view(sessionKey: string) {

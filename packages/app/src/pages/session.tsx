@@ -50,6 +50,7 @@ import {
   SortableTerminalTab,
   NewSessionView,
 } from "@/components/session"
+import { RightPanel } from "@/components/panel/right-panel"
 import { usePlatform } from "@/context/platform"
 import { navMark, navParams } from "@/utils/perf"
 import { same } from "@/utils/same"
@@ -459,6 +460,14 @@ export default function Page() {
       category: "Terminal",
       keybind: "ctrl+shift+`",
       onSelect: () => terminal.new(),
+    },
+    {
+      id: "rightPanel.toggle",
+      title: "Toggle files panel",
+      description: "Show or hide the files/git panel",
+      category: "View",
+      keybind: "mod+shift+e",
+      onSelect: () => layout.rightPanel.toggle(),
     },
     {
       id: "steps.toggle",
@@ -1610,6 +1619,11 @@ export default function Page() {
               </DragOverlay>
             </DragDropProvider>
           </div>
+        </Show>
+
+        {/* Right panel (Files/Git) */}
+        <Show when={isDesktop()}>
+          <RightPanel />
         </Show>
       </div>
 
