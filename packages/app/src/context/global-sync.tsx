@@ -150,6 +150,31 @@ function createGlobalSync() {
       throwOnError: true,
     })
 
+    function loadSessionGrouped<T extends { id: string; sessionID: string }>(
+      promise: Promise<{ data?: T[] | null }>,
+      key: "permission" | "question" | "plan",
+    ) {
+      return promise.then((x) => {
+        const grouped: Record<string, T[]> = {}
+        for (const item of x.data ?? []) {
+          if (!item?.id || !item.sessionID) continue
+          ;(grouped[item.sessionID] ??= []).push(item)
+        }
+        batch(() => {
+          for (const sessionID of Object.keys(store[key])) {
+            if (!grouped[sessionID]) setStore(key, sessionID, [])
+          }
+          for (const [sessionID, items] of Object.entries(grouped)) {
+            setStore(
+              key,
+              sessionID,
+              reconcile(items.slice().sort((a, b) => a.id.localeCompare(b.id)), { key: "id" }) as any,
+            )
+          }
+        })
+      })
+    }
+
     const blockingRequests = {
       project: () => sdk.project.current().then((x) => setStore("project", x.data!.id)),
       provider: () =>
@@ -179,38 +204,9 @@ function createGlobalSync() {
           sdk.mcp.status().then((x) => setStore("mcp", x.data!)),
           sdk.lsp.status().then((x) => setStore("lsp", x.data!)),
           sdk.vcs.get().then((x) => setStore("vcs", x.data)),
-          sdk.permission.list().then((x) => {
-            const grouped: Record<string, PermissionRequest[]> = {}
-            for (const perm of x.data ?? []) {
-              if (!perm?.id || !perm.sessionID) continue
-              const existing = grouped[perm.sessionID]
-              if (existing) {
-                existing.push(perm)
-                continue
-              }
-              grouped[perm.sessionID] = [perm]
-            }
-
-            batch(() => {
-              for (const sessionID of Object.keys(store.permission)) {
-                if (grouped[sessionID]) continue
-                setStore("permission", sessionID, [])
-              }
-              for (const [sessionID, permissions] of Object.entries(grouped)) {
-                setStore(
-                  "permission",
-                  sessionID,
-                  reconcile(
-                    permissions
-                      .filter((p) => !!p?.id)
-                      .slice()
-                      .sort((a, b) => a.id.localeCompare(b.id)),
-                    { key: "id" },
-                  ),
-                )
-              }
-            })
-          }),
+          loadSessionGrouped(sdk.permission.list(), "permission"),
+          loadSessionGrouped(sdk.question.list(), "question"),
+          loadSessionGrouped(sdk.plan.list(), "plan"),
         ]).then(() => {
           setStore("status", "complete")
         })

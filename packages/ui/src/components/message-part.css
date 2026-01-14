@@ -533,7 +533,7 @@
       background-color: var(--surface-raised);
     }
 
-    &[data-selected="true"] {
+    &[data-picked="true"] {
       border-color: var(--border-accent);
       background-color: color-mix(in srgb, var(--surface-accent) 10%, transparent);
     }
@@ -543,7 +543,7 @@
       pointer-events: none;
       opacity: 0.6;
 
-      &[data-selected="true"] {
+      &[data-picked="true"] {
         opacity: 1;
       }
     }
@@ -560,7 +560,7 @@
     flex-shrink: 0;
     margin-top: 2px;
 
-    &[data-selected="true"] {
+    &[data-picked="true"] {
       border-color: var(--border-accent);
     }
   }

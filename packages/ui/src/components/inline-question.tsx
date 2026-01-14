@@ -137,7 +137,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
             <button
               type="button"
               data-slot="question-option"
-              data-selected={isSelected(opt.label)}
+              data-picked={isSelected(opt.label)}
               data-readonly={readonly()}
               onClick={readonly() ? undefined : () => selectOption(opt.label)}
             >
@@ -145,7 +145,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
                 <Checkbox checked={isSelected(opt.label)} />
               </Show>
               <Show when={!multi()}>
-                <div data-slot="question-radio" data-selected={isSelected(opt.label)}>
+                <div data-slot="question-radio" data-picked={isSelected(opt.label)}>
                   <Show when={isSelected(opt.label)}>
                     <div data-slot="question-radio-dot" />
                   </Show>
@@ -165,7 +165,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
         <Show when={!readonly()}>
           <div
             data-slot="question-option"
-            data-selected={isCustomSelected()}
+            data-picked={isCustomSelected()}
             data-custom
           >
             <Show when={multi()}>
@@ -176,7 +176,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
             <Show when={!multi()}>
               <div
                 data-slot="question-radio"
-                data-selected={isCustomSelected()}
+                data-picked={isCustomSelected()}
                 onClick={toggleCustom}
                 style={{ cursor: "pointer" }}
               >
@@ -203,14 +203,14 @@ export function InlineQuestion(props: InlineQuestionProps) {
           {(customAnswer) => (
             <div
               data-slot="question-option"
-              data-selected="true"
+              data-picked="true"
               data-readonly="true"
             >
               <Show when={multi()}>
                 <Checkbox checked />
               </Show>
               <Show when={!multi()}>
-                <div data-slot="question-radio" data-selected="true">
+                <div data-slot="question-radio" data-picked="true">
                   <div data-slot="question-radio-dot" />
                 </div>
               </Show>
