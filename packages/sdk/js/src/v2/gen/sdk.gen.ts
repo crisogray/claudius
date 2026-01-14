@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from './client/index.js';
-import type { AppLogErrors, AppLogResponses, AppPermissionModesResponses, Auth as Auth2, AuthSetErrors, AuthSetResponses, CommandListResponses, Config as Config2, ConfigGetResponses, ConfigModelsResponses, ConfigProvidersResponses, ConfigUpdateErrors, ConfigUpdateResponses, EventSubscribeResponses, ExperimentalResourceListResponses, FileListResponses, FileReadResponses, FileStatusResponses, FindFilesResponses, FindSymbolsResponses, FindTextResponses, FormatterStatusResponses, GlobalDisposeResponses, GlobalEventResponses, GlobalHealthResponses, InstanceDisposeResponses, LspStatusResponses, McpAddErrors, McpAddResponses, McpAuthAuthenticateErrors, McpAuthAuthenticateResponses, McpAuthCallbackErrors, McpAuthCallbackResponses, McpAuthRemoveErrors, McpAuthRemoveResponses, McpAuthStartErrors, McpAuthStartResponses, McpConnectResponses, McpDisconnectResponses, McpLocalConfig, McpRemoteConfig, McpStatusResponses, ModelsListResponses, Part as Part2, PartDeleteErrors, PartDeleteResponses, PartUpdateErrors, PartUpdateResponses, PathGetResponses, PermissionListResponses, PermissionReplyErrors, PermissionReplyResponses, PermissionRespondErrors, PermissionRespondResponses, PermissionRuleset, PlanApproveErrors, PlanApproveResponses, PlanListResponses, PlanRejectErrors, PlanRejectResponses, ProjectCurrentResponses, ProjectListResponses, ProjectUpdateErrors, ProjectUpdateResponses, ProviderAuthResponses, ProviderListResponses, PtyConnectErrors, PtyConnectResponses, PtyCreateErrors, PtyCreateResponses, PtyGetErrors, PtyGetResponses, PtyListResponses, PtyRemoveErrors, PtyRemoveResponses, PtyUpdateErrors, PtyUpdateResponses, QuestionAnswer, QuestionListResponses, QuestionRejectErrors, QuestionRejectResponses, QuestionReplyErrors, QuestionReplyResponses, SessionAbortErrors, SessionAbortResponses, SessionChildrenErrors, SessionChildrenResponses, SessionCommandErrors, SessionCommandResponses, SessionCreateErrors, SessionCreateResponses, SessionDeleteErrors, SessionDeleteResponses, SessionDiffErrors, SessionDiffResponses, SessionForkResponses, SessionGetErrors, SessionGetResponses, SessionInitErrors, SessionInitResponses, SessionListResponses, SessionMessageErrors, SessionMessageResponses, SessionMessagesErrors, SessionMessagesResponses, SessionPromptAsyncErrors, SessionPromptAsyncResponses, SessionPromptErrors, SessionPromptResponses, SessionRevertErrors, SessionRevertResponses, SessionShareErrors, SessionShareResponses, SessionShellErrors, SessionShellResponses, SessionStatusErrors, SessionStatusResponses, SessionSummarizeErrors, SessionSummarizeResponses, SessionTodoErrors, SessionTodoResponses, SessionUnrevertErrors, SessionUnrevertResponses, SessionUnshareErrors, SessionUnshareResponses, SessionUpdateErrors, SessionUpdateResponses, VcsGetResponses, WorktreeCreateErrors, WorktreeCreateInput, WorktreeCreateResponses, WorktreeListResponses } from './types.gen.js';
+import type { AppLogErrors, AppLogResponses, AppPermissionModesResponses, Auth as Auth2, AuthSetErrors, AuthSetResponses, CommandListResponses, Config as Config2, ConfigGetResponses, ConfigModelsResponses, ConfigProvidersResponses, ConfigUpdateErrors, ConfigUpdateResponses, EventSubscribeResponses, ExperimentalResourceListResponses, FileListResponses, FileReadResponses, FileStatusResponses, FileWriteResponses, FindFilesResponses, FindSymbolsResponses, FindTextResponses, FormatterStatusResponses, GitCommitResponses, GitDiffResponses, GitDiscardResponses, GitLogResponses, GitStageAllResponses, GitStageResponses, GitStatusResponses, GitUnstageAllResponses, GitUnstageResponses, GlobalDisposeResponses, GlobalEventResponses, GlobalHealthResponses, InstanceDisposeResponses, LspCompletionErrors, LspCompletionResponses, LspDefinitionErrors, LspDefinitionResponses, LspDiagnosticsResponses, LspDocumentChangeErrors, LspDocumentChangeResponses, LspDocumentCloseErrors, LspDocumentCloseResponses, LspDocumentOpenErrors, LspDocumentOpenResponses, LspDocumentSaveErrors, LspDocumentSaveResponses, LspHoverErrors, LspHoverResponses, LspStatusResponses, McpAddErrors, McpAddResponses, McpAuthAuthenticateErrors, McpAuthAuthenticateResponses, McpAuthCallbackErrors, McpAuthCallbackResponses, McpAuthRemoveErrors, McpAuthRemoveResponses, McpAuthStartErrors, McpAuthStartResponses, McpConnectResponses, McpDisconnectResponses, McpLocalConfig, McpRemoteConfig, McpStatusResponses, ModelsListResponses, Part as Part2, PartDeleteErrors, PartDeleteResponses, PartUpdateErrors, PartUpdateResponses, PathGetResponses, PermissionListResponses, PermissionReplyErrors, PermissionReplyResponses, PermissionRespondErrors, PermissionRespondResponses, PermissionRuleset, PlanApproveErrors, PlanApproveResponses, PlanListResponses, PlanRejectErrors, PlanRejectResponses, ProjectCurrentResponses, ProjectListResponses, ProjectUpdateErrors, ProjectUpdateResponses, ProviderAuthResponses, ProviderListResponses, PtyConnectErrors, PtyConnectResponses, PtyCreateErrors, PtyCreateResponses, PtyGetErrors, PtyGetResponses, PtyListResponses, PtyRemoveErrors, PtyRemoveResponses, PtyUpdateErrors, PtyUpdateResponses, QuestionAnswer, QuestionListResponses, QuestionRejectErrors, QuestionRejectResponses, QuestionReplyErrors, QuestionReplyResponses, SessionAbortErrors, SessionAbortResponses, SessionChildrenErrors, SessionChildrenResponses, SessionCommandErrors, SessionCommandResponses, SessionCreateErrors, SessionCreateResponses, SessionDeleteErrors, SessionDeleteResponses, SessionDiffErrors, SessionDiffResponses, SessionForkResponses, SessionGetErrors, SessionGetResponses, SessionInitErrors, SessionInitResponses, SessionListResponses, SessionMessageErrors, SessionMessageResponses, SessionMessagesErrors, SessionMessagesResponses, SessionPromptAsyncErrors, SessionPromptAsyncResponses, SessionPromptErrors, SessionPromptResponses, SessionRevertErrors, SessionRevertResponses, SessionShareErrors, SessionShareResponses, SessionShellErrors, SessionShellResponses, SessionStatusErrors, SessionStatusResponses, SessionSummarizeErrors, SessionSummarizeResponses, SessionTodoErrors, SessionTodoResponses, SessionUnrevertErrors, SessionUnrevertResponses, SessionUnshareErrors, SessionUnshareResponses, SessionUpdateErrors, SessionUpdateResponses, VcsGetResponses, WorktreeCreateErrors, WorktreeCreateInput, WorktreeCreateResponses, WorktreeListResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -1463,6 +1463,33 @@ export class File extends HeyApiClient {
     }
     
     /**
+     * Write file
+     *
+     * Write content to a specified file.
+     */
+    public write<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        content?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'content' }
+                ] }]);
+        return (options?.client ?? this.client).post<FileWriteResponses, unknown, ThrowOnError>({
+            url: '/file/write',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
      * Get file status
      *
      * Get the git status of all files in the project.
@@ -1473,6 +1500,188 @@ export class File extends HeyApiClient {
         const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }] }]);
         return (options?.client ?? this.client).get<FileStatusResponses, unknown, ThrowOnError>({
             url: '/file/status',
+            ...options,
+            ...params
+        });
+    }
+}
+
+export class Git extends HeyApiClient {
+    /**
+     * Get git status
+     *
+     * Get full git status including staged, unstaged, and untracked files.
+     */
+    public status<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }] }]);
+        return (options?.client ?? this.client).get<GitStatusResponses, unknown, ThrowOnError>({
+            url: '/git/status',
+            ...options,
+            ...params
+        });
+    }
+    
+    /**
+     * Get commit history
+     *
+     * Get recent commit history.
+     */
+    public log<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        limit?: number;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'query', key: 'limit' }] }]);
+        return (options?.client ?? this.client).get<GitLogResponses, unknown, ThrowOnError>({
+            url: '/git/log',
+            ...options,
+            ...params
+        });
+    }
+    
+    /**
+     * Stage files
+     *
+     * Add files to the git staging area.
+     */
+    public stage<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        files?: Array<string>;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'body', key: 'files' }] }]);
+        return (options?.client ?? this.client).post<GitStageResponses, unknown, ThrowOnError>({
+            url: '/git/stage',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Unstage files
+     *
+     * Remove files from the git staging area.
+     */
+    public unstage<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        files?: Array<string>;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'body', key: 'files' }] }]);
+        return (options?.client ?? this.client).post<GitUnstageResponses, unknown, ThrowOnError>({
+            url: '/git/unstage',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Stage all changes
+     *
+     * Stage all modified, added, and deleted files.
+     */
+    public stageAll<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }] }]);
+        return (options?.client ?? this.client).post<GitStageAllResponses, unknown, ThrowOnError>({
+            url: '/git/stage-all',
+            ...options,
+            ...params
+        });
+    }
+    
+    /**
+     * Unstage all changes
+     *
+     * Remove all files from the staging area.
+     */
+    public unstageAll<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }] }]);
+        return (options?.client ?? this.client).post<GitUnstageAllResponses, unknown, ThrowOnError>({
+            url: '/git/unstage-all',
+            ...options,
+            ...params
+        });
+    }
+    
+    /**
+     * Discard file changes
+     *
+     * Discard changes to files and revert to HEAD.
+     */
+    public discard<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        files?: Array<string>;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'body', key: 'files' }] }]);
+        return (options?.client ?? this.client).post<GitDiscardResponses, unknown, ThrowOnError>({
+            url: '/git/discard',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Create commit
+     *
+     * Create a new commit with staged changes.
+     */
+    public commit<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        message?: string;
+        amend?: boolean;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'message' },
+                    { in: 'body', key: 'amend' }
+                ] }]);
+        return (options?.client ?? this.client).post<GitCommitResponses, unknown, ThrowOnError>({
+            url: '/git/commit',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Get file diff
+     *
+     * Get the diff for a specific file.
+     */
+    public diff<ThrowOnError extends boolean = false>(parameters: {
+        directory?: string;
+        file: string;
+        staged?: boolean;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'query', key: 'file' },
+                    { in: 'query', key: 'staged' }
+                ] }]);
+        return (options?.client ?? this.client).get<GitDiffResponses, unknown, ThrowOnError>({
+            url: '/git/diff',
             ...options,
             ...params
         });
@@ -1736,6 +1945,106 @@ export class Experimental extends HeyApiClient {
     resource = new Resource({ client: this.client });
 }
 
+export class Document extends HeyApiClient {
+    /**
+     * Open document
+     *
+     * Notify LSP that a document was opened
+     */
+    public open<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'body', key: 'path' }] }]);
+        return (options?.client ?? this.client).post<LspDocumentOpenResponses, LspDocumentOpenErrors, ThrowOnError>({
+            url: '/lsp/document/open',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Change document
+     *
+     * Notify LSP that a document changed
+     */
+    public change<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        text?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'text' }
+                ] }]);
+        return (options?.client ?? this.client).post<LspDocumentChangeResponses, LspDocumentChangeErrors, ThrowOnError>({
+            url: '/lsp/document/change',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Save document
+     *
+     * Notify LSP that a document was saved
+     */
+    public save<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        text?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'text' }
+                ] }]);
+        return (options?.client ?? this.client).post<LspDocumentSaveResponses, LspDocumentSaveErrors, ThrowOnError>({
+            url: '/lsp/document/save',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Close document
+     *
+     * Notify LSP that a document was closed
+     */
+    public close<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }, { in: 'body', key: 'path' }] }]);
+        return (options?.client ?? this.client).post<LspDocumentCloseResponses, LspDocumentCloseErrors, ThrowOnError>({
+            url: '/lsp/document/close',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+}
+
 export class Lsp extends HeyApiClient {
     /**
      * Get LSP status
@@ -1752,6 +2061,115 @@ export class Lsp extends HeyApiClient {
             ...params
         });
     }
+    
+    /**
+     * Get completions
+     *
+     * Get code completion suggestions at a position
+     */
+    public completion<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        line?: number;
+        character?: number;
+        triggerKind?: number;
+        triggerCharacter?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'line' },
+                    { in: 'body', key: 'character' },
+                    { in: 'body', key: 'triggerKind' },
+                    { in: 'body', key: 'triggerCharacter' }
+                ] }]);
+        return (options?.client ?? this.client).post<LspCompletionResponses, LspCompletionErrors, ThrowOnError>({
+            url: '/lsp/completion',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Get hover information
+     *
+     * Get hover information at a position
+     */
+    public hover<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        line?: number;
+        character?: number;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'line' },
+                    { in: 'body', key: 'character' }
+                ] }]);
+        return (options?.client ?? this.client).post<LspHoverResponses, LspHoverErrors, ThrowOnError>({
+            url: '/lsp/hover',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Get definition
+     *
+     * Go to definition at a position
+     */
+    public definition<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+        path?: string;
+        line?: number;
+        character?: number;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [
+                    { in: 'query', key: 'directory' },
+                    { in: 'body', key: 'path' },
+                    { in: 'body', key: 'line' },
+                    { in: 'body', key: 'character' }
+                ] }]);
+        return (options?.client ?? this.client).post<LspDefinitionResponses, LspDefinitionErrors, ThrowOnError>({
+            url: '/lsp/definition',
+            ...options,
+            ...params,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options?.headers,
+                ...params.headers
+            }
+        });
+    }
+    
+    /**
+     * Get diagnostics
+     *
+     * Get all diagnostics from LSP servers
+     */
+    public diagnostics<ThrowOnError extends boolean = false>(parameters?: {
+        directory?: string;
+    }, options?: Options<never, ThrowOnError>) {
+        const params = buildClientParams([parameters], [{ args: [{ in: 'query', key: 'directory' }] }]);
+        return (options?.client ?? this.client).get<LspDiagnosticsResponses, unknown, ThrowOnError>({
+            url: '/lsp/diagnostics',
+            ...options,
+            ...params
+        });
+    }
+    
+    document = new Document({ client: this.client });
 }
 
 export class Formatter extends HeyApiClient {
@@ -1836,6 +2254,8 @@ export class OpencodeClient extends HeyApiClient {
     find = new Find({ client: this.client });
     
     file = new File({ client: this.client });
+    
+    git = new Git({ client: this.client });
     
     app = new App({ client: this.client });
     

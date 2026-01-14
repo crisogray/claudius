@@ -50,6 +50,7 @@ import {
   SortableTerminalTab,
   NewSessionView,
 } from "@/components/session"
+import { FileEditor } from "@/components/file-editor"
 import { RightPanel } from "@/components/panel/right-panel"
 import { usePlatform } from "@/context/platform"
 import { navMark, navParams } from "@/utils/perf"
@@ -446,14 +447,6 @@ export default function Page() {
       onSelect: () => view().terminal.toggle(),
     },
     {
-      id: "review.toggle",
-      title: "Toggle review",
-      description: "Show or hide the review panel",
-      category: "View",
-      keybind: "mod+shift+r",
-      onSelect: () => view().reviewPanel.toggle(),
-    },
-    {
       id: "terminal.new",
       title: "New terminal",
       description: "Create a new terminal tab",
@@ -731,35 +724,31 @@ export default function Page() {
   }
 
   const contextOpen = createMemo(() => tabs().active() === "context" || tabs().all().includes("context"))
+  // File tabs only - filter out special tabs that are handled separately
   const openedTabs = createMemo(() =>
     tabs()
       .all()
-      .filter((tab) => tab !== "context"),
+      .filter((tab) => tab !== "context" && tab !== "session" && tab !== "review"),
   )
 
   const reviewTab = createMemo(() => hasReview() || tabs().active() === "review")
   const mobileReview = createMemo(() => !isDesktop() && hasReview() && store.mobileTab === "review")
 
-  const showTabs = createMemo(
-    () => view().reviewPanel.opened() && (hasReview() || tabs().all().length > 0 || contextOpen()),
-  )
+  // Tabs panel is always shown on desktop when we have a session
+  const showTabs = createMemo(() => isDesktop() && !!params.id)
 
   const activeTab = createMemo(() => {
     const active = tabs().active()
     if (active) return active
-    if (reviewTab()) return "review"
-
-    const first = openedTabs()[0]
-    if (first) return first
-    if (contextOpen()) return "context"
-    return "review"
+    // Default to session tab
+    return "session"
   })
 
   createEffect(() => {
     if (!layout.ready()) return
     if (tabs().active()) return
-    if (!hasReview() && openedTabs().length === 0 && !contextOpen()) return
-    tabs().setActive(activeTab())
+    // Default to session tab
+    tabs().setActive("session")
   })
 
   createEffect(() => {
@@ -767,7 +756,7 @@ export default function Page() {
     if (!id) return
     if (!hasReview()) return
 
-    const wants = isDesktop() ? view().reviewPanel.opened() && activeTab() === "review" : store.mobileTab === "review"
+    const wants = isDesktop() ? activeTab() === "review" : store.mobileTab === "review"
     if (!wants) return
     if (diffsReady()) return
 
@@ -1042,7 +1031,7 @@ export default function Page() {
                 classes={{ button: "w-full" }}
                 onClick={() => setStore("mobileTab", "session")}
               >
-                Session
+                Chat
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="review"
@@ -1056,226 +1045,155 @@ export default function Page() {
           </Tabs>
         </Show>
 
-        {/* Session panel */}
-        <div
-          classList={{
-            "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger": true,
-            "flex-1 md:flex-none py-6 md:py-3": true,
-          }}
-          style={{
-            width: isDesktop() && showTabs() ? `${layout.session.width()}px` : "100%",
-            "--prompt-height": store.promptHeight ? `${store.promptHeight}px` : undefined,
-          }}
-        >
-          <div class="flex-1 min-h-0 overflow-hidden">
-            <Switch>
-              <Match when={params.id}>
-                <Show when={activeMessage()}>
+        {/* Main content panel with tabs (Session + Review + Context + Files) */}
+        <Show
+          when={isDesktop() && showTabs()}
+          fallback={
+            /* Mobile/No-session view */
+            <div
+              classList={{
+                "@container relative flex flex-col min-h-0 h-full bg-background-stronger": true,
+                "flex-1 py-6 md:py-3": true,
+              }}
+              style={{
+                "--prompt-height": store.promptHeight ? `${store.promptHeight}px` : undefined,
+              }}
+            >
+              <div class="flex-1 min-h-0 overflow-hidden">
+                <Switch>
+                  <Match when={params.id}>
+                    <Show when={activeMessage()}>
+                      <Show
+                        when={!mobileReview()}
+                        fallback={
+                          <div class="relative h-full overflow-hidden">
+                            <Show
+                              when={diffsReady()}
+                              fallback={<div class="px-4 py-4 text-text-weak">Loading changes...</div>}
+                            >
+                              <SessionReviewTab
+                                diffs={diffs}
+                                view={view}
+                                diffStyle="unified"
+                                onViewFile={(path) => {
+                                  const value = file.tab(path)
+                                  tabs().open(value)
+                                  file.load(path)
+                                }}
+                                classes={{
+                                  root: "pb-[calc(var(--prompt-height,8rem)+32px)]",
+                                  header: "px-4",
+                                  container: "px-4",
+                                }}
+                              />
+                            </Show>
+                          </div>
+                        }
+                      >
+                        <div class="relative w-full h-full min-w-0">
+                          <div
+                            ref={setScrollRef}
+                            onScroll={() => autoScroll.handleScroll()}
+                            onClick={autoScroll.handleInteraction}
+                            class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
+                          >
+                            <div
+                              ref={autoScroll.contentRef}
+                              class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,8rem)+64px)] mt-0.5"
+                            >
+                              <For each={renderedUserMessages()}>
+                                {(message) => (
+                                  <div
+                                    id={anchor(message.id)}
+                                    data-message-id={message.id}
+                                    classList={{
+                                      "min-w-0 w-full max-w-full": true,
+                                      "last:min-h-[calc(100vh-5.5rem-var(--prompt-height,8rem)-64px)]":
+                                        platform.platform !== "desktop",
+                                      "last:min-h-[calc(100vh-7rem-var(--prompt-height,8rem)-64px)]":
+                                        platform.platform === "desktop",
+                                    }}
+                                  >
+                                    <SessionTurn
+                                      sessionID={params.id!}
+                                      messageID={message.id}
+                                      lastUserMessageID={lastUserMessage()?.id}
+                                      stepsExpanded={store.expanded[message.id] ?? false}
+                                      onStepsExpandedToggle={() =>
+                                        setStore("expanded", message.id, (open: boolean | undefined) => !open)
+                                      }
+                                      classes={{
+                                        root: "min-w-0 w-full relative",
+                                        content:
+                                          "flex flex-col justify-between !overflow-visible [&_[data-slot=session-turn-message-header]]:top-[-32px]",
+                                        container: "px-4 md:px-6 md:max-w-200 md:mx-auto",
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </For>
+                            </div>
+                          </div>
+                        </div>
+                      </Show>
+                    </Show>
+                  </Match>
+                  <Match when={true}>
+                    <NewSessionView
+                      worktree={newSessionWorktree()}
+                      onWorktreeChange={(value) => {
+                        if (value === "create") {
+                          setStore("newSessionWorktree", value)
+                          return
+                        }
+
+                        setStore("newSessionWorktree", "main")
+
+                        const target = value === "main" ? sync.project?.worktree : value
+                        if (!target) return
+                        if (target === sync.data.path.directory) return
+                        layout.projects.open(target)
+                        navigate(`/${base64Encode(target)}/session`)
+                      }}
+                    />
+                  </Match>
+                </Switch>
+              </div>
+
+              {/* Prompt input for mobile */}
+              <div
+                ref={(el) => (promptDock = el)}
+                class="absolute inset-x-0 bottom-0 pt-12 pb-4 flex flex-col justify-center items-center z-50 px-4 bg-gradient-to-t from-background-stronger via-background-stronger to-transparent pointer-events-none"
+              >
+                <div class="w-full pointer-events-auto">
                   <Show
-                    when={!mobileReview()}
+                    when={prompt.ready()}
                     fallback={
-                      <div class="relative h-full overflow-hidden">
-                        <Show
-                          when={diffsReady()}
-                          fallback={<div class="px-4 py-4 text-text-weak">Loading changes...</div>}
-                        >
-                          <SessionReviewTab
-                            diffs={diffs}
-                            view={view}
-                            diffStyle="unified"
-                            onViewFile={(path) => {
-                              const value = file.tab(path)
-                              tabs().open(value)
-                              file.load(path)
-                            }}
-                            classes={{
-                              root: "pb-[calc(var(--prompt-height,8rem)+32px)]",
-                              header: "px-4",
-                              container: "px-4",
-                            }}
-                          />
-                        </Show>
+                      <div class="w-full min-h-32 rounded-md border border-border-weak-base bg-background-base/50 px-4 py-3 text-text-weak whitespace-pre-wrap pointer-events-none">
+                        {handoff.prompt || "Loading prompt..."}
                       </div>
                     }
                   >
-                    <div class="relative w-full h-full min-w-0">
-                      <Show when={isDesktop()}>
-                        <div class="absolute inset-0 pointer-events-none z-10">
-                          <SessionMessageRail
-                            messages={visibleUserMessages()}
-                            current={activeMessage()}
-                            onMessageSelect={scrollToMessage}
-                            wide={!showTabs()}
-                            class="pointer-events-auto"
-                          />
-                        </div>
-                      </Show>
-                      <div
-                        ref={setScrollRef}
-                        onScroll={(e) => {
-                          autoScroll.handleScroll()
-                          if (isDesktop()) scheduleScrollSpy(e.currentTarget)
-                        }}
-                        onClick={autoScroll.handleInteraction}
-                        class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
-                      >
-                        <div
-                          ref={autoScroll.contentRef}
-                          class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,8rem)+64px)] md:pb-[calc(var(--prompt-height,10rem)+64px)] transition-[margin]"
-                          classList={{
-                            "mt-0.5": !showTabs(),
-                            "mt-0": showTabs(),
-                          }}
-                        >
-                          <Show when={store.turnStart > 0}>
-                            <div class="w-full flex justify-center">
-                              <Button
-                                variant="ghost"
-                                size="large"
-                                class="text-12-medium opacity-50"
-                                onClick={() => setStore("turnStart", 0)}
-                              >
-                                Render earlier messages
-                              </Button>
-                            </div>
-                          </Show>
-                          <Show when={historyMore()}>
-                            <div class="w-full flex justify-center">
-                              <Button
-                                variant="ghost"
-                                size="large"
-                                class="text-12-medium opacity-50"
-                                disabled={historyLoading()}
-                                onClick={() => {
-                                  const id = params.id
-                                  if (!id) return
-                                  setStore("turnStart", 0)
-                                  sync.session.history.loadMore(id)
-                                }}
-                              >
-                                {historyLoading() ? "Loading earlier messages..." : "Load earlier messages"}
-                              </Button>
-                            </div>
-                          </Show>
-                          <For each={renderedUserMessages()}>
-                            {(message) => {
-                              if (import.meta.env.DEV) {
-                                onMount(() => {
-                                  const id = params.id
-                                  if (!id) return
-                                  navMark({ dir: params.dir, to: id, name: "session:first-turn-mounted" })
-                                })
-                              }
-
-                              return (
-                                <div
-                                  id={anchor(message.id)}
-                                  data-message-id={message.id}
-                                  classList={{
-                                    "min-w-0 w-full max-w-full": true,
-                                    "last:min-h-[calc(100vh-5.5rem-var(--prompt-height,8rem)-64px)] md:last:min-h-[calc(100vh-4.5rem-var(--prompt-height,10rem)-64px)]":
-                                      platform.platform !== "desktop",
-                                    "last:min-h-[calc(100vh-7rem-var(--prompt-height,8rem)-64px)] md:last:min-h-[calc(100vh-6rem-var(--prompt-height,10rem)-64px)]":
-                                      platform.platform === "desktop",
-                                  }}
-                                >
-                                  <SessionTurn
-                                    sessionID={params.id!}
-                                    messageID={message.id}
-                                    lastUserMessageID={lastUserMessage()?.id}
-                                    stepsExpanded={store.expanded[message.id] ?? false}
-                                    onStepsExpandedToggle={() =>
-                                      setStore("expanded", message.id, (open: boolean | undefined) => !open)
-                                    }
-                                    classes={{
-                                      root: "min-w-0 w-full relative",
-                                      content:
-                                        "flex flex-col justify-between !overflow-visible [&_[data-slot=session-turn-message-header]]:top-[-32px]",
-                                      container:
-                                        "px-4 md:px-6 " +
-                                        (!showTabs()
-                                          ? "md:max-w-200 md:mx-auto"
-                                          : visibleUserMessages().length > 1
-                                            ? "md:pr-6 md:pl-18"
-                                            : ""),
-                                    }}
-                                  />
-                                </div>
-                              )
-                            }}
-                          </For>
-                        </div>
-                      </div>
-                    </div>
+                    <PromptInput
+                      ref={(el) => {
+                        inputRef = el
+                      }}
+                      newSessionWorktree={newSessionWorktree()}
+                      onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
+                    />
                   </Show>
-                </Show>
-              </Match>
-              <Match when={true}>
-                <NewSessionView
-                  worktree={newSessionWorktree()}
-                  onWorktreeChange={(value) => {
-                    if (value === "create") {
-                      setStore("newSessionWorktree", value)
-                      return
-                    }
-
-                    setStore("newSessionWorktree", "main")
-
-                    const target = value === "main" ? sync.project?.worktree : value
-                    if (!target) return
-                    if (target === sync.data.path.directory) return
-                    layout.projects.open(target)
-                    navigate(`/${base64Encode(target)}/session`)
-                  }}
-                />
-              </Match>
-            </Switch>
-          </div>
-
-          {/* Prompt input */}
-          <div
-            ref={(el) => (promptDock = el)}
-            class="absolute inset-x-0 bottom-0 pt-12 pb-4 md:pb-8 flex flex-col justify-center items-center z-50 px-4 md:px-0 bg-gradient-to-t from-background-stronger via-background-stronger to-transparent pointer-events-none"
-          >
-            <div
-              classList={{
-                "w-full md:px-6 pointer-events-auto": true,
-                "md:max-w-200": !showTabs(),
-              }}
-            >
-              <Show
-                when={prompt.ready()}
-                fallback={
-                  <div class="w-full min-h-32 md:min-h-40 rounded-md border border-border-weak-base bg-background-base/50 px-4 py-3 text-text-weak whitespace-pre-wrap pointer-events-none">
-                    {handoff.prompt || "Loading prompt..."}
-                  </div>
-                }
-              >
-                <PromptInput
-                  ref={(el) => {
-                    inputRef = el
-                  }}
-                  newSessionWorktree={newSessionWorktree()}
-                  onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
-                />
-              </Show>
+                </div>
+              </div>
             </div>
-          </div>
-
-          <Show when={isDesktop() && showTabs()}>
-            <ResizeHandle
-              direction="horizontal"
-              size={layout.session.width()}
-              min={450}
-              max={window.innerWidth * 0.45}
-              onResize={layout.session.resize}
-            />
-          </Show>
-        </div>
-
-        {/* Desktop tabs panel (Review + Context + Files) - hidden on mobile */}
-        <Show when={isDesktop() && showTabs()}>
-          <div class="relative flex-1 min-w-0 h-full border-l border-border-weak-base">
+          }
+        >
+          {/* Desktop: Main panel with integrated tabs */}
+          <div
+            class="@container relative flex-1 min-w-0 h-full flex flex-col bg-background-stronger"
+            style={{
+              "--prompt-height": store.promptHeight ? `${store.promptHeight}px` : undefined,
+            }}
+          >
             <DragDropProvider
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
@@ -1284,9 +1202,16 @@ export default function Page() {
             >
               <DragDropSensors />
               <ConstrainDragYAxis />
-              <Tabs value={activeTab()} onChange={openTab}>
-                <div class="sticky top-0 shrink-0 flex">
+              <Tabs value={activeTab()} onChange={openTab} class="flex flex-col flex-1 min-h-0">
+                <div class="sticky top-0 shrink-0 flex z-10">
                   <Tabs.List>
+                    {/* Chat tab - always shown */}
+                    <Tabs.Trigger value="session">
+                      <div class="flex items-center gap-1.5">
+                        <Icon name="speech-bubble" size="small" />
+                        <span>Chat</span>
+                      </div>
+                    </Tabs.Trigger>
                     <Show when={reviewTab()}>
                       <Tabs.Trigger value="review">
                         <div class="flex items-center gap-3">
@@ -1340,6 +1265,159 @@ export default function Page() {
                     </div>
                   </Tabs.List>
                 </div>
+
+                {/* Session tab content */}
+                <Tabs.Content value="session" class="relative flex-1 min-h-0 !overflow-hidden">
+                  <Show when={activeTab() === "session"}>
+                    <Show
+                      when={params.id && activeMessage()}
+                      fallback={
+                        <NewSessionView
+                          worktree={newSessionWorktree()}
+                          onWorktreeChange={(value) => {
+                            if (value === "create") {
+                              setStore("newSessionWorktree", value)
+                              return
+                            }
+
+                            setStore("newSessionWorktree", "main")
+
+                            const target = value === "main" ? sync.project?.worktree : value
+                            if (!target) return
+                            if (target === sync.data.path.directory) return
+                            layout.projects.open(target)
+                            navigate(`/${base64Encode(target)}/session`)
+                          }}
+                        />
+                      }
+                    >
+                      <div class="relative w-full h-full min-w-0">
+                        <div class="absolute inset-0 pointer-events-none z-10">
+                          <SessionMessageRail
+                            messages={visibleUserMessages()}
+                            current={activeMessage()}
+                            onMessageSelect={scrollToMessage}
+                            wide={false}
+                            class="pointer-events-auto"
+                          />
+                        </div>
+                        <div
+                          ref={setScrollRef}
+                          onScroll={(e) => {
+                            autoScroll.handleScroll()
+                            scheduleScrollSpy(e.currentTarget)
+                          }}
+                          onClick={autoScroll.handleInteraction}
+                          class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
+                        >
+                          <div
+                            ref={autoScroll.contentRef}
+                            class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,10rem)+64px)] mt-0"
+                          >
+                            <Show when={store.turnStart > 0}>
+                              <div class="w-full flex justify-center">
+                                <Button
+                                  variant="ghost"
+                                  size="large"
+                                  class="text-12-medium opacity-50"
+                                  onClick={() => setStore("turnStart", 0)}
+                                >
+                                  Render earlier messages
+                                </Button>
+                              </div>
+                            </Show>
+                            <Show when={historyMore()}>
+                              <div class="w-full flex justify-center">
+                                <Button
+                                  variant="ghost"
+                                  size="large"
+                                  class="text-12-medium opacity-50"
+                                  disabled={historyLoading()}
+                                  onClick={() => {
+                                    const id = params.id
+                                    if (!id) return
+                                    setStore("turnStart", 0)
+                                    sync.session.history.loadMore(id)
+                                  }}
+                                >
+                                  {historyLoading() ? "Loading earlier messages..." : "Load earlier messages"}
+                                </Button>
+                              </div>
+                            </Show>
+                            <For each={renderedUserMessages()}>
+                              {(message) => {
+                                if (import.meta.env.DEV) {
+                                  onMount(() => {
+                                    const id = params.id
+                                    if (!id) return
+                                    navMark({ dir: params.dir, to: id, name: "session:first-turn-mounted" })
+                                  })
+                                }
+
+                                return (
+                                  <div
+                                    id={anchor(message.id)}
+                                    data-message-id={message.id}
+                                    classList={{
+                                      "min-w-0 w-full max-w-full": true,
+                                      "last:min-h-[calc(100vh-4.5rem-var(--prompt-height,10rem)-64px)]":
+                                        platform.platform !== "desktop",
+                                      "last:min-h-[calc(100vh-6rem-var(--prompt-height,10rem)-64px)]":
+                                        platform.platform === "desktop",
+                                    }}
+                                  >
+                                    <SessionTurn
+                                      sessionID={params.id!}
+                                      messageID={message.id}
+                                      lastUserMessageID={lastUserMessage()?.id}
+                                      stepsExpanded={store.expanded[message.id] ?? false}
+                                      onStepsExpandedToggle={() =>
+                                        setStore("expanded", message.id, (open: boolean | undefined) => !open)
+                                      }
+                                      classes={{
+                                        root: "min-w-0 w-full relative",
+                                        content:
+                                          "flex flex-col justify-between !overflow-visible [&_[data-slot=session-turn-message-header]]:top-[-32px]",
+                                        container:
+                                          "px-4 md:px-6 " +
+                                          (visibleUserMessages().length > 1 ? "md:pr-6 md:pl-18" : ""),
+                                      }}
+                                    />
+                                  </div>
+                                )
+                              }}
+                            </For>
+                          </div>
+                        </div>
+
+                        {/* Prompt input - inside session tab */}
+                        <div
+                          ref={(el) => (promptDock = el)}
+                          class="absolute inset-x-0 bottom-0 pt-12 pb-8 flex flex-col justify-center items-center z-50 bg-gradient-to-t from-background-stronger via-background-stronger to-transparent pointer-events-none"
+                        >
+                          <div class="w-full px-6 pointer-events-auto">
+                            <Show
+                              when={prompt.ready()}
+                              fallback={
+                                <div class="w-full min-h-40 rounded-md border border-border-weak-base bg-background-base/50 px-4 py-3 text-text-weak whitespace-pre-wrap pointer-events-none">
+                                  {handoff.prompt || "Loading prompt..."}
+                                </div>
+                              }
+                            >
+                              <PromptInput
+                                ref={(el) => {
+                                  inputRef = el
+                                }}
+                                newSessionWorktree={newSessionWorktree()}
+                                onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
+                              />
+                            </Show>
+                          </div>
+                        </div>
+                      </div>
+                    </Show>
+                  </Show>
+                </Tabs.Content>
                 <Show when={reviewTab()}>
                   <Tabs.Content value="review" class="flex flex-col h-full overflow-hidden contain-strict">
                     <Show when={activeTab() === "review"}>
@@ -1515,7 +1593,7 @@ export default function Page() {
                     return (
                       <Tabs.Content
                         value={tab}
-                        class="mt-3"
+                        class="flex flex-col h-full overflow-hidden"
                         ref={(el: HTMLDivElement) => {
                           scroll = el
                           restoreScroll()
@@ -1573,23 +1651,11 @@ export default function Page() {
                                 </Show>
                               </div>
                             </Match>
-                            <Match when={state()?.loaded}>
-                              <Dynamic
-                                component={codeComponent}
-                                file={{
-                                  name: path() ?? "",
-                                  contents: contents(),
-                                  cacheKey: cacheKey(),
-                                }}
-                                enableLineSelection
-                                selectedLines={selectedLines()}
-                                onLineSelected={(range: SelectedLineRange | null) => {
-                                  const p = path()
-                                  if (!p) return
-                                  file.setSelectedLines(p, range)
-                                }}
-                                overflow="scroll"
-                                class="select-text pb-40"
+                            <Match when={state()?.loaded && path()}>
+                              <FileEditor
+                                path={path()!}
+                                enableLsp
+                                class="h-full"
                               />
                             </Match>
                             <Match when={state()?.loading}>

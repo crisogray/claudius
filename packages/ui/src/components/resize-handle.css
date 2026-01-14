@@ -29,6 +29,12 @@
       inset-inline-start: 50%;
       transform: translateX(-50%);
     }
+
+    &[data-reverse] {
+      inset-inline-end: unset;
+      inset-inline-start: 0;
+      transform: translateX(-50%);
+    }
   }
 
   &[data-direction="vertical"] {

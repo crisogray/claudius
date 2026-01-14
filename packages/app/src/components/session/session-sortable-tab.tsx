@@ -27,6 +27,10 @@ export function SortableTab(props: { tab: string; onTabClose: (tab: string) => v
   const file = useFile()
   const sortable = createSortable(props.tab)
   const path = createMemo(() => file.pathFromTab(props.tab))
+  const isDirty = createMemo(() => {
+    const p = path()
+    return p ? file.isDirty(p) : false
+  })
   return (
     // @ts-ignore
     <div use:sortable classList={{ "h-full": true, "opacity-0": sortable.isActiveDraggable }}>
@@ -41,7 +45,12 @@ export function SortableTab(props: { tab: string; onTabClose: (tab: string) => v
           hideCloseButton
           onMiddleClick={() => props.onTabClose(props.tab)}
         >
-          <Show when={path()}>{(p) => <FileVisual path={p()} />}</Show>
+          <div class="flex items-center gap-3">
+            <Show when={path()}>{(p) => <FileVisual path={p()} />}</Show>
+            <Show when={isDirty()}>
+              <div class="w-2 h-2 rounded-full bg-surface-warning-strong" title="Unsaved changes" />
+            </Show>
+          </div>
         </Tabs.Trigger>
       </div>
     </div>

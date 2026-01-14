@@ -34,8 +34,11 @@ export type FileState = {
   name: string
   loaded?: boolean
   loading?: boolean
+  saving?: boolean
   error?: string
   content?: FileContent
+  /** Edited content that differs from the original */
+  editedContent?: string
 }
 
 function stripFileProtocol(input: string) {
@@ -371,6 +374,132 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       disposeViews()
     })
 
+    /**
+     * Update the edited content for a file (marks it as dirty)
+     */
+    const edit = (input: string, content: string) => {
+      const path = normalize(input)
+      if (!path) return
+      ensure(path)
+      setStore(
+        "file",
+        path,
+        produce((draft) => {
+          draft.editedContent = content
+        }),
+      )
+    }
+
+    /**
+     * Check if a file has unsaved changes
+     */
+    const isDirty = (input: string): boolean => {
+      const path = normalize(input)
+      if (!path) return false
+      const file = store.file[path]
+      if (!file) return false
+      if (file.editedContent === undefined) return false
+      const originalContent = file.content?.content ?? ""
+      return file.editedContent !== originalContent
+    }
+
+    /**
+     * Get the current content of a file (edited if dirty, original otherwise)
+     */
+    const getContent = (input: string): string => {
+      const path = normalize(input)
+      if (!path) return ""
+      const file = store.file[path]
+      if (!file) return ""
+      if (file.editedContent !== undefined) return file.editedContent
+      return file.content?.content ?? ""
+    }
+
+    /**
+     * Save the edited content to the server
+     */
+    const save = async (input: string): Promise<boolean> => {
+      const path = normalize(input)
+      if (!path) return false
+      const file = store.file[path]
+      if (!file) return false
+      if (file.editedContent === undefined) return true // Nothing to save
+
+      setStore(
+        "file",
+        path,
+        produce((draft) => {
+          draft.saving = true
+        }),
+      )
+
+      try {
+        await sdk.client.file.write({
+          path,
+          content: file.editedContent,
+        })
+
+        // Update the original content and clear edited
+        setStore(
+          "file",
+          path,
+          produce((draft) => {
+            draft.saving = false
+            if (draft.content) {
+              draft.content.content = draft.editedContent!
+              draft.content.diff = undefined
+              draft.content.patch = undefined
+            }
+            draft.editedContent = undefined
+          }),
+        )
+
+        showToast({
+          variant: "success",
+          title: "File saved",
+          description: path,
+        })
+
+        return true
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e.message : "Unknown error"
+        setStore(
+          "file",
+          path,
+          produce((draft) => {
+            draft.saving = false
+            draft.error = error
+          }),
+        )
+
+        showToast({
+          variant: "error",
+          title: "Failed to save file",
+          description: error,
+        })
+
+        return false
+      }
+    }
+
+    /**
+     * Discard edited changes and revert to original content
+     */
+    const discard = (input: string) => {
+      const path = normalize(input)
+      if (!path) return
+      const file = store.file[path]
+      if (!file) return
+
+      setStore(
+        "file",
+        path,
+        produce((draft) => {
+          draft.editedContent = undefined
+        }),
+      )
+    }
+
     return {
       ready: () => view().ready(),
       normalize,
@@ -378,6 +507,11 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       pathFromTab,
       get,
       load,
+      edit,
+      isDirty,
+      getContent,
+      save,
+      discard,
       scrollTop,
       scrollLeft,
       setScrollTop,

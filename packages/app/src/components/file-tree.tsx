@@ -2,29 +2,76 @@ import { useLocal, type LocalFile } from "@/context/local"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
-import { For, Match, Switch, type ComponentProps, type ParentProps } from "solid-js"
+import { For, Match, Show, Switch, onMount, type ComponentProps, type ParentProps } from "solid-js"
 import { Dynamic } from "solid-js/web"
+import type { GitFileStatus } from "@/context/git"
+
+// Git status badge component
+function GitBadge(props: { status: GitFileStatus }) {
+  const statusConfig: Record<string, { letter: string; class: string }> = {
+    modified: { letter: "M", class: "text-yellow-500" },
+    added: { letter: "A", class: "text-green-500" },
+    deleted: { letter: "D", class: "text-red-500" },
+    untracked: { letter: "?", class: "text-gray-400" },
+    renamed: { letter: "R", class: "text-blue-500" },
+    copied: { letter: "C", class: "text-blue-500" },
+  }
+  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-gray-400" }
+
+  return (
+    <span class={`ml-auto mr-1 text-[10px] font-mono font-medium ${config().class}`}>
+      {config().letter}
+    </span>
+  )
+}
 
 export default function FileTree(props: {
   path: string
   class?: string
   nodeClass?: string
   level?: number
+  filter?: string
+  gitStatuses?: Map<string, GitFileStatus>
   onFileClick?: (file: LocalFile) => void
+  onContextMenu?: (file: LocalFile, e: MouseEvent) => void
 }) {
   const local = useLocal()
   const level = props.level ?? 0
+
+  // Load root directory on mount
+  onMount(() => {
+    if (level === 0) {
+      local.file.expand(props.path)
+    }
+  })
+
+  const filteredChildren = () => {
+    const children = local.file.children(props.path)
+    const filterText = props.filter?.toLowerCase()
+    if (!filterText) return children
+
+    return children.filter((node) => {
+      // Always include directories if they might have matching children
+      if (node.type === "directory") return true
+      // Filter files by name
+      return node.name.toLowerCase().includes(filterText)
+    })
+  }
 
   const Node = (p: ParentProps & ComponentProps<"div"> & { node: LocalFile; as?: "div" | "button" }) => (
     <Dynamic
       component={p.as ?? "div"}
       classList={{
-        "p-0.5 w-full flex items-center gap-x-2 hover:bg-background-element": true,
+        "h-6 w-full flex items-center justify-start gap-x-2 hover:bg-background-element text-left": true,
         // "bg-background-element": local.file.active()?.path === p.node.path,
         [props.nodeClass ?? ""]: !!props.nodeClass,
       }}
       style={`padding-left: ${level * 10}px`}
       draggable={true}
+      onContextMenu={(e: MouseEvent) => {
+        e.preventDefault()
+        props.onContextMenu?.(p.node, e)
+      }}
       onDragStart={(e: any) => {
         const evt = e as globalThis.DragEvent
         evt.dataTransfer!.effectAllowed = "copy"
@@ -53,7 +100,7 @@ export default function FileTree(props: {
       {p.children}
       <span
         classList={{
-          "text-xs whitespace-nowrap truncate": true,
+          "text-xs whitespace-nowrap truncate flex-1": true,
           "text-text-muted/40": p.node.ignored,
           "text-text-muted/80": !p.node.ignored,
           // "!text-text": local.file.active()?.path === p.node.path,
@@ -62,15 +109,15 @@ export default function FileTree(props: {
       >
         {p.node.name}
       </span>
-      {/* <Show when={local.file.changed(p.node.path)}> */}
-      {/*   <span class="ml-auto mr-1 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" /> */}
-      {/* </Show> */}
+      <Show when={props.gitStatuses?.get(p.node.path)}>
+        {(status) => <GitBadge status={status()} />}
+      </Show>
     </Dynamic>
   )
 
   return (
     <div class={`flex flex-col ${props.class}`}>
-      <For each={local.file.children(props.path)}>
+      <For each={filteredChildren()}>
         {(node) => (
           <Tooltip forceMount={false} openDelay={2000} value={node.path} placement="right">
             <Switch>
@@ -82,7 +129,7 @@ export default function FileTree(props: {
                   // open={local.file.node(node.path)?.expanded}
                   onOpenChange={(open) => (open ? local.file.expand(node.path) : local.file.collapse(node.path))}
                 >
-                  <Collapsible.Trigger>
+                  <Collapsible.Trigger class="!h-auto">
                     <Node node={node}>
                       <Collapsible.Arrow class="text-text-muted/60 ml-1" />
                       <FileIcon
@@ -93,7 +140,7 @@ export default function FileTree(props: {
                     </Node>
                   </Collapsible.Trigger>
                   <Collapsible.Content>
-                    <FileTree path={node.path} level={level + 1} onFileClick={props.onFileClick} />
+                    <FileTree path={node.path} level={level + 1} filter={props.filter} gitStatuses={props.gitStatuses} onFileClick={props.onFileClick} onContextMenu={props.onContextMenu} />
                   </Collapsible.Content>
                 </Collapsible>
               </Match>

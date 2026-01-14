@@ -52,6 +52,7 @@ export type EventLspClientDiagnostics = {
     properties: {
         serverID: string;
         path: string;
+        diagnostics: Array<unknown>;
     };
 };
 
@@ -573,6 +574,7 @@ export type EventPlanReplied = {
         sessionID: string;
         requestID: string;
         approved: boolean;
+        message?: string;
     };
 };
 
@@ -804,6 +806,31 @@ export type EventFileEdited = {
     };
 };
 
+export type GitFileStatus = {
+    path: string;
+    status: 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed' | 'copied';
+    staged: boolean;
+    added: number;
+    removed: number;
+    oldPath?: string;
+};
+
+export type GitStatus = {
+    branch?: string;
+    upstream?: string;
+    ahead: number;
+    behind: number;
+    staged: Array<GitFileStatus>;
+    unstaged: Array<GitFileStatus>;
+    untracked: Array<GitFileStatus>;
+    conflicted: Array<GitFileStatus>;
+};
+
+export type EventGitStatusUpdated = {
+    type: 'git.status.updated';
+    properties: GitStatus;
+};
+
 export type EventFileWatcherUpdated = {
     type: 'file.watcher.updated';
     properties: {
@@ -872,7 +899,7 @@ export type EventGlobalDisposed = {
     };
 };
 
-export type Event = EventProjectUpdated | EventServerInstanceDisposed | EventInstallationUpdated | EventInstallationUpdateAvailable | EventLspClientDiagnostics | EventLspUpdated | EventMessageUpdated | EventMessageRemoved | EventMessagePartUpdated | EventMessagePartRemoved | EventSessionStatus | EventSessionIdle | EventToastShow | EventMcpToolsChanged | EventCommandExecuted | EventPermissionAsked | EventPermissionReplied | EventPlanAsked | EventPlanReplied | EventPlanRejected | EventQuestionAsked | EventQuestionReplied | EventQuestionRejected | EventTodoUpdated | EventSdkStarted | EventSdkCompleted | EventSdkError | EventSessionCreated | EventSessionUpdated | EventSessionDeleted | EventSessionDiff | EventSessionError | EventFileEdited | EventFileWatcherUpdated | EventVcsBranchUpdated | EventPtyCreated | EventPtyUpdated | EventPtyExited | EventPtyDeleted | EventServerConnected | EventGlobalDisposed;
+export type Event = EventProjectUpdated | EventServerInstanceDisposed | EventInstallationUpdated | EventInstallationUpdateAvailable | EventLspClientDiagnostics | EventLspUpdated | EventMessageUpdated | EventMessageRemoved | EventMessagePartUpdated | EventMessagePartRemoved | EventSessionStatus | EventSessionIdle | EventToastShow | EventMcpToolsChanged | EventCommandExecuted | EventPermissionAsked | EventPermissionReplied | EventPlanAsked | EventPlanReplied | EventPlanRejected | EventQuestionAsked | EventQuestionReplied | EventQuestionRejected | EventTodoUpdated | EventSdkStarted | EventSdkCompleted | EventSdkError | EventSessionCreated | EventSessionUpdated | EventSessionDeleted | EventSessionDiff | EventSessionError | EventFileEdited | EventGitStatusUpdated | EventFileWatcherUpdated | EventVcsBranchUpdated | EventPtyCreated | EventPtyUpdated | EventPtyExited | EventPtyDeleted | EventServerConnected | EventGlobalDisposed;
 
 export type GlobalEvent = {
     directory: string;
@@ -1747,6 +1774,21 @@ export type File = {
     status: 'added' | 'deleted' | 'modified';
 };
 
+export type GitCommit = {
+    hash: string;
+    hashShort: string;
+    author: string;
+    email: string;
+    date: number;
+    message: string;
+    messageShort: string;
+};
+
+export type GitCommitResult = {
+    hash: string;
+    message: string;
+};
+
 export type McpStatusConnected = {
     status: 'connected';
 };
@@ -1784,6 +1826,29 @@ export type LspStatus = {
     name: string;
     root: string;
     status: 'connected' | 'error';
+};
+
+export type CompletionItem = {
+    label: string;
+    kind?: number;
+    detail?: string;
+    documentation?: string | {
+        kind: string;
+        value: string;
+    };
+    insertText?: string;
+    insertTextFormat?: number;
+    textEdit?: {
+        range: Range;
+        newText: string;
+    };
+    sortText?: string;
+    filterText?: string;
+};
+
+export type CompletionList = {
+    isIncomplete: boolean;
+    items: Array<CompletionItem>;
 };
 
 export type FormatterStatus = {
@@ -3810,6 +3875,35 @@ export type FileReadResponses = {
 
 export type FileReadResponse = FileReadResponses[keyof FileReadResponses];
 
+export type FileWriteData = {
+    body?: {
+        /**
+         * Path to the file
+         */
+        path: string;
+        /**
+         * Content to write
+         */
+        content: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/file/write';
+};
+
+export type FileWriteResponses = {
+    /**
+     * File written successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type FileWriteResponse = FileWriteResponses[keyof FileWriteResponses];
+
 export type FileStatusData = {
     body?: never;
     path?: never;
@@ -3827,6 +3921,216 @@ export type FileStatusResponses = {
 };
 
 export type FileStatusResponse = FileStatusResponses[keyof FileStatusResponses];
+
+export type GitStatusData = {
+    body?: never;
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/status';
+};
+
+export type GitStatusResponses = {
+    /**
+     * Git status
+     */
+    200: GitStatus;
+};
+
+export type GitStatusResponse = GitStatusResponses[keyof GitStatusResponses];
+
+export type GitLogData = {
+    body?: never;
+    path?: never;
+    query?: {
+        directory?: string;
+        /**
+         * Maximum number of commits to return
+         */
+        limit?: number;
+    };
+    url: '/git/log';
+};
+
+export type GitLogResponses = {
+    /**
+     * Commit history
+     */
+    200: Array<GitCommit>;
+};
+
+export type GitLogResponse = GitLogResponses[keyof GitLogResponses];
+
+export type GitStageData = {
+    body?: {
+        /**
+         * Array of file paths to stage
+         */
+        files: Array<string>;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/stage';
+};
+
+export type GitStageResponses = {
+    /**
+     * Files staged successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type GitStageResponse = GitStageResponses[keyof GitStageResponses];
+
+export type GitUnstageData = {
+    body?: {
+        /**
+         * Array of file paths to unstage
+         */
+        files: Array<string>;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/unstage';
+};
+
+export type GitUnstageResponses = {
+    /**
+     * Files unstaged successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type GitUnstageResponse = GitUnstageResponses[keyof GitUnstageResponses];
+
+export type GitStageAllData = {
+    body?: never;
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/stage-all';
+};
+
+export type GitStageAllResponses = {
+    /**
+     * All changes staged successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type GitStageAllResponse = GitStageAllResponses[keyof GitStageAllResponses];
+
+export type GitUnstageAllData = {
+    body?: never;
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/unstage-all';
+};
+
+export type GitUnstageAllResponses = {
+    /**
+     * All changes unstaged successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type GitUnstageAllResponse = GitUnstageAllResponses[keyof GitUnstageAllResponses];
+
+export type GitDiscardData = {
+    body?: {
+        /**
+         * Array of file paths to discard
+         */
+        files: Array<string>;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/discard';
+};
+
+export type GitDiscardResponses = {
+    /**
+     * Changes discarded successfully
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type GitDiscardResponse = GitDiscardResponses[keyof GitDiscardResponses];
+
+export type GitCommitData = {
+    body?: {
+        /**
+         * Commit message
+         */
+        message: string;
+        /**
+         * Whether to amend the last commit
+         */
+        amend?: boolean;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/git/commit';
+};
+
+export type GitCommitResponses = {
+    /**
+     * Commit created successfully
+     */
+    200: GitCommitResult;
+};
+
+export type GitCommitResponse = GitCommitResponses[keyof GitCommitResponses];
+
+export type GitDiffData = {
+    body?: never;
+    path?: never;
+    query: {
+        directory?: string;
+        /**
+         * Path to the file
+         */
+        file: string;
+        /**
+         * Whether to show staged changes
+         */
+        staged?: boolean;
+    };
+    url: '/git/diff';
+};
+
+export type GitDiffResponses = {
+    /**
+     * File diff
+     */
+    200: {
+        diff: string;
+    };
+};
+
+export type GitDiffResponse = GitDiffResponses[keyof GitDiffResponses];
 
 export type AppLogData = {
     body?: {
@@ -4165,6 +4469,298 @@ export type LspStatusResponses = {
 };
 
 export type LspStatusResponse = LspStatusResponses[keyof LspStatusResponses];
+
+export type LspCompletionData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+        /**
+         * Line number (0-indexed)
+         */
+        line: number;
+        /**
+         * Character offset (0-indexed)
+         */
+        character: number;
+        /**
+         * Trigger kind (1=Invoked, 2=TriggerCharacter, 3=Incomplete)
+         */
+        triggerKind?: number;
+        /**
+         * Trigger character
+         */
+        triggerCharacter?: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/completion';
+};
+
+export type LspCompletionErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspCompletionError = LspCompletionErrors[keyof LspCompletionErrors];
+
+export type LspCompletionResponses = {
+    /**
+     * Completion items
+     */
+    200: CompletionList | null;
+};
+
+export type LspCompletionResponse = LspCompletionResponses[keyof LspCompletionResponses];
+
+export type LspHoverData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+        /**
+         * Line number (0-indexed)
+         */
+        line: number;
+        /**
+         * Character offset (0-indexed)
+         */
+        character: number;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/hover';
+};
+
+export type LspHoverErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspHoverError = LspHoverErrors[keyof LspHoverErrors];
+
+export type LspHoverResponses = {
+    /**
+     * Hover information
+     */
+    200: unknown | null;
+};
+
+export type LspHoverResponse = LspHoverResponses[keyof LspHoverResponses];
+
+export type LspDefinitionData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+        /**
+         * Line number (0-indexed)
+         */
+        line: number;
+        /**
+         * Character offset (0-indexed)
+         */
+        character: number;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/definition';
+};
+
+export type LspDefinitionErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspDefinitionError = LspDefinitionErrors[keyof LspDefinitionErrors];
+
+export type LspDefinitionResponses = {
+    /**
+     * Definition locations
+     */
+    200: Array<unknown>;
+};
+
+export type LspDefinitionResponse = LspDefinitionResponses[keyof LspDefinitionResponses];
+
+export type LspDocumentOpenData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/document/open';
+};
+
+export type LspDocumentOpenErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspDocumentOpenError = LspDocumentOpenErrors[keyof LspDocumentOpenErrors];
+
+export type LspDocumentOpenResponses = {
+    /**
+     * Success
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type LspDocumentOpenResponse = LspDocumentOpenResponses[keyof LspDocumentOpenResponses];
+
+export type LspDocumentChangeData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+        /**
+         * New file content
+         */
+        text: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/document/change';
+};
+
+export type LspDocumentChangeErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspDocumentChangeError = LspDocumentChangeErrors[keyof LspDocumentChangeErrors];
+
+export type LspDocumentChangeResponses = {
+    /**
+     * Success
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type LspDocumentChangeResponse = LspDocumentChangeResponses[keyof LspDocumentChangeResponses];
+
+export type LspDocumentSaveData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+        /**
+         * Saved content (optional)
+         */
+        text?: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/document/save';
+};
+
+export type LspDocumentSaveErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspDocumentSaveError = LspDocumentSaveErrors[keyof LspDocumentSaveErrors];
+
+export type LspDocumentSaveResponses = {
+    /**
+     * Success
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type LspDocumentSaveResponse = LspDocumentSaveResponses[keyof LspDocumentSaveResponses];
+
+export type LspDocumentCloseData = {
+    body?: {
+        /**
+         * File path
+         */
+        path: string;
+    };
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/document/close';
+};
+
+export type LspDocumentCloseErrors = {
+    /**
+     * Bad request
+     */
+    400: BadRequestError;
+};
+
+export type LspDocumentCloseError = LspDocumentCloseErrors[keyof LspDocumentCloseErrors];
+
+export type LspDocumentCloseResponses = {
+    /**
+     * Success
+     */
+    200: {
+        ok: boolean;
+    };
+};
+
+export type LspDocumentCloseResponse = LspDocumentCloseResponses[keyof LspDocumentCloseResponses];
+
+export type LspDiagnosticsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        directory?: string;
+    };
+    url: '/lsp/diagnostics';
+};
+
+export type LspDiagnosticsResponses = {
+    /**
+     * Diagnostics by file path
+     */
+    200: {
+        [key: string]: Array<unknown>;
+    };
+};
+
+export type LspDiagnosticsResponse = LspDiagnosticsResponses[keyof LspDiagnosticsResponses];
 
 export type FormatterStatusData = {
     body?: never;

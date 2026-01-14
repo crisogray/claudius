@@ -2,7 +2,9 @@ import { createMemo, Show, type ParentProps } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider, useSDK } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
+import { GitProvider } from "@/context/git"
 import { LocalProvider } from "@/context/local"
+import { LspProvider } from "@/context/lsp"
 
 import { base64Decode } from "@opencode-ai/util/encode"
 import { DataProvider } from "@opencode-ai/ui/context"
@@ -58,7 +60,11 @@ export default function Layout(props: ParentProps) {
                 onPlanRespond={respondToPlan}
                 onNavigateToSession={navigateToSession}
               >
-                <LocalProvider>{props.children}</LocalProvider>
+                <LspProvider>
+                  <GitProvider>
+                    <LocalProvider>{props.children}</LocalProvider>
+                  </GitProvider>
+                </LspProvider>
               </DataProvider>
             )
           })}

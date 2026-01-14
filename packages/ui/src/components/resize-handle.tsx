@@ -8,6 +8,8 @@ export interface ResizeHandleProps extends Omit<JSX.HTMLAttributes<HTMLDivElemen
   onResize: (size: number) => void
   onCollapse?: () => void
   collapseThreshold?: number
+  /** Reverse the resize direction (for right/bottom panels where handle is on opposite side) */
+  reverse?: boolean
 }
 
 export function ResizeHandle(props: ResizeHandleProps) {
@@ -19,6 +21,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
     "onResize",
     "onCollapse",
     "collapseThreshold",
+    "reverse",
     "class",
     "classList",
   ])
@@ -34,7 +37,9 @@ export function ResizeHandle(props: ResizeHandleProps) {
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       const pos = local.direction === "horizontal" ? moveEvent.clientX : moveEvent.clientY
-      const delta = local.direction === "vertical" ? start - pos : pos - start
+      const isVertical = local.direction === "vertical"
+      const defaultDelta = isVertical ? start - pos : pos - start
+      const delta = local.reverse ? -defaultDelta : defaultDelta
       current = startSize + delta
       const clamped = Math.min(local.max, Math.max(local.min, current))
       local.onResize(clamped)
@@ -61,6 +66,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
       {...rest}
       data-component="resize-handle"
       data-direction={local.direction}
+      data-reverse={local.reverse ? "" : undefined}
       classList={{
         ...(local.classList ?? {}),
         [local.class ?? ""]: !!local.class,

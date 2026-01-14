@@ -35,6 +35,7 @@ export namespace LSPClient {
       z.object({
         serverID: z.string(),
         path: z.string(),
+        diagnostics: z.array(z.any()),
       }),
     ),
   }
@@ -58,7 +59,7 @@ export namespace LSPClient {
       const exists = diagnostics.has(filePath)
       diagnostics.set(filePath, params.diagnostics)
       if (!exists && input.serverID === "typescript") return
-      Bus.publish(Event.Diagnostics, { path: filePath, serverID: input.serverID })
+      Bus.publish(Event.Diagnostics, { path: filePath, serverID: input.serverID, diagnostics: params.diagnostics })
     })
     connection.onRequest("window/workDoneProgress/create", (params) => {
       l.info("window/workDoneProgress/create", params)
@@ -106,9 +107,27 @@ export namespace LSPClient {
             synchronization: {
               didOpen: true,
               didChange: true,
+              didSave: true,
+              didClose: true,
             },
             publishDiagnostics: {
               versionSupport: true,
+            },
+            completion: {
+              completionItem: {
+                snippetSupport: true,
+                documentationFormat: ["markdown", "plaintext"],
+                resolveSupport: {
+                  properties: ["documentation", "detail"],
+                },
+              },
+              contextSupport: true,
+            },
+            hover: {
+              contentFormat: ["markdown", "plaintext"],
+            },
+            definition: {
+              linkSupport: true,
             },
           },
         },
@@ -202,6 +221,64 @@ export namespace LSPClient {
           })
           files[input.path] = 0
           return
+        },
+
+        async change(input: { path: string; text: string }) {
+          input.path = path.isAbsolute(input.path) ? input.path : path.resolve(Instance.directory, input.path)
+          const version = files[input.path]
+          if (version === undefined) {
+            // File not opened yet, open it first
+            const extension = path.extname(input.path)
+            const languageId = LANGUAGE_EXTENSIONS[extension] ?? "plaintext"
+            diagnostics.delete(input.path)
+            await connection.sendNotification("textDocument/didOpen", {
+              textDocument: {
+                uri: pathToFileURL(input.path).href,
+                languageId,
+                version: 0,
+                text: input.text,
+              },
+            })
+            files[input.path] = 0
+            return
+          }
+
+          const next = version + 1
+          files[input.path] = next
+          log.info("textDocument/didChange", {
+            path: input.path,
+            version: next,
+          })
+          await connection.sendNotification("textDocument/didChange", {
+            textDocument: {
+              uri: pathToFileURL(input.path).href,
+              version: next,
+            },
+            contentChanges: [{ text: input.text }],
+          })
+        },
+
+        async save(input: { path: string; text?: string }) {
+          input.path = path.isAbsolute(input.path) ? input.path : path.resolve(Instance.directory, input.path)
+          log.info("textDocument/didSave", { path: input.path })
+          await connection.sendNotification("textDocument/didSave", {
+            textDocument: {
+              uri: pathToFileURL(input.path).href,
+            },
+            text: input.text,
+          })
+        },
+
+        async close(input: { path: string }) {
+          input.path = path.isAbsolute(input.path) ? input.path : path.resolve(Instance.directory, input.path)
+          log.info("textDocument/didClose", { path: input.path })
+          await connection.sendNotification("textDocument/didClose", {
+            textDocument: {
+              uri: pathToFileURL(input.path).href,
+            },
+          })
+          delete files[input.path]
+          diagnostics.delete(input.path)
         },
       },
       get diagnostics() {

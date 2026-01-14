@@ -71,6 +71,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         rightPanel: {
           opened: true,
           activeTab: "files" as RightPanelTab,
+          width: 250,
         },
         sessionTabs: {} as Record<string, SessionTabs>,
         sessionView: {} as Record<string, SessionView>,
@@ -352,6 +353,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       rightPanel: {
         opened: createMemo(() => store.rightPanel?.opened ?? true),
         activeTab: createMemo(() => store.rightPanel?.activeTab ?? "files"),
+        width: createMemo(() => store.rightPanel?.width ?? 250),
         open() {
           setStore("rightPanel", "opened", true)
         },
@@ -363,6 +365,9 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         },
         setActiveTab(tab: RightPanelTab) {
           setStore("rightPanel", "activeTab", tab)
+        },
+        resize(width: number) {
+          setStore("rightPanel", "width", width)
         },
       },
       view(sessionKey: string) {
@@ -471,7 +476,8 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           async open(tab: string) {
             const current = store.sessionTabs[sessionKey] ?? { all: [] }
 
-            if (tab === "review") {
+            // Session and Review are special tabs - just set active without adding to all
+            if (tab === "session" || tab === "review") {
               if (!store.sessionTabs[sessionKey]) {
                 setStore("sessionTabs", sessionKey, { all: [], active: tab })
                 return

@@ -486,6 +486,12 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         load,
         init,
         expand(path: string) {
+          // Create node if it doesn't exist
+          if (!store.node[path]) {
+            setStore("node", path, { path, name: path.split("/").pop() || path, type: "directory" as const, expanded: true, loaded: true })
+            list(path)
+            return
+          }
           setStore("node", path, "expanded", true)
           if (store.node[path]?.loaded) return
           setStore("node", path, "loaded", true)
@@ -530,11 +536,13 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         // changes,
         // changed,
         children(path: string) {
+          // Root directory: match files without "/" (direct children)
+          if (path === "." || path === "") {
+            return Object.values(store.node).filter((x) => x.path && x.path !== "." && !x.path.includes("/"))
+          }
+          // Nested directories: use prefix matching
           return Object.values(store.node).filter(
-            (x) =>
-              x.path.startsWith(path) &&
-              x.path !== path &&
-              !x.path.replace(new RegExp(`^${path + "/"}`), "").includes("/"),
+            (x) => x.path.startsWith(path + "/") && !x.path.slice(path.length + 1).includes("/"),
           )
         },
         searchFiles,

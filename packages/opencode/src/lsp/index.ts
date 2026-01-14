@@ -288,6 +288,38 @@ export namespace LSP {
     })
   }
 
+  export async function openFile(input: string) {
+    log.info("opening file", { file: input })
+    const clients = await getClients(input)
+    await Promise.all(clients.map((client) => client.notify.open({ path: input }))).catch((err) => {
+      log.error("failed to open file", { err, file: input })
+    })
+  }
+
+  export async function changeFile(input: { path: string; text: string }) {
+    log.info("changing file", { file: input.path })
+    const clients = await getClients(input.path)
+    await Promise.all(clients.map((client) => client.notify.change(input))).catch((err) => {
+      log.error("failed to change file", { err, file: input.path })
+    })
+  }
+
+  export async function saveFile(input: { path: string; text?: string }) {
+    log.info("saving file", { file: input.path })
+    const clients = await getClients(input.path)
+    await Promise.all(clients.map((client) => client.notify.save(input))).catch((err) => {
+      log.error("failed to save file", { err, file: input.path })
+    })
+  }
+
+  export async function closeFile(input: string) {
+    log.info("closing file", { file: input })
+    const clients = await getClients(input)
+    await Promise.all(clients.map((client) => client.notify.close({ path: input }))).catch((err) => {
+      log.error("failed to close file", { err, file: input })
+    })
+  }
+
   export async function diagnostics() {
     const results: Record<string, LSPClient.Diagnostic[]> = {}
     for (const result of await runAll(async (client) => client.diagnostics)) {
@@ -301,11 +333,12 @@ export namespace LSP {
   }
 
   export async function hover(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, (client) => {
       return client.connection
         .sendRequest("textDocument/hover", {
           textDocument: {
-            uri: pathToFileURL(input.file).href,
+            uri: pathToFileURL(file).href,
           },
           position: {
             line: input.line,
@@ -314,6 +347,96 @@ export namespace LSP {
         })
         .catch(() => null)
     })
+  }
+
+  export const CompletionItem = z
+    .object({
+      label: z.string(),
+      kind: z.number().optional(),
+      detail: z.string().optional(),
+      documentation: z
+        .union([
+          z.string(),
+          z.object({
+            kind: z.string(),
+            value: z.string(),
+          }),
+        ])
+        .optional(),
+      insertText: z.string().optional(),
+      insertTextFormat: z.number().optional(),
+      textEdit: z
+        .object({
+          range: Range,
+          newText: z.string(),
+        })
+        .optional(),
+      sortText: z.string().optional(),
+      filterText: z.string().optional(),
+    })
+    .meta({
+      ref: "CompletionItem",
+    })
+  export type CompletionItem = z.infer<typeof CompletionItem>
+
+  export const CompletionList = z
+    .object({
+      isIncomplete: z.boolean(),
+      items: z.array(CompletionItem),
+    })
+    .meta({
+      ref: "CompletionList",
+    })
+  export type CompletionList = z.infer<typeof CompletionList>
+
+  export async function completion(input: {
+    file: string
+    line: number
+    character: number
+    triggerKind?: number
+    triggerCharacter?: string
+  }): Promise<CompletionList | null> {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
+    const results = await run(input.file, (client) =>
+      client.connection
+        .sendRequest("textDocument/completion", {
+          textDocument: { uri: pathToFileURL(file).href },
+          position: { line: input.line, character: input.character },
+          context: {
+            triggerKind: input.triggerKind ?? 1, // Invoked
+            triggerCharacter: input.triggerCharacter,
+          },
+        })
+        .catch(() => null),
+    )
+
+    // Merge results from multiple LSP servers
+    const items: CompletionItem[] = []
+    let isIncomplete = false
+
+    for (const result of results) {
+      if (!result) continue
+      // LSP returns either CompletionItem[] or CompletionList
+      const r = result as CompletionItem[] | { items?: CompletionItem[]; isIncomplete?: boolean }
+      if (Array.isArray(r)) {
+        items.push(...r)
+      } else if (r.items) {
+        items.push(...r.items)
+        if (r.isIncomplete) isIncomplete = true
+      }
+    }
+
+    if (items.length === 0) return null
+
+    return { isIncomplete, items }
+  }
+
+  export async function completionResolve(input: { file: string; item: CompletionItem }): Promise<CompletionItem | null> {
+    const results = await run(input.file, (client) =>
+      client.connection.sendRequest("completionItem/resolve", input.item).catch(() => null),
+    )
+    const found = results.find((r) => r !== null)
+    return found ? (found as CompletionItem) : null
   }
 
   enum SymbolKind {
@@ -384,10 +507,11 @@ export namespace LSP {
   }
 
   export async function definition(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, (client) =>
       client.connection
         .sendRequest("textDocument/definition", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
         })
         .catch(() => null),
@@ -395,10 +519,11 @@ export namespace LSP {
   }
 
   export async function references(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, (client) =>
       client.connection
         .sendRequest("textDocument/references", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
           context: { includeDeclaration: true },
         })
@@ -407,10 +532,11 @@ export namespace LSP {
   }
 
   export async function implementation(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, (client) =>
       client.connection
         .sendRequest("textDocument/implementation", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
         })
         .catch(() => null),
@@ -418,10 +544,11 @@ export namespace LSP {
   }
 
   export async function prepareCallHierarchy(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, (client) =>
       client.connection
         .sendRequest("textDocument/prepareCallHierarchy", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
         })
         .catch(() => []),
@@ -429,10 +556,11 @@ export namespace LSP {
   }
 
   export async function incomingCalls(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, async (client) => {
       const items = (await client.connection
         .sendRequest("textDocument/prepareCallHierarchy", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
         })
         .catch(() => [])) as any[]
@@ -442,10 +570,11 @@ export namespace LSP {
   }
 
   export async function outgoingCalls(input: { file: string; line: number; character: number }) {
+    const file = path.isAbsolute(input.file) ? input.file : path.resolve(Instance.directory, input.file)
     return run(input.file, async (client) => {
       const items = (await client.connection
         .sendRequest("textDocument/prepareCallHierarchy", {
-          textDocument: { uri: pathToFileURL(input.file).href },
+          textDocument: { uri: pathToFileURL(file).href },
           position: { line: input.line, character: input.character },
         })
         .catch(() => [])) as any[]

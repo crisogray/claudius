@@ -319,6 +319,25 @@ export namespace File {
     return { type: "text", content }
   }
 
+  export async function write(file: string, content: string): Promise<void> {
+    using _ = log.time("write", { file })
+    const full = path.join(Instance.directory, file)
+
+    // Security check - prevent path traversal
+    if (!Filesystem.contains(Instance.directory, full)) {
+      throw new Error(`Access denied: path escapes project directory`)
+    }
+
+    // Ensure parent directory exists
+    const dir = path.dirname(full)
+    await fs.promises.mkdir(dir, { recursive: true })
+
+    // Write the file
+    await Bun.write(full, content)
+
+    log.info("file written", { file, size: content.length })
+  }
+
   export async function list(dir?: string) {
     const exclude = [".git", ".DS_Store"]
     const project = Instance.project

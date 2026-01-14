@@ -1,0 +1,301 @@
+import { createMemo, createSignal, For, Show, type JSX } from "solid-js"
+import { useGit, type GitFileStatus } from "@/context/git"
+import { Icon } from "@opencode-ai/ui/icon"
+import { Button } from "@opencode-ai/ui/button"
+import { Collapsible } from "@opencode-ai/ui/collapsible"
+import { FileIcon } from "@opencode-ai/ui/file-icon"
+
+// Small action button for git operations
+function ActionButton(props: { icon: "plus" | "close"; onClick: (e: MouseEvent) => void; title: string }) {
+  return (
+    <button
+      class="size-4 flex items-center justify-center rounded hover:bg-background-element text-text-muted hover:text-text"
+      onClick={props.onClick}
+      title={props.title}
+    >
+      <Icon name={props.icon === "plus" ? "plus" : "close"} size="small" />
+    </button>
+  )
+}
+
+function GitStatusBadge(props: { status: GitFileStatus }) {
+  const statusConfig = {
+    modified: { letter: "M", class: "text-yellow-500" },
+    added: { letter: "A", class: "text-green-500" },
+    deleted: { letter: "D", class: "text-red-500" },
+    untracked: { letter: "U", class: "text-green-500" },
+    renamed: { letter: "R", class: "text-blue-500" },
+    copied: { letter: "C", class: "text-blue-500" },
+  }
+
+  const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-gray-400" }
+
+  return (
+    <span
+      class={`text-[10px] font-mono font-medium ${config().class}`}
+      classList={{ "bg-green-500/20 px-0.5 rounded": props.status.staged }}
+    >
+      {config().letter}
+    </span>
+  )
+}
+
+function DiffStats(props: { added: number; removed: number }) {
+  return (
+    <Show when={props.added > 0 || props.removed > 0}>
+      <span class="!text-[10px] font-mono flex gap-1" data-component="diff-changes">
+        <Show when={props.added > 0}>
+          <span class="!text-[10px]" data-slot="diff-changes-additions">+{props.added}</span>
+        </Show>
+        <Show when={props.removed > 0}>
+          <span class="!text-[10px]" data-slot="diff-changes-deletions">-{props.removed}</span>
+        </Show>
+      </span>
+    </Show>
+  )
+}
+
+function GitFileSection(props: {
+  title: string
+  files: GitFileStatus[]
+  onFileClick?: (file: GitFileStatus) => void
+  actions?: (file: GitFileStatus) => any
+  headerActions?: any
+}) {
+  return (
+    <Show when={props.files.length > 0}>
+      <Collapsible defaultOpen={true} variant="ghost" class="w-full">
+        <Collapsible.Trigger class="w-full">
+          <div class="w-full px-2 py-1.5 flex items-center gap-2 bg-background-element">
+            <Collapsible.Arrow class="text-text-muted/60" />
+            <span class="text-xs font-medium">{props.title}</span>
+            <span class="text-xs text-text-muted">({props.files.length})</span>
+            <div class="ml-auto flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              {props.headerActions}
+            </div>
+          </div>
+        </Collapsible.Trigger>
+        <Collapsible.Content>
+          <For each={props.files}>
+            {(file) => (
+              <div
+                class="px-3 py-1 flex items-center gap-2 hover:bg-background-element cursor-pointer group"
+                onClick={() => props.onFileClick?.(file)}
+              >
+                <GitStatusBadge status={file} />
+                <FileIcon node={{ path: file.path, type: "file" }} class="w-4 h-4" />
+                <span class="flex-1 text-xs flex items-baseline min-w-0">
+                  <span class="text-text-strong shrink-0">{file.path.split("/").pop()}</span>
+                  <span class="text-[10px] text-text-weak ml-1 truncate">{file.path.split("/").slice(0, -1).join("/")}</span>
+                </span>
+                <DiffStats added={file.added} removed={file.removed} />
+                <div class="hidden group-hover:flex items-center gap-1">
+                  {props.actions?.(file)}
+                </div>
+              </div>
+            )}
+          </For>
+        </Collapsible.Content>
+      </Collapsible>
+    </Show>
+  )
+}
+
+function formatRelative(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp * 1000
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) return `${days}d ago`
+  if (hours > 0) return `${hours}h ago`
+  if (minutes > 0) return `${minutes}m ago`
+  return "just now"
+}
+
+export function GitTab() {
+  const git = useGit()
+  const [commitMessage, setCommitMessage] = createSignal("")
+  const [amend, setAmend] = createSignal(false)
+  const [committing, setCommitting] = createSignal(false)
+
+  const hasStaged = createMemo(() => (git.status?.staged.length ?? 0) > 0)
+  const hasChanges = createMemo(
+    () =>
+      (git.status?.staged.length ?? 0) + (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0,
+  )
+
+  const handleCommit = async () => {
+    if (!hasStaged() || !commitMessage().trim()) return
+    setCommitting(true)
+    try {
+      await git.commit(commitMessage(), { amend: amend() })
+      setCommitMessage("")
+      setAmend(false)
+    } finally {
+      setCommitting(false)
+    }
+  }
+
+  return (
+    <div class="h-full flex flex-col text-sm">
+      {/* Branch header */}
+      <div class="p-2 border-b border-border-base flex items-center gap-2">
+        <Icon name="branch" size="small" class="text-text-muted" />
+        <span class="font-medium text-xs">{git.status?.branch ?? "detached"}</span>
+        <Show when={git.status?.ahead || git.status?.behind}>
+          <span class="text-[10px] text-text-muted">
+            {git.status?.ahead ? `\u2191${git.status.ahead}` : ""}
+            {git.status?.behind ? `\u2193${git.status.behind}` : ""}
+          </span>
+        </Show>
+        <button
+          class="ml-auto p-1 rounded hover:bg-background-element text-text-muted hover:text-text"
+          onClick={() => git.refresh()}
+          title="Refresh"
+        >
+          <Icon name="chevron-grabber-vertical" size="small" />
+        </button>
+      </div>
+
+      {/* Loading state */}
+      <Show when={git.loading && !git.status}>
+        <div class="flex-1 flex items-center justify-center">
+          <span class="text-xs text-text-muted">Loading...</span>
+        </div>
+      </Show>
+
+      {/* Error state */}
+      <Show when={git.error}>
+        <div class="p-2 text-xs text-red-500">{git.error}</div>
+      </Show>
+
+      {/* File sections */}
+      <Show when={git.status}>
+        <div class="flex-1 overflow-y-auto no-scrollbar">
+          {/* Staged */}
+          <GitFileSection
+            title="Staged Changes"
+            files={git.status?.staged ?? []}
+            actions={(f) => (
+              <ActionButton
+                icon="close"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  git.unstage([f.path])
+                }}
+                title="Unstage"
+              />
+            )}
+            headerActions={
+              <Show when={(git.status?.staged.length ?? 0) > 0}>
+                <ActionButton icon="close" onClick={() => git.unstageAll()} title="Unstage all" />
+              </Show>
+            }
+          />
+
+          {/* Changes (unstaged + untracked) */}
+          <GitFileSection
+            title="Changes"
+            files={[...(git.status?.unstaged ?? []), ...(git.status?.untracked ?? [])]}
+            actions={(f) => (
+              <>
+                <ActionButton
+                  icon="plus"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    git.stage([f.path])
+                  }}
+                  title="Stage"
+                />
+                <Show when={f.status !== "untracked"}>
+                  <ActionButton
+                    icon="close"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      git.discard([f.path])
+                    }}
+                    title="Discard"
+                  />
+                </Show>
+              </>
+            )}
+            headerActions={
+              <Show when={(git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0}>
+                <ActionButton icon="plus" onClick={() => git.stageAll()} title="Stage all" />
+              </Show>
+            }
+          />
+        </div>
+
+        {/* Commit form */}
+        <div class="p-2 border-t border-border-base">
+          <textarea
+            placeholder="Commit message..."
+            class="w-full px-2 py-1.5 text-xs bg-background-element rounded-md border border-border-base resize-none focus:border-primary focus:outline-none"
+            rows={3}
+            value={commitMessage()}
+            onInput={(e) => setCommitMessage(e.currentTarget.value)}
+          />
+          <div class="flex items-center gap-2 mt-2">
+            <label class="flex items-center gap-1 text-[10px] text-text-muted cursor-pointer">
+              <input
+                type="checkbox"
+                checked={amend()}
+                onChange={(e) => setAmend(e.currentTarget.checked)}
+                class="w-3 h-3"
+              />
+              Amend
+            </label>
+            <Button
+              size="small"
+              class="ml-auto"
+              disabled={!hasStaged() || !commitMessage().trim() || committing()}
+              onClick={handleCommit}
+            >
+              {committing() ? "Committing..." : "Commit"}
+            </Button>
+          </div>
+        </div>
+
+        {/* History */}
+        <Show when={git.log.length > 0}>
+          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-base rounded-none bg-surface-base">
+            <Collapsible.Trigger class="w-full">
+              <div class="w-full p-2 flex items-center gap-2">
+                <Collapsible.Arrow class="text-text-muted/60" />
+                <span class="text-xs font-medium">History</span>
+              </div>
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <div class="max-h-48 overflow-y-auto no-scrollbar">
+                <For each={git.log}>
+                  {(commit) => (
+                    <div class="px-2 py-1.5 hover:bg-background-element border-b border-border-base last:border-b-0">
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono text-[10px] text-primary">{commit.hashShort}</span>
+                        <span class="text-xs truncate flex-1">{commit.messageShort}</span>
+                      </div>
+                      <div class="text-[10px] text-text-muted">
+                        {commit.author} &bull; {formatRelative(commit.date)}
+                      </div>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </Collapsible.Content>
+          </Collapsible>
+        </Show>
+      </Show>
+
+      {/* Empty state */}
+      <Show when={git.status && !hasChanges() && !git.loading}>
+        <div class="flex-1 flex items-center justify-center p-4">
+          <span class="text-xs text-text-muted text-center">No changes</span>
+        </div>
+      </Show>
+    </div>
+  )
+}

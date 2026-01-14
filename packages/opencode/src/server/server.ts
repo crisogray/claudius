@@ -16,6 +16,7 @@ import { NamedError } from "@opencode-ai/util/error"
 import { Ripgrep } from "../file/ripgrep"
 import { Config } from "../config/config"
 import { File } from "../file"
+import { Git } from "../git"
 import { LSP } from "../lsp"
 import { Format } from "../format"
 import { MessageV2 } from "../session/message-v2"
@@ -2132,6 +2133,36 @@ export namespace Server {
             return c.json(content)
           },
         )
+        .post(
+          "/file/write",
+          describeRoute({
+            summary: "Write file",
+            description: "Write content to a specified file.",
+            operationId: "file.write",
+            responses: {
+              200: {
+                description: "File written successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "Path to the file" }),
+              content: z.string().meta({ description: "Content to write" }),
+            }),
+          ),
+          async (c) => {
+            const { path, content } = c.req.valid("json")
+            await File.write(path, content)
+            return c.json({ ok: true })
+          },
+        )
         .get(
           "/file/status",
           describeRoute({
@@ -2152,6 +2183,239 @@ export namespace Server {
           async (c) => {
             const content = await File.status()
             return c.json(content)
+          },
+        )
+        // ═══════════════════════════════════════════════════════════════
+        // Git Routes
+        // ═══════════════════════════════════════════════════════════════
+        .get(
+          "/git/status",
+          describeRoute({
+            summary: "Get git status",
+            description: "Get full git status including staged, unstaged, and untracked files.",
+            operationId: "git.status",
+            responses: {
+              200: {
+                description: "Git status",
+                content: {
+                  "application/json": {
+                    schema: resolver(Git.Status),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => c.json(await Git.status()),
+        )
+        .get(
+          "/git/log",
+          describeRoute({
+            summary: "Get commit history",
+            description: "Get recent commit history.",
+            operationId: "git.log",
+            responses: {
+              200: {
+                description: "Commit history",
+                content: {
+                  "application/json": {
+                    schema: resolver(Git.Commit.array()),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "query",
+            z.object({
+              limit: z.coerce.number().default(20).meta({ description: "Maximum number of commits to return" }),
+            }),
+          ),
+          async (c) => c.json(await Git.log(c.req.valid("query").limit)),
+        )
+        .post(
+          "/git/stage",
+          describeRoute({
+            summary: "Stage files",
+            description: "Add files to the git staging area.",
+            operationId: "git.stage",
+            responses: {
+              200: {
+                description: "Files staged successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              files: z.string().array().meta({ description: "Array of file paths to stage" }),
+            }),
+          ),
+          async (c) => {
+            await Git.stage(c.req.valid("json").files)
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/git/unstage",
+          describeRoute({
+            summary: "Unstage files",
+            description: "Remove files from the git staging area.",
+            operationId: "git.unstage",
+            responses: {
+              200: {
+                description: "Files unstaged successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              files: z.string().array().meta({ description: "Array of file paths to unstage" }),
+            }),
+          ),
+          async (c) => {
+            await Git.unstage(c.req.valid("json").files)
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/git/stage-all",
+          describeRoute({
+            summary: "Stage all changes",
+            description: "Stage all modified, added, and deleted files.",
+            operationId: "git.stageAll",
+            responses: {
+              200: {
+                description: "All changes staged successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            await Git.stageAll()
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/git/unstage-all",
+          describeRoute({
+            summary: "Unstage all changes",
+            description: "Remove all files from the staging area.",
+            operationId: "git.unstageAll",
+            responses: {
+              200: {
+                description: "All changes unstaged successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            await Git.unstageAll()
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/git/discard",
+          describeRoute({
+            summary: "Discard file changes",
+            description: "Discard changes to files and revert to HEAD.",
+            operationId: "git.discard",
+            responses: {
+              200: {
+                description: "Changes discarded successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              files: z.string().array().meta({ description: "Array of file paths to discard" }),
+            }),
+          ),
+          async (c) => {
+            await Git.discard(c.req.valid("json").files)
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/git/commit",
+          describeRoute({
+            summary: "Create commit",
+            description: "Create a new commit with staged changes.",
+            operationId: "git.commit",
+            responses: {
+              200: {
+                description: "Commit created successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(Git.CommitResult),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              message: z.string().meta({ description: "Commit message" }),
+              amend: z.boolean().optional().meta({ description: "Whether to amend the last commit" }),
+            }),
+          ),
+          async (c) => {
+            const { message, amend } = c.req.valid("json")
+            return c.json(await Git.commit(message, { amend }))
+          },
+        )
+        .get(
+          "/git/diff",
+          describeRoute({
+            summary: "Get file diff",
+            description: "Get the diff for a specific file.",
+            operationId: "git.diff",
+            responses: {
+              200: {
+                description: "File diff",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ diff: z.string() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "query",
+            z.object({
+              file: z.string().meta({ description: "Path to the file" }),
+              staged: z.coerce.boolean().default(false).meta({ description: "Whether to show staged changes" }),
+            }),
+          ),
+          async (c) => {
+            const { file, staged } = c.req.valid("query")
+            return c.json({ diff: await Git.diff(file, staged) })
           },
         )
         .post(
@@ -2489,6 +2753,254 @@ export namespace Server {
           }),
           async (c) => {
             return c.json(await LSP.status())
+          },
+        )
+        .post(
+          "/lsp/completion",
+          describeRoute({
+            summary: "Get completions",
+            description: "Get code completion suggestions at a position",
+            operationId: "lsp.completion",
+            responses: {
+              200: {
+                description: "Completion items",
+                content: {
+                  "application/json": {
+                    schema: resolver(LSP.CompletionList.nullable()),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+              line: z.number().meta({ description: "Line number (0-indexed)" }),
+              character: z.number().meta({ description: "Character offset (0-indexed)" }),
+              triggerKind: z.number().optional().meta({ description: "Trigger kind (1=Invoked, 2=TriggerCharacter, 3=Incomplete)" }),
+              triggerCharacter: z.string().optional().meta({ description: "Trigger character" }),
+            }),
+          ),
+          async (c) => {
+            const { path, line, character, triggerKind, triggerCharacter } = c.req.valid("json")
+            const result = await LSP.completion({
+              file: path,
+              line,
+              character,
+              triggerKind,
+              triggerCharacter,
+            })
+            return c.json(result)
+          },
+        )
+        .post(
+          "/lsp/hover",
+          describeRoute({
+            summary: "Get hover information",
+            description: "Get hover information at a position",
+            operationId: "lsp.hover",
+            responses: {
+              200: {
+                description: "Hover information",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any().nullable()),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+              line: z.number().meta({ description: "Line number (0-indexed)" }),
+              character: z.number().meta({ description: "Character offset (0-indexed)" }),
+            }),
+          ),
+          async (c) => {
+            const { path, line, character } = c.req.valid("json")
+            const result = await LSP.hover({ file: path, line, character })
+            return c.json(result)
+          },
+        )
+        .post(
+          "/lsp/definition",
+          describeRoute({
+            summary: "Get definition",
+            description: "Go to definition at a position",
+            operationId: "lsp.definition",
+            responses: {
+              200: {
+                description: "Definition locations",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.any().array()),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+              line: z.number().meta({ description: "Line number (0-indexed)" }),
+              character: z.number().meta({ description: "Character offset (0-indexed)" }),
+            }),
+          ),
+          async (c) => {
+            const { path, line, character } = c.req.valid("json")
+            const result = await LSP.definition({ file: path, line, character })
+            return c.json(result)
+          },
+        )
+        .post(
+          "/lsp/document/open",
+          describeRoute({
+            summary: "Open document",
+            description: "Notify LSP that a document was opened",
+            operationId: "lsp.document.open",
+            responses: {
+              200: {
+                description: "Success",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+            }),
+          ),
+          async (c) => {
+            const { path } = c.req.valid("json")
+            await LSP.openFile(path)
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/lsp/document/change",
+          describeRoute({
+            summary: "Change document",
+            description: "Notify LSP that a document changed",
+            operationId: "lsp.document.change",
+            responses: {
+              200: {
+                description: "Success",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+              text: z.string().meta({ description: "New file content" }),
+            }),
+          ),
+          async (c) => {
+            const { path, text } = c.req.valid("json")
+            await LSP.changeFile({ path, text })
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/lsp/document/save",
+          describeRoute({
+            summary: "Save document",
+            description: "Notify LSP that a document was saved",
+            operationId: "lsp.document.save",
+            responses: {
+              200: {
+                description: "Success",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+              text: z.string().optional().meta({ description: "Saved content (optional)" }),
+            }),
+          ),
+          async (c) => {
+            const { path, text } = c.req.valid("json")
+            await LSP.saveFile({ path, text })
+            return c.json({ ok: true })
+          },
+        )
+        .post(
+          "/lsp/document/close",
+          describeRoute({
+            summary: "Close document",
+            description: "Notify LSP that a document was closed",
+            operationId: "lsp.document.close",
+            responses: {
+              200: {
+                description: "Success",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+              ...errors(400),
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              path: z.string().meta({ description: "File path" }),
+            }),
+          ),
+          async (c) => {
+            const { path } = c.req.valid("json")
+            await LSP.closeFile(path)
+            return c.json({ ok: true })
+          },
+        )
+        .get(
+          "/lsp/diagnostics",
+          describeRoute({
+            summary: "Get diagnostics",
+            description: "Get all diagnostics from LSP servers",
+            operationId: "lsp.diagnostics",
+            responses: {
+              200: {
+                description: "Diagnostics by file path",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.record(z.string(), z.any().array())),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            const result = await LSP.diagnostics()
+            return c.json(result)
           },
         )
         .get(
