@@ -32,6 +32,7 @@ import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { DiffChanges } from "@opencode-ai/ui/diff-changes"
 import { Spinner } from "@opencode-ai/ui/spinner"
+import { Dialog } from "@opencode-ai/ui/dialog"
 import { getFilename } from "@opencode-ai/util/path"
 import { Session } from "@opencode-ai/sdk/v2/client"
 import { usePlatform } from "@/context/platform"
@@ -893,7 +894,100 @@ createEffect(() => {
     }
   }
 
-createEffect(
+  const errorMessage = (err: unknown) => {
+    if (err && typeof err === "object" && "data" in err) {
+      const data = (err as { data?: { message?: string } }).data
+      if (data?.message) return data.message
+    }
+    if (err instanceof Error) return err.message
+    return "Request failed"
+  }
+
+  const deleteWorkspace = async (directory: string) => {
+    const current = currentProject()
+    if (!current) return
+    if (directory === current.worktree) return
+
+    const result = await globalSDK.client.worktree
+      .remove({ directory: current.worktree, worktreeRemoveInput: { directory } })
+      .then((x) => x.data)
+      .catch((err) => {
+        showToast({
+          title: "Failed to delete workspace",
+          description: errorMessage(err),
+        })
+        return false
+      })
+
+    if (!result) return
+
+    layout.projects.close(directory)
+    layout.projects.open(current.worktree)
+
+    if (params.dir && base64Decode(params.dir) === directory) {
+      navigateToProject(current.worktree)
+    }
+  }
+
+  function DialogDeleteWorkspace(props: { directory: string }) {
+    const name = createMemo(() => getFilename(props.directory))
+    const [data, setData] = createStore({
+      status: "loading" as "loading" | "ready" | "error",
+      dirty: false,
+    })
+
+    onMount(() => {
+      const current = currentProject()
+      if (!current) {
+        setData({ status: "error", dirty: false })
+        return
+      }
+
+      globalSDK.client.file
+        .status({ directory: props.directory })
+        .then((x) => {
+          const files = x.data ?? []
+          const dirty = files.length > 0
+          setData({ status: "ready", dirty })
+        })
+        .catch(() => {
+          setData({ status: "error", dirty: false })
+        })
+    })
+
+    const handleDelete = async () => {
+      await deleteWorkspace(props.directory)
+      dialog.close()
+    }
+
+    const description = () => {
+      if (data.status === "loading") return "Checking for unmerged changes..."
+      if (data.status === "error") return "Unable to verify git status."
+      if (!data.dirty) return "No unmerged changes detected."
+      return "Unmerged changes detected in this workspace."
+    }
+
+    return (
+      <Dialog title="Delete workspace">
+        <div class="flex flex-col gap-4 px-2.5 pb-3">
+          <div class="flex flex-col gap-1">
+            <span class="text-14-regular text-text-strong">Delete workspace "{name()}"?</span>
+            <span class="text-12-regular text-text-weak">{description()}</span>
+          </div>
+          <div class="flex justify-end gap-2">
+            <Button variant="ghost" size="large" onClick={() => dialog.close()}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="large" disabled={data.status === "loading"} onClick={handleDelete}>
+              Delete workspace
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    )
+  }
+
+  createEffect(
     on(
       () => ({ ready: pageReady(), dir: params.dir, id: params.id }),
       (value) => {
@@ -1204,6 +1298,7 @@ createEffect(
   const SortableWorkspace = (props: { directory: string; project: LocalProject; mobile?: boolean }): JSX.Element => {
     const sortable = createSortable(props.directory)
     const [workspaceStore, setWorkspaceStore] = globalSync.child(props.directory)
+    const [menuOpen, setMenuOpen] = createSignal(false)
     const slug = createMemo(() => base64Encode(props.directory))
     const sessions = createMemo(() =>
       workspaceStore.session
@@ -1249,14 +1344,34 @@ createEffect(
                   />
                 </div>
               </Collapsible.Trigger>
-              <div class="absolute right-1 top-1/2 -translate-y-1/2 hidden items-center gap-0.5 pointer-events-none group-hover/trigger:flex group-focus-within/trigger:flex">
-                <IconButton icon="dot-grid" variant="ghost" class="size-6 rounded-md pointer-events-auto" />
-                <TooltipKeybind
-                  class="pointer-events-auto"
-                  placement="right"
-                  title="New session"
-                  keybind={command.keybind("session.new")}
-                >
+              <div
+                class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-opacity pointer-events-none"
+                classList={{
+                  "opacity-100 pointer-events-auto": menuOpen(),
+                  "opacity-0": !menuOpen(),
+                  "group-hover/trigger:opacity-100 group-hover/trigger:pointer-events-auto": true,
+                  "group-focus-within/trigger:opacity-100 group-focus-within/trigger:pointer-events-auto": true,
+                }}
+              >
+                <DropdownMenu open={menuOpen()} onOpenChange={setMenuOpen}>
+                  <Tooltip value="More options" placement="top">
+                    <DropdownMenu.Trigger as={IconButton} icon="dot-grid" variant="ghost" class="size-6 rounded-md" />
+                  </Tooltip>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content>
+                      <DropdownMenu.Item onSelect={() => navigate(`/${slug()}/session`)}>
+                        <DropdownMenu.ItemLabel>New session</DropdownMenu.ItemLabel>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item
+                        disabled={local()}
+                        onSelect={() => dialog.show(() => <DialogDeleteWorkspace directory={props.directory} />)}
+                      >
+                        <DropdownMenu.ItemLabel>Delete workspace</DropdownMenu.ItemLabel>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu>
+                <TooltipKeybind placement="right" title="New session" keybind={command.keybind("session.new")}>
                   <IconButton
                     icon="plus-small"
                     variant="ghost"
@@ -1267,6 +1382,7 @@ createEffect(
               </div>
             </div>
           </div>
+
           <Collapsible.Content>
             <nav class="flex flex-col gap-1 px-2">
               <Button
@@ -1492,15 +1608,6 @@ createEffect(
     })
     const projectId = createMemo(() => project()?.id ?? "")
     const workspaces = createMemo(() => workspaceIds(project()))
-
-    const errorMessage = (err: unknown) => {
-      if (err && typeof err === "object" && "data" in err) {
-        const data = (err as { data?: { message?: string } }).data
-        if (data?.message) return data.message
-      }
-      if (err instanceof Error) return err.message
-      return "Request failed"
-    }
 
     const createWorkspace = async () => {
       const current = project()
