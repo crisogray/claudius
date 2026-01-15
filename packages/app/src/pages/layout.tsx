@@ -16,6 +16,7 @@ import {
 import { A, useNavigate, useParams } from "@solidjs/router"
 import { useLayout, getAvatarColors, LocalProject } from "@/context/layout"
 import { useGlobalSync } from "@/context/global-sync"
+import { Persist, persisted } from "@/utils/persist"
 import { base64Decode, base64Encode } from "@opencode-ai/util/encode"
 import { Avatar } from "@opencode-ai/ui/avatar"
 import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
@@ -63,13 +64,16 @@ import { useServer } from "@/context/server"
 import { DateTime } from "luxon"
 
 export default function Layout(props: ParentProps) {
-  const [store, setStore] = createStore({
-    lastSession: {} as { [directory: string]: string },
-    activeProject: undefined as string | undefined,
-    activeWorkspace: undefined as string | undefined,
-    workspaceOrder: {} as Record<string, string[]>,
-    workspaceExpanded: {} as Record<string, boolean>,
-  })
+  const [store, setStore, , ready] = persisted(
+    Persist.global("layout.page", ["layout.page.v1"]),
+    createStore({
+      lastSession: {} as { [directory: string]: string },
+      activeProject: undefined as string | undefined,
+      activeWorkspace: undefined as string | undefined,
+      workspaceOrder: {} as Record<string, string[]>,
+      workspaceExpanded: {} as Record<string, boolean>,
+    }),
+  )
 
   let scrollContainerRef: HTMLDivElement | undefined
   const xlQuery = window.matchMedia("(min-width: 1280px)")
@@ -308,6 +312,7 @@ export default function Layout(props: ParentProps) {
   })
 
   createEffect(() => {
+    if (!ready()) return
     const project = currentProject()
     if (!project) return
 
@@ -727,7 +732,7 @@ export default function Layout(props: ParentProps) {
     const id = params.id
     setStore("lastSession", directory, id)
     notification.session.markViewed(id)
-    untrack(() => setStore("workspaceExpanded", directory, true))
+    untrack(() => setStore("workspaceExpanded", directory, (value) => value ?? true))
     requestAnimationFrame(() => scrollToSession(id))
   })
 
