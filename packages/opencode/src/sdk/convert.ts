@@ -192,6 +192,7 @@ export namespace SDKConvert {
     uuid?: string // Optional when sending, required when replayed
     session_id?: string // SDK session ID
     message: {
+      role?: "user" // Required for streaming input mode
       content: ContentBlock[]
     }
   }

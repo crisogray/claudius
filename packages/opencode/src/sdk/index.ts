@@ -199,9 +199,13 @@ export namespace SDK {
         })
       } else if (part.type === "file") {
         const filePath = (part as any).path as string
-        // Handle both file paths and data URLs
-        const isDataUrl = filePath.startsWith("data:")
-        const url = isDataUrl ? filePath : `file://${filePath}`
+        // Skip data URLs (images) - they're already added by the optimistic UI
+        // and we don't want duplicate parts in the message
+        if (filePath.startsWith("data:")) {
+          continue
+        }
+        // Handle file paths
+        const url = `file://${filePath}`
         await Session.updatePart({
           id: Identifier.ascending("part"),
           sessionID: input.sessionID,
@@ -209,13 +213,11 @@ export namespace SDK {
           type: "file",
           mime: (part as any).mime ?? "application/octet-stream",
           url,
-          source: isDataUrl
-            ? undefined
-            : {
-              type: "file",
-              path: filePath,
-              text: { value: "", start: 0, end: 0 },
-            },
+          source: {
+            type: "file",
+            path: filePath,
+            text: { value: "", start: 0, end: 0 },
+          },
         })
       }
     }
@@ -270,6 +272,7 @@ export namespace SDK {
         yield {
           type: "user" as const,
           message: {
+            role: "user" as const,
             content: contentBlocks as SDKConvert.ContentBlock[],
           },
         }

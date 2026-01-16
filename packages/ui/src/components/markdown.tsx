@@ -1,8 +1,12 @@
 import { useMarked } from "../context/marked"
 import DOMPurify from "dompurify"
 import { checksum } from "@opencode-ai/util/encode"
-import { ComponentProps, createResource, splitProps } from "solid-js"
+import { ComponentProps, createResource, Show, splitProps } from "solid-js"
 import { isServer } from "solid-js/web"
+import { useDialog } from "../context/dialog"
+import { Dialog } from "./dialog"
+import { IconButton } from "./icon-button"
+import { PlanApprovalActions } from "./plan-approval-actions"
 
 type Entry = {
   hash: string
@@ -54,10 +58,14 @@ export function Markdown(
     cacheKey?: string
     class?: string
     classList?: Record<string, boolean>
+    fullscreen?: boolean
+    onApprove?: () => void
+    onReject?: (message?: string) => void
   },
 ) {
-  const [local, others] = splitProps(props, ["text", "cacheKey", "class", "classList"])
+  const [local, others] = splitProps(props, ["text", "cacheKey", "class", "classList", "fullscreen", "onApprove", "onReject"])
   const marked = useMarked()
+  const dialog = useDialog()
   const [html] = createResource(
     () => local.text,
     async (markdown) => {
@@ -81,7 +89,32 @@ export function Markdown(
     },
     { initialValue: "" },
   )
-  return (
+
+  const openFullscreen = () => {
+    dialog.show(() => (
+      <Dialog title="Plan" class="markdown-fullscreen">
+        <div data-slot="markdown-fullscreen-content">
+          <div data-component="markdown" innerHTML={html.latest} />
+        </div>
+
+        <Show when={local.onApprove && local.onReject}>
+          <PlanApprovalActions
+            variant="fullscreen"
+            onApprove={() => {
+              local.onApprove?.()
+              dialog.close()
+            }}
+            onReject={(message) => {
+              local.onReject?.(message)
+              dialog.close()
+            }}
+          />
+        </Show>
+      </Dialog>
+    ))
+  }
+
+  const markdownEl = (
     <div
       data-component="markdown"
       classList={{
@@ -91,5 +124,20 @@ export function Markdown(
       innerHTML={html.latest}
       {...others}
     />
+  )
+
+  return (
+    <Show when={local.fullscreen} fallback={markdownEl}>
+      <div data-component="markdown-container">
+        <IconButton
+          data-slot="markdown-fullscreen-button"
+          icon="expand"
+          variant="ghost"
+          size="small"
+          onClick={openFullscreen}
+        />
+        {markdownEl}
+      </div>
+    </Show>
   )
 }

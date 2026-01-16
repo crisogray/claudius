@@ -168,3 +168,58 @@
     display: block;
   }
 }
+
+/* Markdown container with fullscreen button */
+[data-component="markdown-container"] {
+  position: relative;
+
+  [data-slot="markdown-fullscreen-button"] {
+    position: sticky;
+    top: 0;
+    float: right;
+    margin-left: 8px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1;
+  }
+
+  &:hover [data-slot="markdown-fullscreen-button"] {
+    opacity: 1;
+  }
+}
+
+/* Fullscreen markdown dialog */
+[data-slot="dialog-container"]:has([data-slot="dialog-content"].markdown-fullscreen) {
+  width: min(calc(100vw - 32px), 90vw);
+  max-width: 50rem; /* 800px - matches main tab width */
+  height: min(calc(100vh - 32px), 95vh); /* Almost full height */
+}
+
+[data-slot="dialog-content"].markdown-fullscreen {
+  [data-slot="dialog-body"] {
+    padding: 0 16px 16px 16px; /* Remove top padding, keep sides and bottom */
+    display: flex;
+    flex-direction: column;
+  }
+
+  [data-slot="markdown-fullscreen-content"] {
+    padding: 12px; /* Match inline plan padding */
+    border: 1px solid var(--color-border-base);
+    border-radius: 8px;
+    background: var(--color-background-element);
+    overflow: auto;
+    flex: 1;
+  }
+
+  [data-slot="markdown-fullscreen-rejection-input"] {
+    padding-top: 8px;
+    border-top: 1px solid var(--border-base);
+  }
+
+  [data-slot="markdown-fullscreen-actions"] {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+}

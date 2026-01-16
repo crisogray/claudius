@@ -1,19 +1,22 @@
 import { createMemo, createSignal, For, Show, type JSX } from "solid-js"
+import { useParams } from "@solidjs/router"
 import { useGit, type GitFileStatus } from "@/context/git"
+import { useFile } from "@/context/file"
+import { useLayout } from "@/context/layout"
 import { Icon } from "@opencode-ai/ui/icon"
 import { Button } from "@opencode-ai/ui/button"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
 
 // Small action button for git operations
-function ActionButton(props: { icon: "plus" | "close"; onClick: (e: MouseEvent) => void; title: string }) {
+function ActionButton(props: { icon: "plus" | "close" | "pencil-line"; onClick: (e: MouseEvent) => void; title: string }) {
   return (
     <button
       class="size-4 flex items-center justify-center rounded hover:bg-background-element text-text-muted cursor-pointer"
       onClick={props.onClick}
       title={props.title}
     >
-      <Icon name={props.icon === "plus" ? "plus" : "close"} size="small" />
+      <Icon name={props.icon} size="small" />
     </button>
   )
 }
@@ -31,10 +34,7 @@ function GitStatusBadge(props: { status: GitFileStatus }) {
   const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-text-weak" }
 
   return (
-    <span
-      class={`text-[10px] font-mono font-medium ${config().class}`}
-      classList={{ "bg-surface-success-weak px-0.5 rounded": props.status.staged }}
-    >
+    <span class={`text-[10px] font-mono font-medium ${config().class}`}>
       {config().letter}
     </span>
   )
@@ -84,7 +84,7 @@ function GitFileSection(props: {
               >
                 <GitStatusBadge status={file} />
                 <FileIcon node={{ path: file.path, type: "file" }} class="w-4 h-4" />
-                <span class="flex-1 text-xs flex items-baseline min-w-0">
+                <span class="flex-1 text-xs flex items-baseline min-w-0 overflow-hidden">
                   <span class="text-text-strong shrink-0">{file.path.split("/").pop()}</span>
                   <span class="text-[10px] text-text-weak ml-1 truncate">{file.path.split("/").slice(0, -1).join("/")}</span>
                 </span>
@@ -116,10 +116,21 @@ function formatRelative(timestamp: number): string {
 }
 
 export function GitTab() {
+  const params = useParams<{ dir: string; id?: string }>()
   const git = useGit()
+  const file = useFile()
+  const layout = useLayout()
   const [commitMessage, setCommitMessage] = createSignal("")
   const [amend, setAmend] = createSignal(false)
   const [committing, setCommitting] = createSignal(false)
+
+  const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
+
+  const handleOpenFile = (filePath: string) => {
+    file.load(filePath)
+    const tab = file.tab(filePath)
+    layout.tabs(sessionKey()).open(tab)
+  }
 
   const hasStaged = createMemo(() => (git.status?.staged.length ?? 0) > 0)
   const hasUnstaged = createMemo(
@@ -179,14 +190,24 @@ export function GitTab() {
               title="Staged Changes"
               files={git.status?.staged ?? []}
               actions={(f) => (
-                <ActionButton
-                  icon="close"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    git.unstage([f.path])
-                  }}
-                  title="Unstage"
-                />
+                <>
+                  <ActionButton
+                    icon="pencil-line"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleOpenFile(f.path)
+                    }}
+                    title="Open file"
+                  />
+                  <ActionButton
+                    icon="close"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      git.unstage([f.path])
+                    }}
+                    title="Unstage"
+                  />
+                </>
               )}
               headerActions={
                 <Show when={(git.status?.staged.length ?? 0) > 0}>
@@ -201,6 +222,14 @@ export function GitTab() {
               files={[...(git.status?.unstaged ?? []), ...(git.status?.untracked ?? [])]}
               actions={(f) => (
                 <>
+                  <ActionButton
+                    icon="pencil-line"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleOpenFile(f.path)
+                    }}
+                    title="Open file"
+                  />
                   <ActionButton
                     icon="plus"
                     onClick={(e) => {

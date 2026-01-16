@@ -194,13 +194,13 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
       return {
         icon: "magnifying-glass-menu",
         title: "Glob",
-        subtitle: input.pattern,
+        subtitle: input.pattern ? `${input.pattern} in ${getDirectory(input.path || "/")}` : undefined,
       }
     case "grep":
       return {
         icon: "magnifying-glass-menu",
         title: "Grep",
-        subtitle: input.pattern,
+        subtitle: input.pattern ? `${input.pattern} in ${getDirectory(input.path || "/")}` : undefined,
       }
     case "webfetch":
       return {
@@ -754,14 +754,14 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "glob",
   render(props) {
+    const info = createMemo(() => getToolInfo("glob", props.input))
     return (
       <BasicTool
         {...props}
-        icon="magnifying-glass-menu"
+        icon={info().icon}
         trigger={{
-          title: "Glob",
-          subtitle: `${props.input.pattern} in ${getDirectory(props.input.path || "/")}`,
-          args: props.input.pattern ? ["pattern=" + props.input.pattern] : [],
+          title: info().title,
+          subtitle: info().subtitle,
         }}
       >
         <Show when={props.output}>
@@ -779,17 +779,14 @@ ToolRegistry.register({
 ToolRegistry.register({
   name: "grep",
   render(props) {
-    const args: string[] = []
-    if (props.input.pattern) args.push("pattern=" + props.input.pattern)
-    if (props.input.include) args.push("include=" + props.input.include)
+    const info = createMemo(() => getToolInfo("grep", props.input))
     return (
       <BasicTool
         {...props}
-        icon="magnifying-glass-menu"
+        icon={info().icon}
         trigger={{
-          title: "Grep",
-          subtitle: `${props.input.pattern} in ${getDirectory(props.input.path || "/")}`,
-          args,
+          title: info().title,
+          subtitle: info().subtitle,
         }}
       >
         <Show when={props.output}>
