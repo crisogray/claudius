@@ -5,6 +5,7 @@ import {
   createSignal,
   For,
   Match,
+  on,
   onCleanup,
   onMount,
   ParentProps,
@@ -75,6 +76,8 @@ export default function Layout(props: ParentProps) {
     }),
   )
 
+  const pageReady = createMemo(() => ready())
+
   let scrollContainerRef: HTMLDivElement | undefined
   const xlQuery = window.matchMedia("(min-width: 1280px)")
   const [isLargeViewport, setIsLargeViewport] = createSignal(xlQuery.matches)
@@ -86,6 +89,7 @@ export default function Layout(props: ParentProps) {
   const globalSDK = useGlobalSDK()
   const globalSync = useGlobalSync()
   const layout = useLayout()
+  const layoutReady = createMemo(() => layout.ready())
   const platform = usePlatform()
   const server = useServer()
   const notification = useNotification()
@@ -297,12 +301,21 @@ export default function Layout(props: ParentProps) {
     return bUpdated - aUpdated
   }
 
-  function scrollToSession(sessionId: string) {
+  const [scrollSessionKey, setScrollSessionKey] = createSignal<string | undefined>(undefined)
+
+  function scrollToSession(sessionId: string, sessionKey: string) {
     if (!scrollContainerRef) return
+    if (scrollSessionKey() === sessionKey) return
     const element = scrollContainerRef.querySelector(`[data-session-id="${sessionId}"]`)
-    if (element) {
-      element.scrollIntoView({ block: "nearest", behavior: "smooth" })
+    if (!element) return
+    const containerRect = scrollContainerRef.getBoundingClientRect()
+    const elementRect = element.getBoundingClientRect()
+    if (elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom) {
+      setScrollSessionKey(sessionKey)
+      return
     }
+    setScrollSessionKey(sessionKey)
+    element.scrollIntoView({ block: "nearest", behavior: "smooth" })
   }
 
   const currentProject = createMemo(() => {
@@ -318,7 +331,8 @@ export default function Layout(props: ParentProps) {
   })
 
   createEffect(() => {
-    if (!ready()) return
+    if (!pageReady()) return
+    if (!layoutReady()) return
     const project = currentProject()
     if (!project) return
 
@@ -340,6 +354,19 @@ export default function Layout(props: ParentProps) {
 
     if (merged.some((d, i) => d !== existing[i])) {
       setStore("workspaceOrder", project.worktree, merged)
+    }
+  })
+
+createEffect(() => {
+    if (!pageReady()) return
+    if (!layoutReady()) return
+    const projects = layout.projects.list()
+    for (const [directory, expanded] of Object.entries(store.workspaceExpanded)) {
+      if (!expanded) continue
+      const project = projects.find((item) => item.worktree === directory || item.sandboxes?.includes(directory))
+      if (!project) continue
+      if (layout.sidebar.workspaces(project.worktree)()) continue
+      setStore("workspaceExpanded", directory, false)
     }
   })
 
@@ -544,7 +571,7 @@ export default function Layout(props: ParentProps) {
       })
     }
     navigateToSession(session)
-    queueMicrotask(() => scrollToSession(session.id))
+    queueMicrotask(() => scrollToSession(session.id, `${session.directory}:${session.id}`))
   }
 
   function archiveSession(session: Session) {
@@ -734,15 +761,23 @@ export default function Layout(props: ParentProps) {
     }
   }
 
-  createEffect(() => {
-    if (!params.dir || !params.id) return
-    const directory = base64Decode(params.dir)
-    const id = params.id
-    setStore("lastSession", directory, id)
-    notification.session.markViewed(id)
-    untrack(() => setStore("workspaceExpanded", directory, (value) => value ?? true))
-    requestAnimationFrame(() => scrollToSession(id))
-  })
+createEffect(
+    on(
+      () => ({ ready: pageReady(), dir: params.dir, id: params.id }),
+      (value) => {
+        if (!value.ready) return
+        const dir = value.dir
+        const id = value.id
+        if (!dir || !id) return
+        const directory = base64Decode(dir)
+        setStore("lastSession", directory, id)
+        notification.session.markViewed(id)
+        untrack(() => setStore("workspaceExpanded", directory, (current) => current ?? true))
+        requestAnimationFrame(() => scrollToSession(id, `${directory}:${id}`))
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
     const project = currentProject()
