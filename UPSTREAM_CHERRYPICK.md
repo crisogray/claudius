@@ -1,227 +1,297 @@
 # Upstream Cherry-Pick Analysis
 
-Fork point: `bd9c13bb2` (v1.1.8)
-Total commits since fork: 149
+**Range**: v1.1.19 → v1.1.23
+**Date**: 2026-01-16
 
-## CHERRY-PICK (Recommended)
+## Already Cherry-Picked (This Session)
 
-### TUI Fixes
-| Hash | Description | Status |
-|------|-------------|--------|
-| `1a5a63843` | feat(terminal): implement better dynamic terminal numbering (#8081) | ✅ Done |
-| `983f8ffec` | fix(tui): prevent layout jump when toggling tips visibility (#8068) | ⏭️ Skip (conflicts with our tips) |
-| `cd56845dc` | tui: add hint for variants toggle | ✅ Done |
-| `22c68a699` | fix(tui): reopen autocomplete after backspace deletes space (#6031) | ✅ Done |
-| `20399bbdf` | tui: rename kvStore to store for consistency | ⏭️ Skip (conflicts) |
-| `547a97570` | tui: redesign tips display on home screen | ⏭️ Skip (conflicts with did-you-know) |
-| `c009cab15` | Redesign tips display on home screen (#6126) | ✅ Done |
-| `e6bc3b253` | tui: remove update complete toast notification | ✅ Done |
-| `a5b6c57a7` | tweak: make the subagent header have clickable nav | ✅ Done |
-| `82b432349` | feat(tui): add mouse hover and click support to questions tool (#7905) | ✅ Done |
-| `68ed664a3` | tui: fix prompt ref initialization to prevent undefined reference errors | ⏭️ Skip (conflicts) |
-| `3a3077387` | tui: refactor event streaming to use SDK instead of manual RPC subscription | ⏭️ Skip (conflicts with thread/worker) |
-| `0c0057a7d` | Fix: TUI single-line paste cursor position (#7277) | ✅ Done |
-| `a803cf8ae` | feat(tui): add mouse hover and click support to autocomplete (#7820) | ✅ Done |
-| `c526e2d90` | fix(tui): copy oauth url when no device code (#7812) | ⏭️ Skip (we use API key auth) |
-| `43c2da24d` | fix(tui): slash command autocomplete highlighted row jumping (#7815) | ✅ Done |
-| `9280db329` | fix(tui): move props.ref to onMount (#7702) | ✅ Done |
-| `a457828a6` | fix(opencode): command palette mouse hover highlights wrong item (#7721) | ✅ Done |
+| Hash | Description | Our Commit |
+|------|-------------|------------|
+| `779610d66` | fix(desktop): open external links in system browser | `b945e68a4` |
+| `e60ded01d` | chore(desktop): Stop Killing opencode-cli on dev | `fd87824b6` |
+| `b0345284f` | fix(core): filter dead worktrees | `24429187a` |
+| `ee6ca104e` | fix(app): file listing | `0c10d853f` |
+| `05cbb1170` | fix(ui): layout-bottom icons | `0f2120fd6` |
+| `37f30993f` | fix: show toast error message on ConfigMarkdown parse error | `b26993d26` |
+| `4d08123ca` | feat(install): respect ZDOTDIR for zsh config detection | `31db113a2` |
+
+---
+
+## CHERRY-PICK CANDIDATES
 
 ### Desktop Fixes
 | Hash | Description | Status |
 |------|-------------|--------|
-| `b4f33485a` | fix(desktop): Improve User Message Badges for Big Titles and Small Screens (#8037) | ⏭️ Skip (conflicts) |
-| `c6092e4ad` | disable appimage | ✅ Done |
-| `ebbb4dd88` | fix(desktop): improve server detection & connection logic (#7962) | ✅ Done (manual) |
-| `e0eb460fc` | app: resolve defaultServerUrl inside AppInterface | ✅ Done (manual) |
-| `3e9366487` | feat(desktop): User Message Badges on Hover (#7835) | ✅ Done |
-| `025ed04da` | feat(desktop): Image Preview support for Image Attachments (#7841) | ✅ Done |
-| `76386f5cf` | feat(desktop): Fork Session (#7673) - see [Agent SDK Sessions docs](https://platform.claude.com/docs/en/agent-sdk/sessions#forking-sessions) | ✅ Done |
-| `a9275def4` | feat(desktop): Make mouse hover / click work on prompt input autocomplete (#7661) | ✅ Done |
-| `50ed4c6b5` | feat(deskop): Add Copy to Messages (#7658) | ✅ Done |
-| `f882cca98` | fix(desktop): add missing StoreExt import and fix unused mut warning (#7707) | ✅ Done |
-| `2d2a04496` | fix(desktop): build failing - missing import (#7697) | ✅ Done |
-| `02b7eb59f` | feat: support configuring default server URL for desktop (#7363) | ✅ Done |
-| `1a642a79a` | fix(desktop): remove split operation in serverDisplayName function (#7397) | ✅ Done |
-| `afb1cad26` | fix(desktop): Allow Selecting Card Errors (#7506) | ✅ Done |
-| `8b062ed62` | feat(desktop): Change Terminal's Cursor to Bar and Stop Blinking when not focused (#7402) | ✅ Done |
-| `b1e381cff` | fix(desktop): complete symlink support implementation and enable CI for PRs (#7113) | ✅ Done |
+| `a761f66a1` | fix(desktop): correct health check endpoint URL to /global/health | ⬜ Pending |
+| `3c9d80d75` | feat(desktop): Adding Provider Icons | ⬜ Pending |
+| `dc654c93d` | fix(desktop): Revert provider icon on select model dialog | ⬜ Pending |
+| `dfa59dd21` | feat(desktop): Ask Question Tool Support | ⬜ Pending |
+| `077ca4454` | fix(desktop): "load more" button behavior in desktop sidebar | ⬜ Pending |
+| `4b2a14c15` | chore(desktop): Question Tools Updates | ⬜ Pending |
+| `472a6cc83` | fix(app): sidebar toggle on desktop | ⬜ Pending |
 
-### Core Fixes (Non-provider)
+### Core Fixes
 | Hash | Description | Status |
 |------|-------------|--------|
-| `d954e1e3b` | fix(session): store api url in metadata (#8090) | ✅ Done |
-| `fd37d5b54` | tweak: truncation dir perm | ⏭️ Skip (touches deleted truncation.ts) |
-| `d7a1c268d` | fix(app): sanitize markdown -> html | ✅ Done |
-| `0be37cc2c` | tweak: make the .env reads ask user for permission instead of blocking | ✅ Done |
-| `9c69c1de9` | fix(formatter): use biome `check` instead of `format` to include import sorting (#8057) | ✅ Done |
-| `735f3d17b` | fix: ensure plurals are properly handled (#8070) | ✅ Done |
-| `f0912ee83` | core: rename OPENCODE_PASSWORD to OPENCODE_SERVER_PASSWORD | ⏭️ Skip (conflicts) |
-| `7ca767de5` | core: fix HTTP exception handling order to prevent NamedError from masking HTTP exceptions | ✅ Done |
-| `1954c1255` | core: add password authentication and improve server security | ✅ Done |
-| `e47f38313` | core: improve error handling for built-in plugin installation failures | ⏭️ Skip (conflicts) |
-| `62702fbd1` | fix: permissions wildcarding so that for ex: 'ls *' includes ls * AND 'ls' | ✅ Done |
-| `fa79736b8` | fix: check worktree for external_directory permission in subdirs (#7811) | ⏭️ Skip (touches deleted files) |
-| `44fa3d539` | feat(acp): track file modified (#7723) | ✅ Done |
-| `4752c8315` | feat: pass sessionID to chat.system.transform (#7718) | ⏭️ Skip (touches deleted llm.ts) |
-| `f94ee5ce9` | core: extract external directory validation to shared utility | ⏭️ Skip (touches deleted tool files) |
-| `d5738f542` | fix(grep): follow symlinks by default in ripgrep searches (#7501) | ⏭️ Skip (we already have this) |
-| `a593ed4c9` | fix: disable telemetry in the php lsp server (#7649) | ✅ Done |
-| `982b71e86` | disable server unless explicitly opted in (#7529) | ✅ Done |
-| `75df5040e` | fix: report config errors instead of silent termination (#7522) | ✅ Done |
-| `a5edf3a31` | fix: resolve broken forked sessions with compactions (#6445) | ✅ Done |
-| `8e3ab4afa` | feat(config): deduplicate plugins by name with priority-based resolution (#5957) | ✅ Done |
+| `73d5cacc0` | fix: add missing metadata() and ask() definitions to ToolContext type | ⬜ Pending |
+| `562f06713` | fix: deduplicate file refs in sent prompts | ⬜ Pending |
+| `f9fcdead5` | fix(session): skip duplicate system prompt for Codex OAuth sessions | ⬜ Pending |
+| `a57c8669b` | feat: show connected providers in /connect dialog | ⬜ Pending |
+| `fcc561ebb` | fix plan mode when not in git worktree | ⬜ Pending |
+| `6e13e8f74` | fix(session): remove typo'd duplicate path import | ⬜ Pending |
+| `3a9e6b558` | feat(opencode): add AWS Web Identity Token File support for Bedrock | ⬜ Pending |
+| `1f86aa8bb` | fix: adjust gitlab logic in provider.ts | ⬜ Pending |
+| `7d3c7a9f6` | add check incase provider doesnt exist in models list | ⬜ Pending |
+| `b3ae1931f` | fix: plan path permissions | ⬜ Pending |
+| `dd1f981d2` | fix: honor per-server MCP timeouts | ⬜ Pending |
+| `4edb4fa4f` | fix: handle broken symlinks gracefully in grep tool | ⬜ Pending |
+| `dc1c25cff` | fix: ensure frontmatter can process same content as other agents | ⬜ Pending |
+| `d71153eae` | fix(core): loading models.dev in dev | ⬜ Pending |
+| `af2a09940` | fix(core): more defensive project list | ⬜ Pending |
+| `b14622352` | fix(session): ensure agent exists before processing title | ⬜ Pending |
+| `8d720f946` | fix(opencode): add input limit for compaction | ⬜ Pending |
 
 ### App/UI Fixes
 | Hash | Description | Status |
 |------|-------------|--------|
-| `b3a1360ad` | feat(dialog-select-server): add icon button for server removal (#8053) | ✅ Done |
-| `8b9a85b7e` | fix(mcp): support `resource` content type in MCP tool output (#7879) | ⏭️ Skip (touches deleted prompt.ts) |
-| `b6b009775` | fix(ui): allow text editing shortcuts in search dialogs on macOS (#7419) | ✅ Done |
-| `6da60bd5d` | fix(app): more defensive dom access | ✅ Done |
-| `075fa2c0e` | fix: instance dispose issue | ✅ Done (manual) |
-| `0f2124db3` | fix(app): no inline js | ✅ Done |
-| `44297ffe7` | fix(app): break words in user message | ✅ Done |
-| `030b14ac4` | fix: prevent model picker overflow with Zen in new sessions (#7495) | ✅ Done |
-| `0433d4d06` | fix(app): store terminal and review pane visibility per session | ✅ Done |
-| `ec828619c` | fix(app): more defensive todo access | ✅ Done |
+| `43680534d` | add fullscreen view to permission prompt | ⬜ Pending |
+| `1fccb3bda` | fix(prompt-input): handle Shift+Enter before IME check | ⬜ Pending |
+| `73adf7e86` | fix: update User-Agent string to latest Chrome version in webfetch | ⬜ Pending |
+| `bfc9b24b4` | use native text truncation for sidebar diff paths | ⬜ Pending |
+| `beb97d21f` | fix(app): show session busy even for active session | ⬜ Pending |
+| `da3dea042` | fix(app): persist workspace order and collapsed state | ⬜ Pending |
+| `47d43aaf2` | feat(app): persist workspace branch | ⬜ Pending |
 
-### Nix/Build
+### MCP/State Fixes
 | Hash | Description | Status |
 |------|-------------|--------|
-| `ca1b597b0` | fix(nix): filter optional dependencies by target platform (#8033) | ⏭️ Skip (hash conflicts) |
-| `762c58b75` | Update Nix flake.lock and hashes | ⏭️ Skip (hash conflicts) |
-| `22f51c6b4` | upgrade opentui to v0.1.72 | ⏭️ Skip (version conflicts) |
-| `e82b11275` | upgrade opentui to v0.1.71 | ⏭️ Skip (version conflicts) |
-| `f2b294029` | Update Nix flake.lock and hashes | ⏭️ Skip (hash conflicts) |
-| `7df36cf0f` | Update Nix flake.lock and hashes | ✅ Done |
-| `7c2907cbb` | ci: fix failing pipeline | ⏭️ Skip (empty) |
+| `4dc72669e` | fix(mcp): close existing client before reassignment to prevent leaks | ⬜ Pending |
+| `9b7633723` | fix(state): delete key from recordsByKey on instance disposal | ⬜ Pending |
+
+### Themes
+| Hash | Description | Status |
+|------|-------------|--------|
+| `e37104cb1` | feat: add Undertale and Deltarune built-in themes | ⬜ Pending |
 
 ---
 
-## SKIP (Don't cherry-pick)
+## NEW LAYOUT FEATURE (Manual Integration Required)
 
-### Codex/OpenAI/GPT Specific
-| Hash | Description | Reason |
+These commits implement terminal splits and new sidebar layout. They conflict heavily with our layout and require manual integration.
+
+| Hash | Description | Status |
 |------|-------------|--------|
-| `8f22a6b69` | Add nova-2 to region prefix models | Bedrock |
-| `20c18689c` | bump copilot plugin version | Copilot |
-| `0cc3c3bc7` | ensure codex built in plugin is always available | Codex |
-| `ee8b38ab2` | fix: ensure /connect works for openai business plans | OpenAI |
-| `794c5981a` | fix: exclude 'none' variant for gpt-5.2-codex | Codex |
-| `1662e149b` | fix: add ChatGPT-Account-Id header | OpenAI |
-| `b03172d72` | fix: ensure gpt-5.2-codex has variants | Codex |
-| `a44d4acb3` | tweak: adjust codex styling and fix hint | Codex |
-| `8b8a358de` | update docs and auth methods for openai | OpenAI |
-| `8b287caaa` | tweak codex instructions prompt | Codex |
-| `172bbdace` | feat: codex auth support (#7537) | Codex |
-| `e30a15926` | fix(cli): enable API key prompt for Bedrock | Bedrock |
-| `a618fbe8c` | bump copilot plugin version | Copilot |
-| `07dc1f8ec` | fix: model dialog issue (touches provider code) | Multi-provider |
-| `71a7ad1a4` | fix model selection in title generation | May conflict |
+| `9f66a4597` | feat(app): new layout | ⬜ Manual |
+| `679270d9e` | feat(app): new layout | ⬜ Manual |
+| `564d3edfa` | fix(app): new layout issues | ⬜ Manual |
+| `169844801` | fix(app): new layout sessions stale | ⬜ Manual |
+| `f270ea65c` | fix(app): new layout issues | ⬜ Manual |
+| `6450ba1b7` | fix: search bar in header | ⬜ Manual |
+| `8cba7d7f5` | fix: tooltips cleanup | ⬜ Manual |
+| `fbc8f6eba` | fix: recent sessions hover gutter | ⬜ Manual |
+| `fe2cc0cff` | fix: archive icon replaces diff count on hover | ⬜ Manual |
+| `e5b08da0f` | fix: tooltip gutter spacing | ⬜ Manual |
+| `520c47e81` | fix: increase delay on session list tooltips | ⬜ Manual |
+| `1c05ebaea` | fix: show project options on hover of row | ⬜ Manual |
+| `f9a441d4f` | fix: avatar background | ⬜ Manual |
+| `bb6e350d6` | fix: move left panel toggle over | ⬜ Manual |
+| `3789a3142` | fix: project dropdown labels and order | ⬜ Manual |
+| `a71dcc189` | fix: recent sessions title color | ⬜ Manual |
+| `acd1eb574` | fix: load more button font size | ⬜ Manual |
+| `a5d47f076` | fix: avatar button states | ⬜ Manual |
+| `1ee916a3c` | fix: hide view all sessions on active project | ⬜ Manual |
+| `55bd6e487` | fix: workspace name color | ⬜ Manual |
+| `3b3505cfe` | fix: remove more options tooltip | ⬜ Manual |
+| `74b1349cf` | fix: new session tooltip position and add shortcut | ⬜ Manual |
+| `99110d12c` | fix: remove the active state from load more button | ⬜ Manual |
+| `dc8f8cc56` | fix: current session background color | ⬜ Manual |
+| `4d3e983ed` | fix: session icon and name alignment | ⬜ Manual |
+| `0f7b17b1b` | fix: thinking animation opacity and design | ⬜ Manual |
 
-### SDK Regeneration
-| Hash | Description | Reason |
-|------|-------------|--------|
-| `835e48cd2` | chore: generate | SDK regen |
-| `64f0205f9` | chore: generate | SDK regen |
-| `08d4d6d4a` | chore: generate | SDK regen |
-| `e6045ca92` | chore: generate | SDK regen |
-| `087473be6` | chore: generate | SDK regen |
-| `bdbbcd8a0` | chore: generate | SDK regen |
-| `a8f23fb54` | chore: generate | SDK regen |
-| `58186004d` | chore: generate | SDK regen |
-| `e20535655` | chore: generate | SDK regen |
-| `7c06ef247` | chore: generate | SDK regen |
-| `5c74bff8e` | chore: generate | SDK regen |
-| `bce9dc040` | chore: generate | SDK regen |
-| `445c8631a` | chore: generate | SDK regen |
-| `a98d108d2` | chore: generate | SDK regen |
-| `cf97633d7` | chore: generate | SDK regen |
-| `61d0b3e4d` | chore: bump ai sdk packages | AI SDK |
+---
 
-### WIP/Internal
-| Hash | Description | Reason |
-|------|-------------|--------|
-| `e146083b7` | wip: black | WIP |
-| `b41fbda68` | wip: black | WIP |
-| `b3e6b7a98` | wip: black | WIP |
-| `c4eacd0cc` | wip: black | WIP |
-| `dd5ec26c8` | wip: black | WIP |
-| `ab97a9503` | wip: black | WIP |
-| `2e875b2d6` | wip: black | WIP |
-| `790baec41` | wip: zen | WIP |
-| `52fbd16e0` | wip: zen | WIP |
-| `18cf4df6c` | wip: zen | WIP |
+## SKIP - TUI (Deleted in our fork)
 
-### Releases/Ignores
-| Hash | Description | Reason |
-|------|-------------|--------|
-| `db7243c36` | release: v1.1.15 | Release tag |
-| `7c6b3f981` | release: v1.1.14 | Release tag |
-| `efbab087d` | release: v1.1.13 | Release tag |
-| `449270aac` | release: v1.1.12 | Release tag |
-| `8a43c2493` | release: v1.1.11 | Release tag |
-| `563b4c33f` | release: v1.1.10 | Release tag |
-| `4695e685c` | ignore: update download stats | Stats |
-| `3205db9c1` | ignore: update download stats | Stats |
-| `e92a2ec9d` | ignore: update download stats | Stats |
-| `d34fdac85` | ignore: update download stats | Stats |
-| `de286b08f` | ignore: bump plugin version | Ignore |
-| `eb5c113cf` | ignore: add PR template | Ignore |
-
-### Docs (Optional)
 | Hash | Description |
 |------|-------------|
-| `c47438068` | docs: fix permission rule ordering in examples (#7010) |
-| `2e9c22d91` | docs: fix typo (#8041) |
-| `65724b693` | docs: fix scroll_speed default value (#7867) |
-| `7cbec9a1a` | docs: fix typos in settings doc (#7892) |
-| `b81eca4eb` | docs: fix typos on the providers page (#7829) |
-| `e342795bd` | docs: add url based instructions to web docs (#7216) |
-| `f3e8a275b` | docs: update brew formula references |
-| `559013e12` | docs: perf plans |
-| `3fe2e89d5` | docs: Add Scaleway to provider docs (#7389) |
-| `dfe3e7930` | docs(ecosystem): add micode and octto plugins (#7327) |
-| `c4ba5961c` | chore: update GitHub stars count to 60K |
+| `bee4b6801` | fix(TUI): make tui work when OPENCODE_SERVER_PASSWORD is set |
+| `1ff46c75f` | fix(tui): track all timeouts in Footer to prevent memory leak |
+| `90eaf9b3f` | fix(TUI): make tui work when OPENCODE_SERVER_PASSWORD is set (dupe) |
+| `8917dfdf5` | fix(tui): track all timeouts in Footer (dupe) |
+| `b2b123a39` | feat(tui): improve question prompt UX |
+| `76a79284d` | feat(tui): make dialog keybinds configurable |
+| `3a9fd1bb3` | fix: restore brand integrity of TUI wordmark |
+| `08ca1237c` | fix(tui): Center the initially selected session |
+| `ebc194ca9` | Prettify retry duration display in TUI |
+| `994c55f70` | upgrade opentui |
+| `4eb6b5750` | tweak: external dir permission rendering in tui |
 
-### Tests
+---
+
+## SKIP - Documentation Only
+
 | Hash | Description |
 |------|-------------|
-| `5c4345da4` | test: fix read test |
-| `d527ceeb2` | test: fix |
+| `2f7b2cf60` | docs: Update plan mode restrictions |
+| `b8828f260` | docs: add 302ai provider |
+| `f4a28b265` | docs: Update plan mode restrictions (dupe) |
+| `adcc66179` | docs: add 302ai provider (dupe) |
+| `a184714f6` | docs: document ~/.claude/CLAUDE.md compatibility behavior |
+| `6b019a125` | docs: fix permission system documentation |
+| `b75d4d1c5` | docs: update screenshot images |
+| `e6e7eaf6e` | docs: Web usage page |
+| `207a59aad` | docs: add comprehensive security threat model |
+| `6b6d6e9e0` | update security |
+| `f5fd54598` | docs: add /thinking command documentation |
+| `63176bb04` | docs: fix typos in documentation |
 
-### Other/Misc
-| Hash | Description | Reason |
-|------|-------------|--------|
-| `f2504d8eb` | security.md | Doc |
-| `1c24dd02a` | ci: adjust triage prompt | CI |
-| `b7b09fdfc` | admin unshare | Admin |
-| `f1a13f25a` | ci: don't continue-on-error | CI |
-| `2e0c2c9db` | chore(lander): fix spacing | Website |
-| `13305966e` | ci: tweak pr standards workflow | CI |
-| `8c3cc0d44` | chore: prep | Prep |
-| `e30562d5f` | chore: prep | Prep |
-| `58eccf7f5` | chore: prep | Prep |
-| `cbb314113` | fix(app): no custom url param | Maybe conflicts |
+---
+
+## SKIP - Console/Website
+
+| Hash | Description |
+|------|-------------|
+| `bc557e828` | console: reduce desktop download cache ttl |
+| `bb3926bf4` | fix(homepage): Update FAQ |
+| `78be8fecd` | feat(console): add /changelog page |
+| `8ce5c2b90` | feat(console/app): Style changes, view transitions |
+| `44d24d42b` | ignore: fix auth redirect |
+| `5b431c36f` | ignore: remove nowrap constraint |
+| `346c5e0da` | fix(console): make logo link |
+| `3206ed47e` | feat(console): add OG image |
+| `c0b43d3cb` | ignore: add slash command to checks |
+| `1fb611ef0` | fix: enable sticky header on changelog |
+| `fe58c649c` | feat(console): Update /black plan selection |
+| `ea643f1e3` | feat(console): Style improvements for /black |
+
+---
+
+## SKIP - Chore/Release/Nix/Sync
+
+| Hash | Description |
+|------|-------------|
+| `f24251f89` | sync |
+| `8ae10f1c9` | sync |
+| `b7a1d8f2f` | Update Nix flake.lock and x86_64-linux hash |
+| `f3d4dd509` | Update aarch64-darwin hash |
+| `7aa7dd369` | chore: generate |
+| `aa522aad6` | release: v1.1.17 |
+| `15e80fca6` | chore: generate |
+| `fcaa041ef` | chore: generate |
+| `c67b0a9ba` | release: v1.1.18 |
+| `f642a6c5b` | chore: generate |
+| `29703aee9` | chore: generate |
+| `874e22a04` | chore: generate |
+| `16b2bfa8e` | add family to gpt 5.2 codex in codex plugin |
+| `a160a35d0` | chore: generate |
+| `2aed4d263` | chore: generate |
+| `3839d70a9` | chore: generate |
+| `9b2d595cf` | Update Nix flake.lock |
+| `ff669d441` | Update aarch64-darwin hash |
+| `76b10d85e` | chore: generate |
+| `4347a77d8` | ignore: update download stats |
+| `2256362ba` | chore: generate |
+| `09ff3b9bb` | release: v1.1.20 |
+| `9fd61aef6` | chore: generate |
+| `cc67bc005` | Update Nix flake.lock |
+| `b5e9f9666` | Update aarch64-darwin hash |
+| `d83756eaa` | chore: generate |
+| `50dfa9caf` | chore: upgrade bun |
+| `216a2d87c` | chore: generate |
+| `5a8a0f6a5` | fix: downgrade bun to fix avx issue |
+| `161e3db79` | Update Nix flake.lock |
+| `3f3550a16` | Update aarch64-darwin hash |
+| `b4717d809` | bun/package.json updates |
+| `60aa0cb96` | Update Nix flake.lock |
+| `3f16e0d89` | Update Nix flake.lock |
+| `2691e1e66` | Update aarch64-darwin hash |
+| `d3fc29bde` | Update aarch64-darwin hash |
+| `9862303ee` | fix: update hix hashes |
+| `df8e6e601` | release: v1.1.23 |
+| `99a1e73fa` | release: v1.1.21 |
+| `ba4c86448` | chore: generate |
+
+---
+
+## SKIP - Black/Zen (Subscription features)
+
+| Hash | Description |
+|------|-------------|
+| `eaf18d991` | wip: black |
+| `45fa4eda1` | wip: black |
+| `82319bbd8` | wip: black |
+| `6fe265e7d` | Merge branch 'zen-black' into dev |
+| `9b2d595cf` | wip: black |
+| `bbb3120b5` | zen: gpt-5.2-codex |
+| `e03932e58` | zen: black usage |
+
+---
+
+## SKIP - CI/Workflow
+
+| Hash | Description |
+|------|-------------|
+| `5b699a0d9` | fix(github): add persist-credentials: false to workflow templates |
+| `87438fb38` | ci: dedup stuff in changelog |
+
+---
+
+## SKIP - Provider Plugins (Not using)
+
+| Hash | Description |
+|------|-------------|
+| `a520c4ff9` | feat: Add GitLab Duo Agentic Chat Provider Support |
+| `0ce849c3d` | chore: update gitlab-ai-provider |
+| `d78d31430` | feat: official copilot plugin |
+| `74baae597` | chore: bump plugin version |
+| `6a2fed704` | chore: bump cache version |
+| `b36837ae9` | tweak: add error message for copilot reauthentication |
+| `92931437c` | fix: codex id issue |
+| `fcf2da957` | feat: allow provider-level store option |
+| `16cac69a7` | Revert "feat: allow provider-level store option" |
+
+---
+
+## SKIP - Misc/Cleanup
+
+| Hash | Description |
+|------|-------------|
+| `45a770cdb` | fix(opencode): fix docker image after sst rename in tips |
+| `0ddf8e6c6` | fix(cli): mcp auth duplicate radio button icon |
+| `759939616` | tweak: ensure external dir and bash tool invocations render workdir details |
+| `3997d3f2d` | feat: add plan mode with enter/exit tools |
+| `cd6e07355` | test: fix plan agent test path |
+| `4c37e17ac` | remove plan |
+| `905226c01` | fix: Add Plugin Mocks to Provider Tests |
+| `bcdaf7e77` | tweak: prompt for explore agent better |
+| `0026bc581` | do not allow agent to ask custom-less questions |
+| `ad17e8d1f` | feat: add choco and scoop to opencode upgrade methods |
+| `9d92ae753` | copy changes |
+| `096e14d78` | tweak: adjust lsp wording |
+| `dbd1987f0` | chore: cleanup |
+| `e5973e286` | chore: cleanup |
+| `076dfb375` | chore: cleanup |
+| `2f32f2ceb` | chore: cleanup |
+| `7e016fdda` | chore: cleanup |
 
 ---
 
 ## Summary
 
-| Category | Count | Done | Skipped |
-|----------|-------|------|---------|
-| TUI Fixes | 18 | 12 | 6 |
-| Desktop Fixes | 16 | 15 | 1 |
-| Core Fixes | 21 | 14 | 7 |
-| App/UI Fixes | 10 | 9 | 1 |
-| Nix/Build | 7 | 1 | 6 |
-| **Total** | **72** | **51** | **21** |
-
-## Recommended Order
-
-1. Start with core fixes (most likely to apply cleanly)
-2. Then TUI fixes
-3. Then Desktop fixes
-4. Then App/UI fixes
-5. Finally Nix/Build updates
+| Category | Pending | Manual | Skip |
+|----------|---------|--------|------|
+| Desktop Fixes | 7 | - | - |
+| Core Fixes | 17 | - | - |
+| App/UI Fixes | 7 | - | - |
+| MCP/State Fixes | 2 | - | - |
+| Themes | 1 | - | - |
+| New Layout | - | 26 | - |
+| TUI | - | - | 11 |
+| Docs | - | - | 12 |
+| Console/Website | - | - | 12 |
+| Chore/Release/Nix | - | - | 39 |
+| Black/Zen | - | - | 7 |
+| CI/Workflow | - | - | 2 |
+| Provider Plugins | - | - | 9 |
+| Misc/Cleanup | - | - | 17 |
+| **Total** | **34** | **26** | **109** |
