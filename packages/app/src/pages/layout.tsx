@@ -951,10 +951,10 @@ createEffect(
                   "animate-pulse": isWorking(),
                 }}
               >
-                {props.session.title}
+{props.session.title}
               </span>
               <div class="shrink-0 group-hover/session:hidden group-active/session:hidden group-focus-within/session:hidden">
-                <Switch>
+                <Switch fallback={<Icon name="dash" size="small" class="text-icon-weak" />}>
                   <Match when={isWorking()}>
                     <Spinner class="size-2.5 mr-0.5" />
                   </Match>
