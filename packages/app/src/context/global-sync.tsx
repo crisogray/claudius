@@ -75,6 +75,7 @@ type State = {
   lsp: LspStatus[]
   vcs: VcsInfo | undefined
   limit: number
+  totalSessions: number
   message: {
     [sessionID: string]: Message[]
   }
@@ -141,6 +142,7 @@ function createGlobalSync() {
         lsp: [],
         vcs: cache[0].value,
         limit: 5,
+        totalSessions: 0,
         message: {},
         part: {},
       })
@@ -161,6 +163,9 @@ function createGlobalSync() {
           .filter((s) => !s.time?.archived)
           .slice()
           .sort((a, b) => a.id.localeCompare(b.id))
+
+        // Store the total count of non-archived sessions before filtering
+        setStore("totalSessions", nonArchived.length)
 
         const sandboxWorkspace = globalStore.project.some((p) => (p.sandboxes ?? []).includes(directory))
         if (sandboxWorkspace) {
