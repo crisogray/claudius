@@ -116,9 +116,9 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       )
 
       const [ephemeral, setEphemeral] = createStore<{
-        model: Record<string, ModelKey>
+        model: ModelKey | undefined
       }>({
-        model: {},
+        model: undefined,
       })
 
       const available = createMemo(() =>
@@ -202,10 +202,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       })
 
       const current = createMemo(() => {
-        const p = permissionMode.current()
-        if (!p) return undefined
         const key = getFirstValidModel(
-          () => ephemeral.model[p.id],
+          () => ephemeral.model,
           fallbackModel,
         )
         if (!key) return undefined
@@ -254,8 +252,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         cycle,
         set(model: ModelKey | undefined, options?: { recent?: boolean }) {
           batch(() => {
-            const currentPermission = permissionMode.current()
-            if (currentPermission) setEphemeral("model", currentPermission.id, model ?? fallbackModel())
+            setEphemeral("model", model ?? fallbackModel())
             if (model) updateVisibility(model, "show")
             if (options?.recent && model) {
               const uniq = uniqueBy([model, ...store.recent], (x) => x.providerID + x.modelID)
