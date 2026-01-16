@@ -1092,6 +1092,7 @@ export default function Page() {
         </Show>
 
         {/* Main content panel with tabs (Session + Review + Context + Files) */}
+        <div class="flex-1 min-w-0 flex flex-col min-h-0">
         <Show
           when={isDesktop() && showTabs()}
           fallback={
@@ -1760,6 +1761,92 @@ export default function Page() {
             </DragDropProvider>
           </div>
         </Show>
+
+        <Show when={isDesktop() && params.id && view().terminal.opened()}>
+          <div
+            class="relative w-full flex-col shrink-0 border-t border-border-weak-base"
+            style={{ height: `${layout.terminal.height()}px` }}
+          >
+            <ResizeHandle
+              direction="vertical"
+              size={layout.terminal.height()}
+              min={100}
+              max={window.innerHeight * 0.6}
+              collapseThreshold={50}
+              onResize={layout.terminal.resize}
+              onCollapse={view().terminal.close}
+            />
+            <Show
+              when={terminal.ready()}
+              fallback={
+                <div class="flex flex-col h-full pointer-events-none">
+                  <div class="h-10 flex items-center gap-2 px-2 border-b border-border-weak-base bg-background-stronger overflow-hidden">
+                    <For each={handoff.terminals}>
+                      {(title) => (
+                        <div class="px-2 py-1 rounded-md bg-surface-base text-14-regular text-text-weak truncate max-w-40">
+                          {title}
+                        </div>
+                      )}
+                    </For>
+                    <div class="flex-1" />
+                    <div class="text-text-weak pr-2">Loading...</div>
+                  </div>
+                  <div class="flex-1 flex items-center justify-center text-text-weak">Loading terminal...</div>
+                </div>
+              }
+            >
+              <DragDropProvider
+                onDragStart={handleTerminalDragStart}
+                onDragEnd={handleTerminalDragEnd}
+                onDragOver={handleTerminalDragOver}
+                collisionDetector={closestCenter}
+              >
+                <DragDropSensors />
+                <ConstrainDragYAxis />
+                <Tabs variant="alt" value={terminal.active()} onChange={terminal.open}>
+                  <Tabs.List class="h-10">
+                    <SortableProvider ids={terminal.all().map((t: LocalPTY) => t.id)}>
+                      <For each={terminal.all()}>{(pty) => <SortableTerminalTab terminal={pty} />}</For>
+                    </SortableProvider>
+                    <div class="h-full flex items-center justify-center">
+                      <TooltipKeybind
+                        title="New terminal"
+                        keybind={command.keybind("terminal.new")}
+                        class="flex items-center"
+                      >
+                        <IconButton icon="plus-small" variant="ghost" iconSize="large" onClick={terminal.new} />
+                      </TooltipKeybind>
+                    </div>
+                  </Tabs.List>
+                  <For each={terminal.all()}>
+                    {(pty) => (
+                      <Tabs.Content value={pty.id}>
+                        <Terminal pty={pty} onCleanup={terminal.update} onConnectError={() => terminal.clone(pty.id)} />
+                      </Tabs.Content>
+                    )}
+                  </For>
+                </Tabs>
+                <DragOverlay>
+                  <Show when={store.activeTerminalDraggable}>
+                    {(draggedId) => {
+                      const pty = createMemo(() => terminal.all().find((t: LocalPTY) => t.id === draggedId()))
+                      return (
+                        <Show when={pty()}>
+                          {(t) => (
+                            <div class="relative p-1 h-10 flex items-center bg-background-stronger text-14-regular">
+                              {t().title}
+                            </div>
+                          )}
+                        </Show>
+                      )
+                    }}
+                  </Show>
+                </DragOverlay>
+              </DragDropProvider>
+            </Show>
+          </div>
+        </Show>
+        </div>
 
         {/* Right panel (Files/Git) */}
         <Show when={isDesktop()}>

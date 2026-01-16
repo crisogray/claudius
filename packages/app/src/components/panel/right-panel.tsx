@@ -8,6 +8,7 @@ import { Icon } from "@opencode-ai/ui/icon"
 import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
 import FileTree from "@/components/file-tree"
 import { GitTab } from "@/components/panel/git-tab"
+import { SearchTab } from "@/components/panel/search-tab"
 import { FileContextMenu, useFileContextMenu } from "@/components/panel/file-context-menu"
 import type { LocalFile } from "@/context/local"
 
@@ -57,6 +58,12 @@ export function RightPanel() {
                 <span>Git</span>
               </div>
             </Tabs.Trigger>
+            <Tabs.Trigger value="search" class="flex-1">
+              <div class="flex items-center gap-1.5">
+                <Icon name="magnifying-glass" size="small" />
+                <span>Search</span>
+              </div>
+            </Tabs.Trigger>
           </Tabs.List>
 
           <Tabs.Content value="files" class="flex-1 min-h-0 flex flex-col">
@@ -83,6 +90,10 @@ export function RightPanel() {
 
           <Tabs.Content value="git" class="flex-1 min-h-0">
             <GitTab />
+          </Tabs.Content>
+
+          <Tabs.Content value="search" class="flex-1 min-h-0">
+            <SearchTab />
           </Tabs.Content>
         </Tabs>
 
