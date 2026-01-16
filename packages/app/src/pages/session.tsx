@@ -884,6 +884,19 @@ export default function Page() {
     window.history.replaceState(null, "", `#${anchor(id)}`)
   }
 
+  const scrollToElement = (el: HTMLElement, behavior: ScrollBehavior) => {
+    const root = scroller
+    if (!root) {
+      el.scrollIntoView({ behavior, block: "start" })
+      return
+    }
+
+    const a = el.getBoundingClientRect()
+    const b = root.getBoundingClientRect()
+    const top = a.top - b.top + root.scrollTop
+    root.scrollTo({ top, behavior })
+  }
+
   const scrollToMessage = (message: UserMessage, behavior: ScrollBehavior = "smooth") => {
     setActiveMessage(message)
 
