@@ -76,7 +76,13 @@
 
 ## NEW LAYOUT FEATURE (Manual Integration Required)
 
-These commits implement terminal splits and new sidebar layout. They conflict heavily with our layout and require manual integration.
+These commits implement terminal splits and new sidebar layout. **Cherry-picking doesn't work** - the 5 core commits depend on ~20+ interspersed changes to:
+- Terminal context (Panel system, splits, pane management, focus)
+- Session state (`agent`, `sessionTotal`, `hasPermissions`)
+- Function signatures (`scrollToElement(el, behavior)`)
+- Type definitions across multiple files
+
+**Recommended approach:** Full upstream rebase or wait for feature stabilization (25+ fix commits suggest ongoing refinement).
 
 | Hash | Description | Status |
 |------|-------------|--------|
