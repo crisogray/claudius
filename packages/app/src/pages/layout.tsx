@@ -1065,9 +1065,9 @@ createEffect(
       <button
         type="button"
         classList={{
-          "flex items-center justify-center size-10 p-1 rounded-lg border transition-colors cursor-default": true,
-          "bg-transparent border-icon-strong-base hover:bg-surface-base-hover": isActive(),
-          "bg-transparent border-transparent hover:bg-surface-base-hover hover:border-border-weak-base": !isActive(),
+          "flex items-center justify-center size-10 p-1 rounded-lg overflow-hidden transition-colors cursor-default": true,
+          "bg-transparent border-2 border-icon-strong-base hover:bg-surface-base-hover": isActive(),
+          "bg-transparent border border-transparent hover:bg-surface-base-hover hover:border-border-weak-base": !isActive(),
         }}
         onClick={() => navigateToProject(props.project.worktree)}
       >
