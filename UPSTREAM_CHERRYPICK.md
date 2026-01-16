@@ -17,6 +17,7 @@
 | `a761f66a1` | fix(desktop): correct health check endpoint URL | `b834081a6` |
 | `73d5cacc0` | fix: add missing metadata() and ask() to ToolContext type | `51d85aa2b` |
 | `af2a09940` | fix(core): more defensive project list | `5f17c2a01` |
+| `dd1f981d2` | fix: update MCP timeout config descriptions | `da1bacf1e` |
 
 ---
 
@@ -44,7 +45,6 @@
 | `1f86aa8bb` | fix: adjust gitlab logic in provider.ts | provider.ts conflict |
 | `7d3c7a9f6` | add check if provider doesn't exist in models | provider.ts conflict |
 | `b3ae1931f` | fix: plan path permissions | Conflict |
-| `dd1f981d2` | fix: honor per-server MCP timeouts | Conflict |
 | `4edb4fa4f` | fix: handle broken symlinks in grep tool | Conflict |
 | `dc1c25cff` | fix: ensure frontmatter can process same content | Conflict |
 | `d71153eae` | fix(core): loading models.dev in dev | Conflict |
@@ -114,8 +114,8 @@ These commits implement terminal splits and new sidebar layout. They conflict he
 | Category | Applied | Skipped | Already Present |
 |----------|---------|---------|-----------------|
 | Desktop Fixes | 1 | 6 | 0 |
-| Core Fixes | 2 | 15 | 0 |
+| Core Fixes | 3 | 14 | 0 |
 | App/UI Fixes | 0 | 6 | 1 |
 | MCP/State | 0 | 0 | 2 |
 | Themes | 0 | 0 | 1 |
-| **Total** | **3** | **27** | **4** |
+| **Total** | **4** | **26** | **4** |
