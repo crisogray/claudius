@@ -1266,6 +1266,7 @@ export default function Layout(props: ParentProps) {
           if (!props.mobile) scrollContainerRef = el
         }}
         class="size-full flex flex-col py-2 overflow-y-auto no-scrollbar"
+        style={{ "overflow-anchor": "none" }}
       >
         <nav class="flex flex-col gap-1 px-2">
           <For each={sessions()}>
@@ -1478,6 +1479,7 @@ export default function Layout(props: ParentProps) {
                               if (!sidebarProps.mobile) scrollContainerRef = el
                             }}
                             class="size-full flex flex-col py-2 gap-4 overflow-y-auto no-scrollbar"
+                            style={{ "overflow-anchor": "none" }}
                           >
                             <SortableProvider ids={workspaces()}>
                               <For each={workspaces()}>
