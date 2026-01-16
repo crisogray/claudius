@@ -84,7 +84,7 @@ export function SessionHeader() {
             >
               <div class="flex items-center gap-2">
                 <Icon name="magnifying-glass" size="normal" class="icon-base" />
-                <span class="flex-1 min-w-0 text-14-regular text-text-weak truncate" style={{ "line-height": "1" }}>
+                <span class="flex-1 min-w-0 text-14-regular text-text-weak truncate" style={{ "line-height": 1 }}>
                   Search {name()}
                 </span>
               </div>
