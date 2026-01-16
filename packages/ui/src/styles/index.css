@@ -26,6 +26,7 @@
 @import "../components/image-preview.css" layer(components);
 @import "../components/keybind.css" layer(components);
 @import "../components/text-field.css" layer(components);
+@import "../components/inline-input.css" layer(components);
 @import "../components/list.css" layer(components);
 @import "../components/logo.css" layer(components);
 @import "../components/markdown.css" layer(components);
