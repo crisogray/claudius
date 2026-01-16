@@ -17,6 +17,7 @@ import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
 import { Select } from "@opencode-ai/ui/select"
 import { Popover } from "@opencode-ai/ui/popover"
 import { TextField } from "@opencode-ai/ui/text-field"
+import { Keybind } from "@opencode-ai/ui/keybind"
 import { DialogSelectServer } from "@/components/dialog-select-server"
 import { SessionLspIndicator } from "@/components/session-lsp-indicator"
 import { SessionMcpIndicator } from "@/components/session-mcp-indicator"
@@ -88,16 +89,7 @@ export function SessionHeader() {
                   Search {name()}
                 </span>
               </div>
-              <Show when={hotkey()}>
-                {(keybind) => (
-                  <span
-                    class="shrink-0 flex items-center justify-center h-5 px-2 rounded-[2px] bg-surface-base text-12-medium text-text-weak"
-                    style={{ "box-shadow": "var(--shadow-xxs-border)" }}
-                  >
-                    {keybind()}
-                  </span>
-                )}
-              </Show>
+              <Show when={hotkey()}>{(keybind) => <Keybind>{keybind()}</Keybind>}</Show>
             </button>
           </Portal>
         )}
