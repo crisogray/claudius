@@ -1165,7 +1165,7 @@ export default function Layout(props: ParentProps) {
       return `${kind} : ${name}`
     })
     const open = createMemo(() => store.workspaceExpanded[props.directory] ?? true)
-    const hasMore = createMemo(() => local() && workspaceStore.session.length >= workspaceStore.limit)
+    const hasMore = createMemo(() => local() && workspaceStore.session.length < workspaceStore.totalSessions)
     const loadMore = async () => {
       if (!local()) return
       setWorkspaceStore("limit", (limit) => limit + 5)
@@ -1260,7 +1260,7 @@ export default function Layout(props: ParentProps) {
         .filter((session) => !session.parentID)
         .toSorted(sortSessions),
     )
-    const hasMore = createMemo(() => workspaceStore.session.length >= workspaceStore.limit)
+    const hasMore = createMemo(() => workspaceStore.session.length < workspaceStore.totalSessions)
     const loadMore = async () => {
       setWorkspaceStore("limit", (limit) => limit + 5)
       await globalSync.project.loadSessions(props.project.worktree)
