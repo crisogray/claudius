@@ -328,7 +328,7 @@ async fn setup_server_connection(app: &AppHandle, port: u32) -> Result<(Option<C
 pub fn run() {
     let updater_enabled = option_env!("TAURI_SIGNING_PRIVATE_KEY").is_some();
 
-    #[cfg(target_os = "macos")]
+    #[cfg(all(target_os = "macos", not(debug_assertions)))]
     let _ = std::process::Command::new("killall")
         .arg("opencode-cli")
         .output();
