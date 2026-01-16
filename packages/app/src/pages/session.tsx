@@ -26,6 +26,7 @@ import { useSync } from "@/context/sync"
 import { useTerminal, type LocalPTY } from "@/context/terminal"
 import { useLayout } from "@/context/layout"
 import { Terminal } from "@/components/terminal"
+import { TerminalSplit } from "@/components/terminal-split"
 import { checksum, base64Encode, base64Decode } from "@opencode-ai/util/encode"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { DialogSelectFile } from "@/components/dialog-select-file"
@@ -453,6 +454,28 @@ export default function Page() {
       category: "Terminal",
       keybind: "ctrl+shift+`",
       onSelect: () => terminal.new(),
+    },
+    {
+      id: "terminal.split.vertical",
+      title: "Split terminal vertically",
+      description: "Split the current terminal pane vertically",
+      category: "Terminal",
+      keybind: "mod+\\",
+      onSelect: () => {
+        const active = terminal.active()
+        if (active) terminal.split(active, "vertical")
+      },
+    },
+    {
+      id: "terminal.split.horizontal",
+      title: "Split terminal horizontally",
+      description: "Split the current terminal pane horizontally",
+      category: "Terminal",
+      keybind: "mod+shift+\\",
+      onSelect: () => {
+        const active = terminal.active()
+        if (active) terminal.split(active, "horizontal")
+      },
     },
     {
       id: "rightPanel.toggle",
@@ -1761,8 +1784,8 @@ export default function Page() {
               <ConstrainDragYAxis />
               <Tabs variant="alt" value={terminal.active()} onChange={terminal.open}>
                 <Tabs.List class="h-10">
-                  <SortableProvider ids={terminal.all().map((t: LocalPTY) => t.id)}>
-                    <For each={terminal.all()}>{(pty) => <SortableTerminalTab terminal={pty} />}</For>
+                  <SortableProvider ids={terminal.tabs().map((t: LocalPTY) => t.id)}>
+                    <For each={terminal.tabs()}>{(pty) => <SortableTerminalTab terminal={pty} />}</For>
                   </SortableProvider>
                   <div class="h-full flex items-center justify-center">
                     <TooltipKeybind
@@ -1774,10 +1797,10 @@ export default function Page() {
                     </TooltipKeybind>
                   </div>
                 </Tabs.List>
-                <For each={terminal.all()}>
+                <For each={terminal.tabs()}>
                   {(pty) => (
-                    <Tabs.Content value={pty.id}>
-                      <Terminal pty={pty} onCleanup={terminal.update} onConnectError={() => terminal.clone(pty.id)} />
+                    <Tabs.Content value={pty.id} class="h-[calc(100%-2.5rem)]">
+                      <TerminalSplit tabId={pty.id} />
                     </Tabs.Content>
                   )}
                 </For>

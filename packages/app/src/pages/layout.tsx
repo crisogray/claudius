@@ -60,6 +60,7 @@ import { DialogSelectDirectory } from "@/components/dialog-select-directory"
 import { DialogEditProject } from "@/components/dialog-edit-project"
 import { Titlebar } from "@/components/titlebar"
 import { useServer } from "@/context/server"
+import { DateTime } from "luxon"
 
 export default function Layout(props: ParentProps) {
   const [store, setStore] = createStore({
@@ -863,24 +864,23 @@ export default function Layout(props: ParentProps) {
 
   const SessionItem = (props: { session: Session; slug: string; mobile?: boolean; dense?: boolean }): JSX.Element => {
     const notification = useNotification()
+    const updated = createMemo(() => DateTime.fromMillis(props.session.time.updated))
     const notifications = createMemo(() => notification.session.unseen(props.session.id))
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const [sessionStore] = globalSync.child(props.session.directory)
+
     const hasUserRequest = createMemo(() => {
       const sessionID = props.session.id
-      // Check permissions, questions, and plans
-      if ((sessionStore.permission?.[sessionID] ?? []).length > 0) return true
       if ((sessionStore.question?.[sessionID] ?? []).length > 0) return true
       if ((sessionStore.plan?.[sessionID] ?? []).length > 0) return true
-      // Check child sessions
       const childSessions = sessionStore.session.filter((s) => s.parentID === sessionID)
       for (const child of childSessions) {
-        if ((sessionStore.permission?.[child.id] ?? []).length > 0) return true
         if ((sessionStore.question?.[child.id] ?? []).length > 0) return true
         if ((sessionStore.plan?.[child.id] ?? []).length > 0) return true
       }
       return false
     })
+
     const hasPermissions = createMemo(() => {
       const permissions = sessionStore.permission?.[props.session.id] ?? []
       if (permissions.length > 0) return true
@@ -891,6 +891,7 @@ export default function Layout(props: ParentProps) {
       }
       return false
     })
+
     const isWorking = createMemo(() => {
       if (props.session.id === params.id) return false
       if (hasUserRequest()) return false
@@ -899,58 +900,68 @@ export default function Layout(props: ParentProps) {
       return status?.type === "busy" || status?.type === "retry"
     })
 
-    const tint = createMemo(() => {
-      // Agent tint color feature not implemented in this fork
-      return undefined
-    })
-
     return (
       <div
         data-session-id={props.session.id}
-        class="group/session relative w-full rounded-md cursor-default transition-colors pl-2 pr-3
-               hover:bg-surface-raised-base-hover focus-within:bg-surface-raised-base-hover has-[.active]:bg-surface-base-active"
+        class="group/session relative w-full rounded-md cursor-default transition-colors
+               hover:bg-surface-raised-base-hover focus-within:bg-surface-raised-base-hover has-[.active]:bg-surface-raised-base-hover"
       >
         <Tooltip placement={props.mobile ? "bottom" : "right"} value={props.session.title} gutter={16} openDelay={1000}>
           <A
             href={`${props.slug}/session/${props.session.id}`}
-            class={`flex items-center justify-between gap-3 min-w-0 text-left w-full focus:outline-none transition-[padding] group-hover/session:pr-7 group-focus-within/session:pr-7 group-active/session:pr-7 ${props.dense ? "py-0.5" : "py-1"}`}
+            class={`flex flex-col min-w-0 text-left w-full focus:outline-none pl-4 pr-2 ${props.dense ? "py-0.5" : "py-1"}`}
             onMouseEnter={() => prefetchSession(props.session, "high")}
             onFocus={() => prefetchSession(props.session, "high")}
           >
-            <div class="flex items-center gap-1 w-full">
-              <div
-                class="shrink-0 size-6 flex items-center justify-center"
-                style={{ color: tint() ?? "var(--icon-interactive-base)" }}
+            <div class="flex items-center self-stretch gap-6 justify-between transition-[padding] group-hover/session:pr-7 group-focus-within/session:pr-7 group-active/session:pr-7">
+              <span
+                classList={{
+                  "text-14-regular text-text-strong overflow-hidden text-ellipsis truncate": true,
+                  "animate-pulse": isWorking(),
+                }}
               >
+                {props.session.title}
+              </span>
+              <div class="shrink-0 group-hover/session:hidden group-active/session:hidden group-focus-within/session:hidden">
                 <Switch>
                   <Match when={isWorking()}>
-                    <Spinner class="size-[15px] opacity-50" />
+                    <Spinner class="size-2.5 mr-0.5" />
                   </Match>
                   <Match when={hasUserRequest()}>
-                    <div class="size-1.5 rounded-full bg-surface-warning-strong" />
+                    <div class="size-1.5 mr-1.5 rounded-full bg-surface-warning-strong" />
                   </Match>
                   <Match when={hasPermissions()}>
-                    <div class="size-1.5 rounded-full bg-surface-warning-strong" />
+                    <div class="size-1.5 mr-1.5 rounded-full bg-surface-warning-strong" />
                   </Match>
                   <Match when={hasError()}>
-                    <div class="size-1.5 rounded-full bg-text-diff-delete-base" />
+                    <div class="size-1.5 mr-1.5 rounded-full bg-text-diff-delete-base" />
                   </Match>
                   <Match when={notifications().length > 0}>
-                    <div class="size-1.5 rounded-full bg-text-interactive-base" />
+                    <div class="size-1.5 mr-1.5 rounded-full bg-text-interactive-base" />
+                  </Match>
+                  <Match when={true}>
+                    <span class="text-12-regular text-text-weak text-right whitespace-nowrap">
+                      {Math.abs(updated()?.diffNow().as("seconds")) < 60
+                        ? "Now"
+                        : updated()
+                            ?.toRelative({ style: "short", unit: ["days", "hours", "minutes"] })
+                            ?.replace(" ago", "")
+                            ?.replace(/ days?/, "d")
+                            ?.replace(" min.", "m")
+                            ?.replace(" hr.", "h")}
+                    </span>
                   </Match>
                 </Switch>
               </div>
-              <span class="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate">
-                {props.session.title}
-              </span>
-              <Show when={props.session.summary}>
-                {(summary) => (
-                  <div class="group-hover/session:hidden group-active/session:hidden group-focus-within/session:hidden">
-                    <DiffChanges changes={summary()} />
-                  </div>
-                )}
-              </Show>
             </div>
+            <Show when={props.session.summary?.files}>
+              <div class="flex justify-between items-center self-stretch">
+                <span class="text-12-regular text-text-weak">
+                  {`${props.session.summary?.files || "No"} file${props.session.summary?.files !== 1 ? "s" : ""} changed`}
+                </span>
+                <Show when={props.session.summary}>{(summary) => <DiffChanges changes={summary()} />}</Show>
+              </div>
+            </Show>
           </A>
         </Tooltip>
         <div
