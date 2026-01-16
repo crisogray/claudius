@@ -293,6 +293,17 @@ export namespace Git {
   }
 
   /**
+   * Get file content from a git ref (HEAD, index, or specific commit)
+   * @param file - Path to the file
+   * @param ref - Git ref: "HEAD" for committed, ":" for staged/index, or a commit hash
+   */
+  export async function show(file: string, ref = "HEAD"): Promise<string> {
+    // For staged content, use `:path` (colon prefix means staged/index)
+    const refPath = ref === ":" ? `:${file}` : `${ref}:${file}`
+    return await $`git show ${refPath}`.cwd(Instance.directory).quiet().nothrow().text()
+  }
+
+  /**
    * Get a map of file paths to their git status (for file tree badges)
    */
   export async function fileStatuses(): Promise<Map<string, FileStatus>> {

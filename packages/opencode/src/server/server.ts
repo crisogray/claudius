@@ -2418,6 +2418,35 @@ export namespace Server {
             return c.json({ diff: await Git.diff(file, staged) })
           },
         )
+        .get(
+          "/git/show",
+          describeRoute({
+            summary: "Get file content from git ref",
+            description: "Get file content from a specific git ref (HEAD, index, or commit).",
+            operationId: "git.show",
+            responses: {
+              200: {
+                description: "File content",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ content: z.string() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "query",
+            z.object({
+              file: z.string().meta({ description: "Path to the file" }),
+              ref: z.string().default("HEAD").meta({ description: "Git ref: HEAD, : (for staged), or commit hash" }),
+            }),
+          ),
+          async (c) => {
+            const { file, ref } = c.req.valid("query")
+            return c.json({ content: await Git.show(file, ref) })
+          },
+        )
         .post(
           "/log",
           describeRoute({

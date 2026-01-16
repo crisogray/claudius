@@ -52,6 +52,7 @@ import {
   NewSessionView,
 } from "@/components/session"
 import { FileEditor } from "@/components/file-editor"
+import { GitDiffViewer } from "@/components/git-diff-viewer"
 import { RightPanel } from "@/components/panel/right-panel"
 import { usePlatform } from "@/context/platform"
 import { navMark, navParams } from "@/utils/perf"
@@ -537,10 +538,10 @@ export default function Page() {
     },
     {
       id: "agent.cycle",
-      title: "Cycle mode",
+      title: "Cycle permission mode",
       description: "Switch to the next permission mode",
       category: "Mode",
-      keybind: "mod+.",
+      keybind: "shift+tab",
       slash: "mode",
       onSelect: () => local.permissionMode.move(1),
     },
@@ -1506,6 +1507,27 @@ export default function Page() {
                 </Show>
                 <For each={openedTabs()}>
                   {(tab) => {
+                    // Check if this is a diff tab
+                    const isDiff = file.isDiffTab(tab)
+                    const diffPath = file.pathFromDiffTab(tab)
+                    const diffStaged = file.isDiffTabStaged(tab)
+
+                    // For diff tabs, render GitDiffViewer
+                    if (isDiff && diffPath) {
+                      return (
+                        <Tabs.Content value={tab} class="flex flex-col h-full overflow-hidden">
+                          <Show when={activeTab() === tab}>
+                            <GitDiffViewer
+                              path={diffPath}
+                              staged={diffStaged}
+                              class="h-full"
+                            />
+                          </Show>
+                        </Tabs.Content>
+                      )
+                    }
+
+                    // For file tabs, use existing logic
                     let scroll: HTMLDivElement | undefined
                     let scrollFrame: number | undefined
                     let pending: { x: number; y: number } | undefined
@@ -1722,7 +1744,11 @@ export default function Page() {
               <DragOverlay>
                 <Show when={store.activeDraggable}>
                   {(tab) => {
-                    const path = createMemo(() => file.pathFromTab(tab()))
+                    const path = createMemo(() => {
+                      const t = tab()
+                      if (file.isDiffTab(t)) return file.pathFromDiffTab(t)
+                      return file.pathFromTab(t)
+                    })
                     return (
                       <div class="relative px-6 h-12 flex items-center bg-background-stronger border-x border-border-weak-base border-b border-b-transparent">
                         <Show when={path()}>{(p) => <FileVisual active path={p()} />}</Show>

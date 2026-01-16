@@ -125,6 +125,11 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       return result.diff
     }
 
+    const show = async (file: string, ref = "HEAD"): Promise<string> => {
+      const result = await api<{ content: string }>(`/git/show?file=${encodeURIComponent(file)}&ref=${encodeURIComponent(ref)}`)
+      return result.content
+    }
+
     // Initial load
     onMount(() => {
       refresh()
@@ -199,6 +204,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       discard,
       commit,
       diff,
+      show,
     }
   },
 })

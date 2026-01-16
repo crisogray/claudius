@@ -26,11 +26,21 @@ export function FileVisual(props: { path: string; active?: boolean }): JSX.Eleme
 export function SortableTab(props: { tab: string; onTabClose: (tab: string) => void }): JSX.Element {
   const file = useFile()
   const sortable = createSortable(props.tab)
-  const path = createMemo(() => file.pathFromTab(props.tab))
+
+  // Handle both file:// and diff:// tab types
+  const isDiffTab = createMemo(() => file.isDiffTab(props.tab))
+  const path = createMemo(() => {
+    if (isDiffTab()) {
+      return file.pathFromDiffTab(props.tab)
+    }
+    return file.pathFromTab(props.tab)
+  })
   const isDirty = createMemo(() => {
+    if (isDiffTab()) return false // Diff tabs are read-only
     const p = path()
     return p ? file.isDirty(p) : false
   })
+
   return (
     // @ts-ignore
     <div use:sortable classList={{ "h-full": true, "opacity-0": sortable.isActiveDraggable }}>
@@ -46,7 +56,22 @@ export function SortableTab(props: { tab: string; onTabClose: (tab: string) => v
           onMiddleClick={() => props.onTabClose(props.tab)}
         >
           <div class="flex items-center gap-3">
-            <Show when={path()}>{(p) => <FileVisual path={p()} />}</Show>
+            <Show when={path()}>
+              {(p) => (
+                <div class="flex items-center gap-x-1.5">
+                  <FileIcon
+                    node={{ path: p(), type: "file" }}
+                    classList={{
+                      "grayscale-100 group-data-[selected]/tab:grayscale-0": true,
+                    }}
+                  />
+                  <span class="text-14-medium">{getFilename(p())}</span>
+                  <Show when={isDiffTab()}>
+                    <span class="text-10-regular text-text-muted">(diff)</span>
+                  </Show>
+                </div>
+              )}
+            </Show>
             <Show when={isDirty()}>
               <div class="w-2 h-2 rounded-full bg-surface-warning-strong" title="Unsaved changes" />
             </Show>

@@ -192,6 +192,11 @@ export function InlineQuestion(props: InlineQuestionProps) {
               onKeyDown={(e: KeyboardEvent) => {
                 if (e.key === "Enter") {
                   e.preventDefault()
+                  if (isLast()) {
+                    submit()
+                  } else {
+                    setStore("tab", store.tab + 1)
+                  }
                 }
               }}
             />

@@ -1561,7 +1561,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 </div>
               </Match>
               <Match when={store.mode === "normal"}>
-                <TooltipKeybind placement="top" title="Cycle mode" keybind={command.keybind("agent.cycle")}>
+                <TooltipKeybind placement="top" title="Cycle permission mode" keybind={command.keybind("agent.cycle")}>
                   <Select
                     options={local.permissionMode.list().map((mode) => mode.name)}
                     current={local.permissionMode.current()?.name ?? ""}

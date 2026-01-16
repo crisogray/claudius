@@ -126,9 +126,9 @@ export function GitTab() {
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
 
-  const handleOpenFile = (filePath: string) => {
+  const handleOpenFile = (filePath: string, staged = false) => {
     file.load(filePath)
-    const tab = file.tab(filePath)
+    const tab = file.diffTab(filePath, staged)
     layout.tabs(sessionKey()).open(tab)
   }
 
@@ -189,15 +189,16 @@ export function GitTab() {
             <GitFileSection
               title="Staged Changes"
               files={git.status?.staged ?? []}
+              onFileClick={(f) => handleOpenFile(f.path, true)}
               actions={(f) => (
                 <>
                   <ActionButton
                     icon="pencil-line"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleOpenFile(f.path)
+                      handleOpenFile(f.path, true)
                     }}
-                    title="Open file"
+                    title="View diff"
                   />
                   <ActionButton
                     icon="close"
@@ -220,15 +221,16 @@ export function GitTab() {
             <GitFileSection
               title="Changes"
               files={[...(git.status?.unstaged ?? []), ...(git.status?.untracked ?? [])]}
+              onFileClick={(f) => handleOpenFile(f.path, false)}
               actions={(f) => (
                 <>
                   <ActionButton
                     icon="pencil-line"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleOpenFile(f.path)
+                      handleOpenFile(f.path, false)
                     }}
-                    title="Open file"
+                    title="View diff"
                   />
                   <ActionButton
                     icon="plus"

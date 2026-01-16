@@ -227,6 +227,27 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       return normalize(tabValue)
     }
 
+    function diffTab(input: string, staged = false) {
+      const path = normalize(input)
+      return `diff://${path}${staged ? "?staged=true" : ""}`
+    }
+
+    function pathFromDiffTab(tabValue: string) {
+      if (!tabValue.startsWith("diff://")) return
+      const withoutPrefix = tabValue.slice(7) // Remove "diff://"
+      const path = withoutPrefix.split("?")[0] // Remove query params
+      return normalize(path)
+    }
+
+    function isDiffTabStaged(tabValue: string) {
+      if (!tabValue.startsWith("diff://")) return false
+      return tabValue.includes("?staged=true")
+    }
+
+    function isDiffTab(tabValue: string) {
+      return tabValue.startsWith("diff://")
+    }
+
     const inflight = new Map<string, Promise<void>>()
 
     const [store, setStore] = createStore<{
@@ -505,6 +526,10 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       normalize,
       tab,
       pathFromTab,
+      diffTab,
+      pathFromDiffTab,
+      isDiffTab,
+      isDiffTabStaged,
       get,
       load,
       edit,
