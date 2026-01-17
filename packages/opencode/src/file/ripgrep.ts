@@ -5,7 +5,6 @@ import fs from "fs/promises"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
 import { lazy } from "../util/lazy"
-import { $ } from "bun"
 
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js"
 import { Log } from "@/util/log"
@@ -368,7 +367,7 @@ export namespace Ripgrep {
   }
 
   export async function search(input: { cwd: string; pattern: string; glob?: string[]; limit?: number }) {
-    const args = [`${await filepath()}`, "--json", "--hidden", "--glob='!.git/*'"]
+    const args = [await filepath(), "--json", "--hidden", "--glob=!.git/*"]
 
     if (input.glob) {
       for (const g of input.glob) {
@@ -376,27 +375,48 @@ export namespace Ripgrep {
       }
     }
 
-    if (input.limit) {
-      args.push(`--max-count=${input.limit}`)
-    }
-
     args.push("--")
     args.push(input.pattern)
 
-    const command = args.join(" ")
-    const result = await $`${{ raw: command }}`.cwd(input.cwd).quiet().nothrow()
-    if (result.exitCode !== 0) {
-      return []
+    const proc = Bun.spawn(args, {
+      cwd: input.cwd,
+      stdout: "pipe",
+      stderr: "ignore",
+    })
+
+    const reader = proc.stdout.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    const results: z.infer<typeof Match>["data"][] = []
+    const limit = input.limit ?? Infinity
+
+    try {
+      outer: while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split(/\r?\n/)
+        buffer = lines.pop() || ""
+
+        for (const line of lines) {
+          if (!line) continue
+          try {
+            const parsed = JSON.parse(line)
+            if (parsed.type === "match") {
+              results.push(parsed.data as z.infer<typeof Match>["data"])
+              if (results.length >= limit) break outer
+            }
+          } catch {
+            // Skip malformed JSON lines
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+      proc.kill()
     }
 
-    // Handle both Unix (\n) and Windows (\r\n) line endings
-    const lines = result.text().trim().split(/\r?\n/).filter(Boolean)
-    // Parse JSON lines from ripgrep output
-
-    return lines
-      .map((line) => JSON.parse(line))
-      .map((parsed) => Result.parse(parsed))
-      .filter((r) => r.type === "match")
-      .map((r) => r.data)
+    return results
   }
 }

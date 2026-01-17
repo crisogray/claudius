@@ -262,7 +262,7 @@ export function GitTab() {
         </div>
 
         {/* Commit form */}
-        <div class="p-2 border-t border-border-base bg-surface-base">
+        <div class="p-2 border-t border-border-base">
           <textarea
             placeholder="Commit message..."
             class="w-full px-2 py-1.5 text-xs bg-background-element rounded-md border border-border-base resize-none focus:border-primary focus:outline-none"
@@ -292,7 +292,7 @@ export function GitTab() {
         </div>
 
         {/* Branch header */}
-        <div class="p-2 border-t border-border-base flex items-center gap-2 bg-surface-base">
+        <div class="p-2 border-t border-border-base flex items-center gap-2">
           <Icon name="branch" size="small" class="text-text-muted" />
           <span class="font-medium text-xs">{git.status?.branch ?? "detached"}</span>
           <Show when={git.status?.ahead || git.status?.behind}>

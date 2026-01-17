@@ -878,21 +878,12 @@ export default function Layout(props: ParentProps) {
       const sessionID = props.session.id
       if ((sessionStore.question?.[sessionID] ?? []).length > 0) return true
       if ((sessionStore.plan?.[sessionID] ?? []).length > 0) return true
+      if ((sessionStore.permission?.[sessionID] ?? []).length > 0) return true
       const childSessions = sessionStore.session.filter((s) => s.parentID === sessionID)
       for (const child of childSessions) {
         if ((sessionStore.question?.[child.id] ?? []).length > 0) return true
         if ((sessionStore.plan?.[child.id] ?? []).length > 0) return true
-      }
-      return false
-    })
-
-    const hasPermissions = createMemo(() => {
-      const permissions = sessionStore.permission?.[props.session.id] ?? []
-      if (permissions.length > 0) return true
-      const childSessions = sessionStore.session.filter((s) => s.parentID === props.session.id)
-      for (const child of childSessions) {
-        const childPermissions = sessionStore.permission?.[child.id] ?? []
-        if (childPermissions.length > 0) return true
+        if ((sessionStore.permission?.[child.id] ?? []).length > 0) return true
       }
       return false
     })
@@ -900,7 +891,6 @@ export default function Layout(props: ParentProps) {
     const isWorking = createMemo(() => {
       if (props.session.id === params.id) return false
       if (hasUserRequest()) return false
-      if (hasPermissions()) return false
       const status = sessionStore.session_status[props.session.id]
       return status?.type === "busy" || status?.type === "retry"
     })
@@ -933,9 +923,6 @@ export default function Layout(props: ParentProps) {
                     <Spinner class="size-2.5 mr-0.5" />
                   </Match>
                   <Match when={hasUserRequest()}>
-                    <div class="size-1.5 mr-1.5 rounded-full bg-surface-warning-strong" />
-                  </Match>
-                  <Match when={hasPermissions()}>
                     <div class="size-1.5 mr-1.5 rounded-full bg-surface-warning-strong" />
                   </Match>
                   <Match when={hasError()}>

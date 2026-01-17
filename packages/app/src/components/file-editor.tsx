@@ -1,5 +1,5 @@
 import { createMemo, createEffect, onMount, onCleanup, Show } from "solid-js"
-import { CodeMirrorEditor } from "@opencode-ai/ui/codemirror-editor"
+import { CodeMirrorEditor, EditorView, EditorSelection } from "@opencode-ai/ui/codemirror-editor"
 import { lspExtension, type LspOptions } from "@opencode-ai/ui/codemirror-lsp"
 import { useFile } from "@/context/file"
 import { useLsp } from "@/context/lsp"
@@ -110,6 +110,22 @@ export function FileEditor(props: FileEditorProps) {
     return opts ? lspExtension(opts) : []
   })
 
+  const handleViewReady = (view: EditorView) => {
+    const line = file.focusLine(props.path)
+    if (line && line > 0) {
+      try {
+        const pos = view.state.doc.line(line).from
+        view.dispatch({
+          selection: EditorSelection.cursor(pos),
+          effects: EditorView.scrollIntoView(pos, { y: "center" }),
+        })
+      } catch {
+        // Line number out of range
+      }
+      file.clearFocusLine(props.path)
+    }
+  }
+
   return (
     <div class={`relative h-full flex flex-col ${props.class ?? ""}`}>
       <Show when={state()?.loading}>
@@ -128,6 +144,7 @@ export function FileEditor(props: FileEditorProps) {
             readOnly={props.readOnly || isSaving()}
             onChange={handleChange}
             onSave={handleSave}
+            onViewReady={handleViewReady}
             extensions={lspExtensions()}
           />
         </div>

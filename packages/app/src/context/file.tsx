@@ -27,6 +27,7 @@ export type FileViewState = {
   scrollTop?: number
   scrollLeft?: number
   selectedLines?: SelectedLineRange | null
+  focusLine?: number
 }
 
 export type FileState = {
@@ -171,14 +172,30 @@ function createViewSession(dir: string, id: string | undefined) {
     pruneView(path)
   }
 
+  const focusLine = (path: string) => view.file[path]?.focusLine
+
+  const setFocusLine = (path: string, line: number | undefined) => {
+    setView("file", path, (current) => ({
+      ...(current ?? {}),
+      focusLine: line,
+    }))
+  }
+
+  const clearFocusLine = (path: string) => {
+    setFocusLine(path, undefined)
+  }
+
   return {
     ready,
     scrollTop,
     scrollLeft,
     selectedLines,
+    focusLine,
     setScrollTop,
     setScrollLeft,
     setSelectedLines,
+    setFocusLine,
+    clearFocusLine,
   }
 }
 
@@ -390,6 +407,18 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       view().setSelectedLines(path, range)
     }
 
+    const focusLine = (input: string) => view().focusLine(normalize(input))
+
+    const setFocusLine = (input: string, line: number | undefined) => {
+      const path = normalize(input)
+      view().setFocusLine(path, line)
+    }
+
+    const clearFocusLine = (input: string) => {
+      const path = normalize(input)
+      view().clearFocusLine(path)
+    }
+
     onCleanup(() => {
       stop()
       disposeViews()
@@ -543,6 +572,9 @@ export const { use: useFile, provider: FileProvider } = createSimpleContext({
       setScrollLeft,
       selectedLines,
       setSelectedLines,
+      focusLine,
+      setFocusLine,
+      clearFocusLine,
       searchFiles: (query: string) =>
         sdk.client.find.files({ query, dirs: "false" }).then((x) => (x.data ?? []).map(normalize)),
       searchFilesAndDirectories: (query: string) =>

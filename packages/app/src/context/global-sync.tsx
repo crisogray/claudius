@@ -155,7 +155,7 @@ function createGlobalSync() {
 
   async function loadSessions(directory: string) {
     const [store, setStore] = child(directory)
-    globalSDK.client.session
+    return globalSDK.client.session
       .list({ directory })
       .then((x) => {
         const nonArchived = (x.data ?? [])

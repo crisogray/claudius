@@ -265,42 +265,42 @@ export namespace SDK {
       log.info("SDK revert resume", { sessionID: input.sessionID, at: revertSdkUuid })
     }
 
-    try {
-      // Create message generator for streaming input (required for images)
-      // Type matches SDK's SDKUserMessage interface for streaming input
-      async function* createMessageGenerator(): AsyncGenerator<SDKConvert.SDKUserMessage> {
-        yield {
-          type: "user" as const,
-          message: {
-            role: "user" as const,
-            content: contentBlocks as SDKConvert.ContentBlock[],
-          },
-        }
-      }
-
-      // Start real SDK query - use generator when we have images, string otherwise
-      const activeQuery = query({
-        prompt: hasImages ? (createMessageGenerator() as any) : prompt,
-        options: {
-          model: options.model,
-          cwd: options.cwd,
-          tools: options.tools,
-          mcpServers: options.mcpServers,
-          maxThinkingTokens: options.maxThinkingTokens,
-          permissionMode: options.permissionMode,
-          hooks: options.hooks,
-          canUseTool: options.canUseTool,
-          resume: forkOptions.resume ?? options.resume,
-          resumeSessionAt: forkOptions.resumeSessionAt ?? revertOptions.resumeSessionAt,
-          forkSession: forkOptions.forkSession,
-          systemPrompt: options.systemPrompt,
-          settingSources: ["project"],
-          includePartialMessages: true,
+    // Create message generator for streaming input (required for images)
+    // Type matches SDK's SDKUserMessage interface for streaming input
+    async function* createMessageGenerator(): AsyncGenerator<SDKConvert.SDKUserMessage> {
+      yield {
+        type: "user" as const,
+        message: {
+          role: "user" as const,
+          content: contentBlocks as SDKConvert.ContentBlock[],
         },
-      })
+      }
+    }
 
-      activeQueries.set(input.sessionID, activeQuery)
+    // Start real SDK query - use generator when we have images, string otherwise
+    const activeQuery = query({
+      prompt: hasImages ? (createMessageGenerator() as any) : prompt,
+      options: {
+        model: options.model,
+        cwd: options.cwd,
+        tools: options.tools,
+        mcpServers: options.mcpServers,
+        maxThinkingTokens: options.maxThinkingTokens,
+        permissionMode: options.permissionMode,
+        hooks: options.hooks,
+        canUseTool: options.canUseTool,
+        resume: forkOptions.resume ?? options.resume,
+        resumeSessionAt: forkOptions.resumeSessionAt ?? revertOptions.resumeSessionAt,
+        forkSession: forkOptions.forkSession,
+        systemPrompt: options.systemPrompt,
+        settingSources: ["project"],
+        includePartialMessages: true,
+      },
+    })
 
+    activeQueries.set(input.sessionID, activeQuery)
+
+    try {
       // Process stream - SDK query is async iterable
       const result = await SDKStream.processSDKStream(
         activeQuery as AsyncIterable<SDKConvert.SDKMessage>,
@@ -339,13 +339,16 @@ export namespace SDK {
       Bus.publish(Event.Error, { sessionID: input.sessionID, error: errorMessage })
       throw error
     } finally {
-      activeQueries.delete(input.sessionID)
-      currentMessages.delete(input.sessionID)
-      // Clean up any pending plan/question requests for this session
-      await PlanApproval.rejectBySession(input.sessionID)
-      await Question.rejectBySession(input.sessionID)
-      // Set session status back to idle
-      SessionStatus.set(input.sessionID, { type: "idle" })
+      // Only delete if this is still our query (avoids race with new prompt after interrupt)
+      if (activeQueries.get(input.sessionID) === activeQuery) {
+        activeQueries.delete(input.sessionID)
+        currentMessages.delete(input.sessionID)
+        // Clean up any pending plan/question requests for this session
+        await PlanApproval.rejectBySession(input.sessionID)
+        await Question.rejectBySession(input.sessionID)
+        // Set session status back to idle
+        SessionStatus.set(input.sessionID, { type: "idle" })
+      }
     }
   }
 

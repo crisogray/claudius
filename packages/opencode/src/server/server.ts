@@ -1998,7 +1998,7 @@ export namespace Server {
             const result = await Ripgrep.search({
               cwd: Instance.directory,
               pattern,
-              limit: 10,
+              limit: 100,
             })
             return c.json(result)
           },

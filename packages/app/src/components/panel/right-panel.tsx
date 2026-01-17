@@ -22,6 +22,12 @@ export function RightPanel() {
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
 
+  const hasGitChanges = createMemo(() => {
+    const status = git.status
+    if (!status) return false
+    return status.staged.length > 0 || status.unstaged.length > 0 || status.untracked.length > 0
+  })
+
   const handleFileClick = (node: LocalFile) => {
     file.load(node.path)
     const tab = file.tab(node.path)
@@ -46,23 +52,17 @@ export function RightPanel() {
         />
         <Tabs value={layout.rightPanel.activeTab()} onChange={(tab) => layout.rightPanel.setActiveTab(tab as RightPanelTab)}>
           <Tabs.List class="shrink-0">
-            <Tabs.Trigger value="files" class="flex-1">
-              <div class="flex items-center gap-1.5">
-                <Icon name="folder" size="small" />
-                <span>Files</span>
-              </div>
+            <Tabs.Trigger value="files" title="Files">
+              <Icon name="folder" size="small" />
             </Tabs.Trigger>
-            <Tabs.Trigger value="git" class="flex-1">
-              <div class="flex items-center gap-1.5">
-                <Icon name="branch" size="small" />
-                <span>Git</span>
-              </div>
+            <Tabs.Trigger value="git" title="Git" class="relative">
+              <Icon name="branch" size="small" />
+              <Show when={hasGitChanges()}>
+                <div class="absolute top-1/2 -translate-y-1/2 right-4 size-1.5 rounded-full bg-surface-warning-strong" />
+              </Show>
             </Tabs.Trigger>
-            <Tabs.Trigger value="search" class="flex-1">
-              <div class="flex items-center gap-1.5">
-                <Icon name="magnifying-glass" size="small" />
-                <span>Search</span>
-              </div>
+            <Tabs.Trigger value="search" title="Search">
+              <Icon name="magnifying-glass" size="small" />
             </Tabs.Trigger>
           </Tabs.List>
 

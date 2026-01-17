@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show } from "solid-js"
+import { createSignal, createMemo, For, Show, type JSX } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useSDK } from "@/context/sdk"
 import { useFile } from "@/context/file"
@@ -8,6 +8,37 @@ import { FileIcon } from "@opencode-ai/ui/file-icon"
 import type { FindTextResponse } from "@opencode-ai/sdk/v2/client"
 
 type SearchMatch = FindTextResponse[number]
+
+function highlightMatches(text: string, submatches: SearchMatch["submatches"]): JSX.Element {
+  // Calculate leading whitespace offset
+  const trimmedStart = text.length - text.trimStart().length
+  const trimmed = text.trim()
+
+  if (!submatches.length) return <>{trimmed}</>
+
+  const parts: JSX.Element[] = []
+  let lastEnd = 0
+
+  for (const sub of submatches) {
+    // Adjust positions for trimmed leading whitespace
+    const start = Math.max(0, sub.start - trimmedStart)
+    const end = Math.max(0, sub.end - trimmedStart)
+
+    if (start >= trimmed.length || end <= 0) continue
+
+    if (start > lastEnd) {
+      parts.push(<>{trimmed.slice(lastEnd, start)}</>)
+    }
+    parts.push(<span class="bg-surface-warning-base">{trimmed.slice(start, Math.min(end, trimmed.length))}</span>)
+    lastEnd = Math.min(end, trimmed.length)
+  }
+
+  if (lastEnd < trimmed.length) {
+    parts.push(<>{trimmed.slice(lastEnd)}</>)
+  }
+
+  return <>{parts}</>
+}
 
 export function SearchTab() {
   const params = useParams<{ dir: string; id?: string }>()
@@ -20,18 +51,31 @@ export function SearchTab() {
   const [loading, setLoading] = createSignal(false)
 
   let timer: ReturnType<typeof setTimeout>
+  let abortController: AbortController | null = null
+
   const search = (q: string) => {
     clearTimeout(timer)
+    abortController?.abort()
+    setResults([])
+
     if (!q.trim()) {
-      setResults([])
+      setLoading(false)
       return
     }
+
+    setLoading(true)
     timer = setTimeout(async () => {
-      setLoading(true)
-      const res = await sdk.client.find.text({ pattern: q })
-      setResults(res.data ?? [])
-      setLoading(false)
-    }, 300)
+      abortController = new AbortController()
+      try {
+        const res = await sdk.client.find.text({ pattern: q }, { signal: abortController.signal })
+        setResults(res.data ?? [])
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return
+        throw e
+      } finally {
+        setLoading(false)
+      }
+    }, 150)
   }
 
   const sessionKey = () => `${params.dir}${params.id ? "/" + params.id : ""}`
@@ -47,8 +91,9 @@ export function SearchTab() {
     return [...map.entries()]
   })
 
-  const openFile = (path: string) => {
+  const openFile = (path: string, lineNumber?: number) => {
     file.load(path)
+    if (lineNumber) file.setFocusLine(path, lineNumber)
     layout.tabs(sessionKey()).open(file.tab(path))
   }
 
@@ -80,22 +125,25 @@ export function SearchTab() {
           {([path, matches]) => (
             <Collapsible defaultOpen variant="ghost" class="w-full">
               <Collapsible.Trigger class="w-full">
-                <div class="w-full px-2 py-1.5 flex items-center gap-2 bg-background-element">
+                <div class="w-full px-2 py-1 flex items-center gap-1.5 bg-background-strong">
                   <Collapsible.Arrow class="text-text-muted/60" />
-                  <FileIcon node={{ path, type: "file" }} class="w-4 h-4" />
-                  <span class="text-xs truncate flex-1">{path}</span>
-                  <span class="text-xs text-text-muted">{matches.length}</span>
+                  <FileIcon node={{ path, type: "file" }} class="w-3.5 h-3.5 shrink-0" />
+                  <span class="flex-1 flex items-baseline gap-1 min-w-0 overflow-hidden">
+                    <span class="text-xs text-text-muted shrink-0">{path.split("/").pop()}</span>
+                    <span class="text-[10px] text-text-weak truncate">{path.split("/").slice(0, -1).join("/")}</span>
+                  </span>
+                  <span class="text-[10px] text-text-muted shrink-0">{matches.length}</span>
                 </div>
               </Collapsible.Trigger>
               <Collapsible.Content>
                 <For each={matches}>
                   {(m) => (
                     <div
-                      class="px-3 py-1 flex gap-2 hover:bg-background-element cursor-pointer text-xs font-mono"
-                      onClick={() => openFile(path)}
+                      class="px-3 flex gap-2 hover:bg-background-element cursor-pointer text-[10px] font-mono text-text-weaker"
+                      onClick={() => openFile(path, m.line_number)}
                     >
-                      <span class="text-text-muted w-8 text-right shrink-0">{m.line_number}</span>
-                      <span class="truncate">{m.lines.text.trim()}</span>
+                      <span class="text-text-muted w-6 text-right shrink-0">{m.line_number}</span>
+                      <span class="truncate">{highlightMatches(m.lines.text, m.submatches)}</span>
                     </div>
                   )}
                 </For>

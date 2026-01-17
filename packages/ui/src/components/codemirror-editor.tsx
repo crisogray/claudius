@@ -1,6 +1,9 @@
 import { createEffect, onCleanup, onMount } from "solid-js"
-import { EditorState, Compartment, type Extension } from "@codemirror/state"
+import { EditorState, EditorSelection, Compartment, type Extension } from "@codemirror/state"
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "@codemirror/view"
+
+// Re-export for consumers
+export { EditorView, EditorSelection }
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands"
 import { indentOnInput, bracketMatching, foldGutter, foldKeymap } from "@codemirror/language"
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete"
