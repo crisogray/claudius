@@ -1469,27 +1469,30 @@ export default function Page() {
                     </Show>
                 </Tabs.Content>
                 <Show when={reviewTab()}>
-                  <Tabs.Content value="review" class="flex flex-col h-full overflow-hidden contain-strict">
-                    <Show when={activeTab() === "review"}>
-                      <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
-                        <Show
-                          when={diffsReady()}
-                          fallback={<div class="px-6 py-4 text-text-weak">Loading changes...</div>}
-                        >
-                          <SessionReviewTab
-                            diffs={diffs}
-                            view={view}
-                            diffStyle={layout.review.diffStyle()}
-                            onDiffStyleChange={layout.review.setDiffStyle}
-                            onViewFile={(path) => {
-                              const value = file.tab(path)
-                              tabs().open(value)
-                              file.load(path)
-                            }}
-                          />
-                        </Show>
-                      </div>
-                    </Show>
+                  <Tabs.Content
+                    value="review"
+                    forceMount
+                    class="flex flex-col h-full overflow-hidden contain-strict"
+                    classList={{ hidden: activeTab() !== "review" }}
+                  >
+                    <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
+                      <Show
+                        when={diffsReady()}
+                        fallback={<div class="px-6 py-4 text-text-weak">Loading changes...</div>}
+                      >
+                        <SessionReviewTab
+                          diffs={diffs}
+                          view={view}
+                          diffStyle={layout.review.diffStyle()}
+                          onDiffStyleChange={layout.review.setDiffStyle}
+                          onViewFile={(path) => {
+                            const value = file.tab(path)
+                            tabs().open(value)
+                            file.load(path)
+                          }}
+                        />
+                      </Show>
+                    </div>
                   </Tabs.Content>
                 </Show>
                 <Show when={contextOpen()}>

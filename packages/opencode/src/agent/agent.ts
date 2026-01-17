@@ -46,7 +46,7 @@ export namespace Agent {
    */
   const defaultPermissionRuleset = () =>
     PermissionNext.fromConfig({
-      "*": "allow",
+      "*": "ask",
       doom_loop: "ask",
       external_directory: {
         "*": "ask",

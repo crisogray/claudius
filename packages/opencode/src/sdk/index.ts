@@ -31,7 +31,7 @@ export type PermissionMode = "default" | "plan" | "acceptEdits" | "bypassPermiss
  * Permission mode display info for UI
  */
 export const PERMISSION_MODES = [
-  { id: "default" as const, name: "Build", description: "Normal mode with permission prompts", color: "#3B82F6" },
+  { id: "default" as const, name: "Default", description: "Normal mode with permission prompts", color: "#3B82F6" },
   { id: "plan" as const, name: "Plan", description: "Read-only planning mode", color: "#8B5CF6" },
   { id: "acceptEdits" as const, name: "Auto-Accept", description: "Auto-accept file edits", color: "#22C55E" },
   { id: "bypassPermissions" as const, name: "Bypass", description: "Skip all permission checks", color: "#F59E0B" },
@@ -287,6 +287,7 @@ export namespace SDK {
         mcpServers: options.mcpServers,
         maxThinkingTokens: options.maxThinkingTokens,
         permissionMode: options.permissionMode,
+        allowDangerouslySkipPermissions: options.allowDangerouslySkipPermissions,
         hooks: options.hooks,
         canUseTool: options.canUseTool,
         resume: forkOptions.resume ?? options.resume,
@@ -466,6 +467,8 @@ export namespace SDK {
       enableFileCheckpointing: true,
       // Pass permission mode directly to SDK
       permissionMode,
+      // Required when using bypassPermissions mode per SDK docs
+      allowDangerouslySkipPermissions: permissionMode === "bypassPermissions",
       hooks: isPlanMode ? buildPlanModeHooks() : undefined,
       canUseTool: SDKPermissions.createPermissionHandler(session.id),
       // Resume using stored SDK session ID (if exists)

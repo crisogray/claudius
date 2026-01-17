@@ -70,7 +70,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     type PermissionModeID = "default" | "plan" | "acceptEdits" | "bypassPermissions"
     type PermissionModeInfo = { id: PermissionModeID; name: string; description: string }
     const PERMISSION_MODES: PermissionModeInfo[] = [
-      { id: "default", name: "Build", description: "Normal mode with permission prompts" },
+      { id: "default", name: "Default", description: "Normal mode with permission prompts" },
       { id: "plan", name: "Plan", description: "Read-only planning mode" },
       { id: "acceptEdits", name: "Auto-Accept", description: "Auto-accept file edits" },
       { id: "bypassPermissions", name: "Bypass", description: "Skip all permission checks" },

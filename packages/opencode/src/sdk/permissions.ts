@@ -91,6 +91,10 @@ export namespace SDKPermissions {
           metadata: buildMetadata(toolName, toolInput),
           always: [pattern],
           ruleset,
+          tool: {
+            messageID: "",
+            callID: options.toolUseID,
+          },
         })
 
         // Permission granted
