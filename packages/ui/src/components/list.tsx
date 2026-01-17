@@ -71,7 +71,7 @@ export function List<T>(props: ListProps<T> & { ref?: (ref: ListRef) => void }) 
     if (!props.current) return
     const key = props.key(props.current)
     requestAnimationFrame(() => {
-      const element = scrollRef()?.querySelector(`[data-key="${key}"]`)
+      const element = scrollRef()?.querySelector(`[data-key="${CSS.escape(key)}"]`)
       element?.scrollIntoView({ block: "center" })
     })
   })
@@ -83,7 +83,7 @@ export function List<T>(props: ListProps<T> & { ref?: (ref: ListRef) => void }) 
       scrollRef()?.scrollTo(0, 0)
       return
     }
-    const element = scrollRef()?.querySelector(`[data-key="${active()}"]`)
+    const element = scrollRef()?.querySelector(`[data-key="${CSS.escape(active()!)}"]`)
     element?.scrollIntoView({ block: "center" })
   })
 
