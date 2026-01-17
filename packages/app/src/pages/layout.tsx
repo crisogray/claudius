@@ -873,7 +873,7 @@ createEffect(
     const notifications = createMemo(() => notification.project.unseen(props.project.worktree))
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const name = createMemo(() => props.project.name || getFilename(props.project.worktree))
-    const mask = "radial-gradient(circle 6px at calc(100% - 3px) 3px, transparent 6px, black 6.5px)"
+    const mask = "radial-gradient(circle 6px at calc(100% - 5px) 5px, transparent 6px, black 6.5px)"
 
     return (
       <div class={`relative size-8 shrink-0 rounded ${props.class ?? ""}`}>
@@ -893,7 +893,7 @@ createEffect(
         <Show when={notifications().length > 0 && props.notify}>
           <div
             classList={{
-              "absolute -top-px -right-px size-2 rounded-full z-10": true,
+              "absolute top-px right-px size-2 rounded-full z-10": true,
               "bg-icon-critical-base": hasError(),
               "bg-text-interactive-base": !hasError(),
             }}
