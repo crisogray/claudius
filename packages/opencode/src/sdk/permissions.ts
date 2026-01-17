@@ -168,12 +168,13 @@ export namespace SDKPermissions {
       })
 
       // Convert answers back to SDK format
-      // SDK expects: { questions: [...], answers: { "question text": "selected label" } }
+      // SDK expects: { questions: [...], answers: { "question text": "selected labels as JSON array" } }
       const answersMap: Record<string, string> = {}
       questions.forEach((q, i) => {
         const answer = answers[i]
         if (answer && answer.length > 0) {
-          answersMap[q.question] = answer.join(", ")
+          // Store as JSON array to preserve answers containing ", "
+          answersMap[q.question] = JSON.stringify(answer)
         }
       })
 

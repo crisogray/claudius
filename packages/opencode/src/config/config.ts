@@ -445,6 +445,10 @@ export namespace Config {
       url: z.string().describe("URL of the remote MCP server"),
       enabled: z.boolean().optional().describe("Enable or disable the MCP server on startup"),
       headers: z.record(z.string(), z.string()).optional().describe("Headers to send with the request"),
+      transport: z
+        .enum(["http", "sse"])
+        .optional()
+        .describe("Transport type for the remote server. Defaults to 'sse' if not specified."),
       oauth: z
         .union([McpOAuth, z.literal(false)])
         .optional()

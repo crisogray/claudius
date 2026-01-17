@@ -205,7 +205,7 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
     case "webfetch":
       return {
         icon: "window-cursor",
-        title: "Webfetch",
+        title: "Web Fetch",
         subtitle: input.url,
       }
     case "websearch":
@@ -809,7 +809,7 @@ ToolRegistry.register({
         {...props}
         icon="window-cursor"
         trigger={{
-          title: "Webfetch",
+          title: "Web Fetch",
           subtitle: props.input.url || "",
           args: props.input.format ? ["format=" + props.input.format] : [],
           action: (
@@ -1192,7 +1192,15 @@ ToolRegistry.register({
       if (inputAnswers && Object.keys(inputAnswers).length > 0) {
         return questions.map((q) => {
           const answer = inputAnswers[q.question]
-          return answer ? answer.split(", ") : []
+          if (!answer) return []
+          // Try parsing as JSON array first (new format), fall back to ", " split (legacy)
+          try {
+            const parsed = JSON.parse(answer)
+            if (Array.isArray(parsed)) return parsed
+          } catch {
+            // Not JSON, use legacy format
+          }
+          return answer.split(", ")
         })
       }
 
@@ -1208,7 +1216,15 @@ ToolRegistry.register({
         if (Object.keys(answersMap).length > 0) {
           return questions.map((q) => {
             const answer = answersMap[q.question]
-            return answer ? answer.split(", ") : []
+            if (!answer) return []
+            // Try parsing as JSON array first (new format), fall back to ", " split (legacy)
+            try {
+              const parsed = JSON.parse(answer)
+              if (Array.isArray(parsed)) return parsed
+            } catch {
+              // Not JSON, use legacy format
+            }
+            return answer.split(", ")
           })
         }
       }

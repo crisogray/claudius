@@ -1,4 +1,5 @@
 import { Config } from "@/config/config"
+import { McpAuth } from "@/mcp/auth"
 import { Log } from "@/util/log"
 
 export namespace SDKMCP {
@@ -11,23 +12,30 @@ export namespace SDKMCP {
     env?: Record<string, string>
   }
 
+  export interface HTTPServerConfig {
+    type: "http"
+    url: string
+    headers?: Record<string, string>
+  }
+
   export interface SSEServerConfig {
     type: "sse"
     url: string
     headers?: Record<string, string>
   }
 
-  export type ServerConfig = StdioServerConfig | SSEServerConfig
+  export type ServerConfig = StdioServerConfig | HTTPServerConfig | SSEServerConfig
 
   /**
    * Convert opencode MCP config to SDK format
    *
    * opencode format:
    * - local: { type: "local", command: ["cmd", "arg1", "arg2"], environment: {} }
-   * - remote: { type: "remote", url: "...", headers: {} }
+   * - remote: { type: "remote", url: "...", headers: {}, transport: "http" | "sse" }
    *
    * SDK format:
    * - stdio: { command: "cmd", args: ["arg1", "arg2"], env: {} }
+   * - http: { type: "http", url: "...", headers: {} }
    * - sse: { type: "sse", url: "...", headers: {} }
    */
   export async function getMcpServers(): Promise<Record<string, ServerConfig>> {
@@ -53,15 +61,31 @@ export namespace SDKMCP {
       }
 
       if (mcp.type === "remote") {
-        // opencode: { type: "remote", url: "...", headers: {} }
-        // SDK: { type: "sse", url: "...", headers: {} }
-        // Note: SDK doesn't support OAuth for MCP - tokens must be in headers
-        result[name] = {
-          type: "sse",
-          url: mcp.url,
-          headers: mcp.headers,
+        // Build headers, injecting OAuth token if available
+        const headers: Record<string, string> = { ...mcp.headers }
+
+        // Inject OAuth token from stored credentials if not already present
+        const auth = await McpAuth.get(name)
+        if (auth?.tokens?.accessToken && !headers.Authorization) {
+          // Check if token is expired and warn
+          const expired = await McpAuth.isTokenExpired(name)
+          if (expired) {
+            log.warn("oauth token expired for mcp server", { name })
+          } else {
+            headers.Authorization = `Bearer ${auth.tokens.accessToken}`
+            log.info("injected oauth token for mcp server", { name })
+          }
         }
-        log.info("configured remote mcp server", { name, url: mcp.url })
+
+        // Use configured transport type, defaulting to "sse" for backwards compatibility
+        const transport = mcp.transport ?? "sse"
+
+        result[name] = {
+          type: transport,
+          url: mcp.url,
+          headers: Object.keys(headers).length > 0 ? headers : undefined,
+        }
+        log.info("configured remote mcp server", { name, url: mcp.url, transport })
       }
     }
 
