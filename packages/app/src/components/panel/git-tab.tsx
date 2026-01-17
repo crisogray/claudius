@@ -196,9 +196,10 @@ export function GitTab() {
                     icon="pencil-line"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleOpenFile(f.path, true)
+                      file.load(f.path)
+                      layout.tabs(sessionKey()).open(file.tab(f.path))
                     }}
-                    title="View diff"
+                    title="Open file"
                   />
                   <ActionButton
                     icon="close"
@@ -228,9 +229,10 @@ export function GitTab() {
                     icon="pencil-line"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleOpenFile(f.path, false)
+                      file.load(f.path)
+                      layout.tabs(sessionKey()).open(file.tab(f.path))
                     }}
-                    title="View diff"
+                    title="Open file"
                   />
                   <ActionButton
                     icon="plus"
@@ -262,7 +264,7 @@ export function GitTab() {
         </div>
 
         {/* Commit form */}
-        <div class="p-2 border-t border-border-base">
+        <div class="p-2 border-t border-border-weak-base">
           <textarea
             placeholder="Commit message..."
             class="w-full px-2 py-1.5 text-xs bg-background-element rounded-md border border-border-base resize-none focus:border-primary focus:outline-none"
@@ -292,7 +294,7 @@ export function GitTab() {
         </div>
 
         {/* Branch header */}
-        <div class="p-2 border-t border-border-base flex items-center gap-2">
+        <div class="p-2 border-t border-border-weak-base flex items-center gap-2">
           <Icon name="branch" size="small" class="text-text-muted" />
           <span class="font-medium text-xs">{git.status?.branch ?? "detached"}</span>
           <Show when={git.status?.ahead || git.status?.behind}>
@@ -312,9 +314,9 @@ export function GitTab() {
 
         {/* History */}
         <Show when={git.log.length > 0}>
-          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-base rounded-none bg-background-strong">
+          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-weak-base rounded-none bg-background-strong">
             <Collapsible.Trigger class="w-full">
-              <div class="w-full p-2 flex items-center gap-2 border-b border-border-base">
+              <div class="w-full p-2 flex items-center gap-2 border-b border-border-weak-base">
                 <Collapsible.Arrow class="text-text-muted/60" />
                 <span class="text-xs font-medium">History</span>
               </div>
@@ -323,7 +325,7 @@ export function GitTab() {
               <div class="max-h-48 overflow-y-auto no-scrollbar">
                 <For each={git.log}>
                   {(commit) => (
-                    <div class="px-2 py-1.5 hover:bg-background-element border-b border-border-base last:border-b-0">
+                    <div class="px-2 py-1.5 hover:bg-background-element border-b border-border-weak-base last:border-b-0">
                       <div class="flex items-center gap-2">
                         <span class="font-mono text-[10px] text-primary">{commit.hashShort}</span>
                         <span class="text-xs truncate flex-1">{commit.messageShort}</span>

@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show, type JSX } from "solid-js"
+import { createSignal, createMemo, For, Show, onCleanup, type JSX } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useSDK } from "@/context/sdk"
 import { useFile } from "@/context/file"
@@ -53,6 +53,11 @@ export function SearchTab() {
   let timer: ReturnType<typeof setTimeout>
   let abortController: AbortController | null = null
 
+  onCleanup(() => {
+    clearTimeout(timer)
+    abortController?.abort()
+  })
+
   const search = (q: string) => {
     clearTimeout(timer)
     abortController?.abort()
@@ -91,6 +96,8 @@ export function SearchTab() {
     return [...map.entries()]
   })
 
+  const totalCount = createMemo(() => results().length)
+
   const openFile = (path: string, lineNumber?: number) => {
     file.load(path)
     if (lineNumber) file.setFocusLine(path, lineNumber)
@@ -99,7 +106,7 @@ export function SearchTab() {
 
   return (
     <div class="h-full flex flex-col text-sm">
-      <div class="p-2 border-b border-border-base">
+      <div class="p-2 border-b border-border-weak-base">
         <input
           type="text"
           placeholder="Search in files..."
@@ -111,6 +118,11 @@ export function SearchTab() {
           }}
         />
       </div>
+      <Show when={!loading() && results().length > 0}>
+        <div class="px-2 py-1 bg-background-strong text-xs text-text-muted">
+          {totalCount()} {totalCount() === 1 ? 'result' : 'results'} in {grouped().length} {grouped().length === 1 ? 'file' : 'files'}
+        </div>
+      </Show>
       <div class="flex-1 overflow-y-auto">
         <Show when={loading()}>
           <div class="p-4 text-xs text-text-muted text-center">Searching...</div>

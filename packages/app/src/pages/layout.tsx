@@ -178,6 +178,12 @@ export default function Layout(props: ParentProps) {
         icon: "bubble-5" as const,
         description: (sessionTitle: string, projectName: string) => `${sessionTitle} in ${projectName} has a question`,
       },
+      "plan.asked": {
+        title: "Plan approval needed",
+        icon: "checklist" as const,
+        description: (sessionTitle: string, projectName: string) =>
+          `${sessionTitle} in ${projectName} needs plan approval`,
+      },
     }
 
     const toastBySession = new Map<string, number>()
@@ -185,7 +191,7 @@ export default function Layout(props: ParentProps) {
     const cooldownMs = 5000
 
     const unsub = globalSDK.event.listen((e) => {
-      if (e.details?.type !== "permission.asked" && e.details?.type !== "question.asked") return
+      if (e.details?.type !== "permission.asked" && e.details?.type !== "question.asked" && e.details?.type !== "plan.asked") return
       const config = alerts[e.details.type]
       const directory = e.name
       const props = e.details.properties

@@ -731,8 +731,8 @@ export namespace SDKStream {
     }
     await Session.updatePart(stepFinishPart)
 
-    // Get changed files
-    const patch = await Snapshot.patch(initialSnapshot)
+    // Get changed files (compare initial to final snapshot to exclude concurrent session changes)
+    const patch = await Snapshot.patch(initialSnapshot, finalSnapshot)
     if (patch.files.length) {
       const patchPart: MessageV2.PatchPart = {
         id: Identifier.ascending("part"),

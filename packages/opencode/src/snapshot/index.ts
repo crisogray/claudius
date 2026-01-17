@@ -44,24 +44,31 @@ export namespace Snapshot {
   })
   export type Patch = z.infer<typeof Patch>
 
-  export async function patch(hash: string): Promise<Patch> {
+  export async function patch(from: string, to?: string): Promise<Patch> {
     const git = gitdir()
     await $`git --git-dir ${git} --work-tree ${Instance.worktree} add .`.quiet().cwd(Instance.directory).nothrow()
-    const result =
-      await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff --no-ext-diff --name-only ${hash} -- .`
-        .quiet()
-        .cwd(Instance.directory)
-        .nothrow()
+
+    // If `to` is provided, compare two tree snapshots directly (excludes concurrent session changes)
+    // If `to` is not provided, compare against the current working tree (legacy behavior)
+    const result = to
+      ? await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff-tree --no-ext-diff --name-only -r ${from} ${to}`
+          .quiet()
+          .cwd(Instance.directory)
+          .nothrow()
+      : await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff --no-ext-diff --name-only ${from} -- .`
+          .quiet()
+          .cwd(Instance.directory)
+          .nothrow()
 
     // If git diff fails, return empty patch
     if (result.exitCode !== 0) {
-      log.warn("failed to get diff", { hash, exitCode: result.exitCode })
-      return { hash, files: [] }
+      log.warn("failed to get diff", { from, to, exitCode: result.exitCode })
+      return { hash: from, files: [] }
     }
 
     const files = result.text()
     return {
-      hash,
+      hash: from,
       files: files
         .trim()
         .split("\n")

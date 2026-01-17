@@ -67,7 +67,7 @@ export function RightPanel() {
           </Tabs.List>
 
           <Tabs.Content value="files" class="flex-1 min-h-0 flex flex-col">
-            <div class="p-2 border-b border-border-base">
+            <div class="p-2 border-b border-border-weak-base">
               <input
                 type="text"
                 placeholder="Filter files..."
