@@ -752,6 +752,30 @@ export type Session = {
         sessionId?: string;
         model?: string;
         tools?: Array<string>;
+        modelUsage?: {
+            [modelName: string]: {
+                inputTokens: number;
+                outputTokens: number;
+                cacheReadInputTokens: number;
+                cacheCreationInputTokens: number;
+                webSearchRequests: number;
+                costUSD: number;
+                contextWindow: number;
+            };
+        };
+        totalCostUsd?: number;
+        durationMs?: number;
+        durationApiMs?: number;
+        numTurns?: number;
+        compactionEvents?: Array<{
+            trigger: 'manual' | 'auto';
+            preTokens: number;
+            timestamp: number;
+        }>;
+        permissionDenials?: Array<{
+            toolName: string;
+            toolUseId: string;
+        }>;
     };
     fork?: {
         fromSessionID: string;

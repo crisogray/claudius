@@ -216,6 +216,25 @@ export namespace SDKStream {
 
               SessionSummary.summarize({ sessionID, messageID: context.parentID })
             }
+
+            // Handle compaction boundary messages
+            if (message.subtype === "compact_boundary") {
+              const compactMsg = message as SDKConvert.SDKCompactBoundaryMessage
+              await Session.update(sessionID, (draft) => {
+                if (!draft.sdk) draft.sdk = {}
+                if (!draft.sdk.compactionEvents) draft.sdk.compactionEvents = []
+                draft.sdk.compactionEvents.push({
+                  trigger: compactMsg.compact_metadata.trigger,
+                  preTokens: compactMsg.compact_metadata.pre_tokens,
+                  timestamp: Date.now(),
+                })
+              })
+              log.info("compaction boundary recorded", {
+                sessionID,
+                trigger: compactMsg.compact_metadata.trigger,
+                preTokens: compactMsg.compact_metadata.pre_tokens,
+              })
+            }
             break
           }
 
@@ -390,6 +409,38 @@ export namespace SDKStream {
 
               Bus.publish(MessageV2.Event.Updated, { info: currentMessage })
             }
+
+            // Capture additional SDK metrics on session (for context tab display)
+            const resultMsg = message as SDKConvert.SDKResultMessage
+            await Session.update(sessionID, (draft) => {
+              if (!draft.sdk) draft.sdk = {}
+              // Per-model usage breakdown
+              if (resultMsg.modelUsage) {
+                draft.sdk.modelUsage = resultMsg.modelUsage
+              }
+              // Authoritative total cost
+              if (resultMsg.total_cost_usd !== undefined) {
+                draft.sdk.totalCostUsd = resultMsg.total_cost_usd
+              }
+              // Duration metrics
+              if (resultMsg.duration_ms !== undefined) {
+                draft.sdk.durationMs = resultMsg.duration_ms
+              }
+              if (resultMsg.duration_api_ms !== undefined) {
+                draft.sdk.durationApiMs = resultMsg.duration_api_ms
+              }
+              // Turn count
+              if (resultMsg.num_turns !== undefined) {
+                draft.sdk.numTurns = resultMsg.num_turns
+              }
+              // Permission denials
+              if (resultMsg.permission_denials && resultMsg.permission_denials.length > 0) {
+                draft.sdk.permissionDenials = resultMsg.permission_denials.map((d) => ({
+                  toolName: d.tool_name,
+                  toolUseId: d.tool_use_id,
+                }))
+              }
+            })
             break
           }
 

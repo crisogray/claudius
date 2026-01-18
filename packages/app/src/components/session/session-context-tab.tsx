@@ -24,23 +24,27 @@ export function SessionContextTab(props: SessionContextTabProps) {
   const sync = useSync()
 
   const ctx = createMemo(() => {
-    const last = props.messages().findLast((x) => {
-      if (x.role !== "assistant") return false
-      const total = x.tokens.input + x.tokens.output + x.tokens.reasoning + x.tokens.cache.read + x.tokens.cache.write
-      return total > 0
-    }) as AssistantMessage
+    const last = props.messages().findLast((x) => x.role === "assistant") as AssistantMessage
     if (!last) return
 
     const provider = sync.data.provider.all.find((x) => x.id === last.providerID)
     const model = provider?.models[last.modelID]
-    const limit = model?.limit.context
 
-    const input = last.tokens.input
-    const output = last.tokens.output
-    const reasoning = last.tokens.reasoning
-    const cacheRead = last.tokens.cache.read
-    const cacheWrite = last.tokens.cache.write
-    const total = input + output + reasoning + cacheRead + cacheWrite
+    const sdkUsage = props.info()?.sdk?.modelUsage
+    if (!sdkUsage || Object.keys(sdkUsage).length === 0) return
+
+    const totals = Object.values(sdkUsage).reduce(
+      (acc, m) => ({
+        input: acc.input + m.inputTokens,
+        output: acc.output + m.outputTokens,
+        cacheRead: acc.cacheRead + m.cacheReadInputTokens,
+        cacheWrite: acc.cacheWrite + m.cacheCreationInputTokens,
+      }),
+      { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    )
+    const firstUsage = Object.values(sdkUsage)[0]
+    const limit = firstUsage?.contextWindow || model?.limit.context
+    const total = totals.input + totals.output + totals.cacheRead + totals.cacheWrite
     const usage = limit ? Math.round((total / limit) * 100) : null
 
     return {
@@ -48,23 +52,58 @@ export function SessionContextTab(props: SessionContextTabProps) {
       provider,
       model,
       limit,
-      input,
-      output,
-      reasoning,
-      cacheRead,
-      cacheWrite,
+      input: totals.input,
+      output: totals.output,
+      cacheRead: totals.cacheRead,
+      cacheWrite: totals.cacheWrite,
       total,
       usage,
     }
   })
 
   const cost = createMemo(() => {
-    const total = props.messages().reduce((sum, x) => sum + (x.role === "assistant" ? x.cost : 0), 0)
+    const sdkTotal = props.info()?.sdk?.totalCostUsd ?? 0
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(total)
+    }).format(sdkTotal)
   })
+
+  // Cache hit rate calculation
+  const cacheHitRate = createMemo(() => {
+    const c = ctx()
+    if (!c) return null
+    const total = c.cacheRead + c.cacheWrite
+    if (total === 0) return null
+    return Math.round((c.cacheRead / total) * 100)
+  })
+
+  // Web search count from SDK model usage
+  const webSearchCount = createMemo(() => {
+    const usage = props.info()?.sdk?.modelUsage
+    if (!usage) return null
+    const total = Object.values(usage).reduce((sum, m) => sum + (m.webSearchRequests ?? 0), 0)
+    return total > 0 ? total : null
+  })
+
+  // Duration metrics
+  const durationInfo = createMemo(() => {
+    const sdk = props.info()?.sdk
+    if (!sdk?.durationMs) return null
+    return {
+      total: sdk.durationMs,
+      api: sdk.durationApiMs ?? 0,
+    }
+  })
+
+  // Turn count from SDK
+  const numTurns = createMemo(() => props.info()?.sdk?.numTurns ?? null)
+
+  // Model usage breakdown
+  const modelUsage = createMemo(() => props.info()?.sdk?.modelUsage ?? null)
+
+  // Compaction events
+  const compactionEvents = createMemo(() => props.info()?.sdk?.compactionEvents ?? [])
 
   const counts = createMemo(() => {
     const all = props.messages()
@@ -103,6 +142,15 @@ export function SessionContextTab(props: SessionContextTabProps) {
     return DateTime.fromMillis(value).toLocaleString(DateTime.DATETIME_MED)
   }
 
+  const duration = (ms: number | undefined) => {
+    if (!ms) return "—"
+    if (ms < 1000) return `${ms}ms`
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
+    const minutes = Math.floor(ms / 60000)
+    const seconds = Math.round((ms % 60000) / 1000)
+    return `${minutes}m ${seconds}s`
+  }
+
   const providerLabel = createMemo(() => {
     const c = ctx()
     if (!c) return "—"
@@ -116,120 +164,6 @@ export function SessionContextTab(props: SessionContextTabProps) {
     return c.message.modelID
   })
 
-  const breakdown = createMemo(
-    on(
-      () => [ctx()?.message.id, ctx()?.input, props.messages().length, systemPrompt()],
-      () => {
-        const c = ctx()
-        if (!c) return []
-        const input = c.input
-        if (!input) return []
-
-        const out = {
-          system: systemPrompt()?.length ?? 0,
-          user: 0,
-          assistant: 0,
-          tool: 0,
-        }
-
-        for (const msg of props.messages()) {
-          const parts = (sync.data.part[msg.id] ?? []) as Part[]
-
-          if (msg.role === "user") {
-            for (const part of parts) {
-              if (part.type === "text") out.user += part.text.length
-              if (part.type === "file") out.user += part.source?.text.value.length ?? 0
-              if (part.type === "agent") out.user += part.source?.value.length ?? 0
-            }
-            continue
-          }
-
-          if (msg.role === "assistant") {
-            for (const part of parts) {
-              if (part.type === "text") out.assistant += part.text.length
-              if (part.type === "reasoning") out.assistant += part.text.length
-              if (part.type === "tool") {
-                out.tool += Object.keys(part.state.input).length * 16
-                if (part.state.status === "pending") out.tool += part.state.raw.length
-                if (part.state.status === "completed") out.tool += part.state.output.length
-                if (part.state.status === "error") out.tool += part.state.error.length
-              }
-            }
-          }
-        }
-
-        const estimateTokens = (chars: number) => Math.ceil(chars / 4)
-        const system = estimateTokens(out.system)
-        const user = estimateTokens(out.user)
-        const assistant = estimateTokens(out.assistant)
-        const tool = estimateTokens(out.tool)
-        const estimated = system + user + assistant + tool
-
-        const pct = (tokens: number) => (tokens / input) * 100
-        const pctLabel = (tokens: number) => (Math.round(pct(tokens) * 10) / 10).toString() + "%"
-
-        const build = (tokens: { system: number; user: number; assistant: number; tool: number; other: number }) => {
-          return [
-            {
-              key: "system",
-              label: "System",
-              tokens: tokens.system,
-              width: pct(tokens.system),
-              percent: pctLabel(tokens.system),
-              color: "var(--syntax-info)",
-            },
-            {
-              key: "user",
-              label: "User",
-              tokens: tokens.user,
-              width: pct(tokens.user),
-              percent: pctLabel(tokens.user),
-              color: "var(--syntax-success)",
-            },
-            {
-              key: "assistant",
-              label: "Assistant",
-              tokens: tokens.assistant,
-              width: pct(tokens.assistant),
-              percent: pctLabel(tokens.assistant),
-              color: "var(--syntax-property)",
-            },
-            {
-              key: "tool",
-              label: "Tool Calls",
-              tokens: tokens.tool,
-              width: pct(tokens.tool),
-              percent: pctLabel(tokens.tool),
-              color: "var(--syntax-warning)",
-            },
-            {
-              key: "other",
-              label: "Other",
-              tokens: tokens.other,
-              width: pct(tokens.other),
-              percent: pctLabel(tokens.other),
-              color: "var(--syntax-comment)",
-            },
-          ].filter((x) => x.tokens > 0)
-        }
-
-        if (estimated <= input) {
-          return build({ system, user, assistant, tool, other: input - estimated })
-        }
-
-        const scale = input / estimated
-        const scaled = {
-          system: Math.floor(system * scale),
-          user: Math.floor(user * scale),
-          assistant: Math.floor(assistant * scale),
-          tool: Math.floor(tool * scale),
-        }
-        const scaledTotal = scaled.system + scaled.user + scaled.assistant + scaled.tool
-        return build({ ...scaled, other: Math.max(0, input - scaledTotal) })
-      },
-    ),
-  )
-
   function Stat(statProps: { label: string; value: JSX.Element }) {
     return (
       <div class="flex flex-col gap-1">
@@ -242,7 +176,12 @@ export function SessionContextTab(props: SessionContextTabProps) {
   const stats = createMemo(() => {
     const c = ctx()
     const count = counts()
-    return [
+    const dur = durationInfo()
+    const hitRate = cacheHitRate()
+    const searches = webSearchCount()
+    const turns = numTurns()
+
+    const items: { label: string; value: JSX.Element }[] = [
       { label: "Session", value: props.info()?.title ?? params.id ?? "—" },
       { label: "Messages", value: count.all.toLocaleString() },
       { label: "Provider", value: providerLabel() },
@@ -252,14 +191,44 @@ export function SessionContextTab(props: SessionContextTabProps) {
       { label: "Usage", value: percent(c?.usage) },
       { label: "Input Tokens", value: number(c?.input) },
       { label: "Output Tokens", value: number(c?.output) },
-      { label: "Reasoning Tokens", value: number(c?.reasoning) },
       { label: "Cache Tokens (read/write)", value: `${number(c?.cacheRead)} / ${number(c?.cacheWrite)}` },
+    ]
+
+    // Cache hit rate (only show if cache was used)
+    if (hitRate !== null) {
+      items.push({ label: "Cache Hit Rate", value: `${hitRate}%` })
+    }
+
+    // Web searches (only show if any occurred)
+    if (searches !== null) {
+      items.push({ label: "Web Searches", value: searches.toLocaleString() })
+    }
+
+    // Turn count
+    if (turns !== null) {
+      items.push({ label: "Turns", value: turns.toLocaleString() })
+    }
+
+    items.push(
       { label: "User Messages", value: count.user.toLocaleString() },
       { label: "Assistant Messages", value: count.assistant.toLocaleString() },
       { label: "Total Cost", value: cost() },
+    )
+
+    // Duration metrics
+    if (dur) {
+      items.push(
+        { label: "Total Duration", value: duration(dur.total) },
+        { label: "API Latency", value: duration(dur.api) },
+      )
+    }
+
+    items.push(
       { label: "Session Created", value: time(props.info()?.time.created) },
       { label: "Last Activity", value: time(c?.message.time.created) },
-    ] satisfies { label: string; value: JSX.Element }[]
+    )
+
+    return items
   })
 
   function RawMessageContent(msgProps: { message: Message }) {
@@ -369,35 +338,63 @@ export function SessionContextTab(props: SessionContextTabProps) {
           <For each={stats()}>{(stat) => <Stat label={stat.label} value={stat.value} />}</For>
         </div>
 
-        <Show when={breakdown().length > 0}>
+        <Show when={modelUsage() && Object.keys(modelUsage()!).length > 0}>
           <div class="flex flex-col gap-2">
-            <div class="text-12-regular text-text-weak">Context Breakdown</div>
-            <div class="h-2 w-full rounded-full bg-surface-base overflow-hidden flex">
-              <For each={breakdown()}>
-                {(segment) => (
-                  <div
-                    class="h-full"
-                    style={{
-                      width: `${segment.width}%`,
-                      "background-color": segment.color,
-                    }}
-                  />
-                )}
-              </For>
+            <div class="text-12-regular text-text-weak">Model Usage</div>
+            <div class="border border-border-base rounded-md overflow-hidden">
+              <table class="w-full text-12-regular">
+                <thead class="bg-surface-base">
+                  <tr class="text-text-weak text-left">
+                    <th class="px-3 py-2 font-medium">Model</th>
+                    <th class="px-3 py-2 font-medium text-right">Input</th>
+                    <th class="px-3 py-2 font-medium text-right">Output</th>
+                    <th class="px-3 py-2 font-medium text-right">Cache</th>
+                    <th class="px-3 py-2 font-medium text-right">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={Object.entries(modelUsage()!)}>
+                    {([model, usage]) => (
+                      <tr class="border-t border-border-base text-text-base">
+                        <td class="px-3 py-2 truncate max-w-[150px]" title={model}>
+                          {model.replace(/^claude-/, "").replace(/-\d{8}$/, "")}
+                        </td>
+                        <td class="px-3 py-2 text-right tabular-nums">{usage.inputTokens.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{usage.outputTokens.toLocaleString()}</td>
+                        <td class="px-3 py-2 text-right tabular-nums text-text-weak">
+                          {usage.cacheReadInputTokens.toLocaleString()}
+                        </td>
+                        <td class="px-3 py-2 text-right tabular-nums text-text-strong">
+                          ${usage.costUSD.toFixed(4)}
+                        </td>
+                      </tr>
+                    )}
+                  </For>
+                </tbody>
+              </table>
             </div>
-            <div class="flex flex-wrap gap-x-3 gap-y-1">
-              <For each={breakdown()}>
-                {(segment) => (
-                  <div class="flex items-center gap-1 text-11-regular text-text-weak">
-                    <div class="size-2 rounded-sm" style={{ "background-color": segment.color }} />
-                    <div>{segment.label}</div>
-                    <div class="text-text-weaker">{segment.percent}</div>
+          </div>
+        </Show>
+
+        <Show when={compactionEvents().length > 0}>
+          <div class="flex flex-col gap-2">
+            <div class="text-12-regular text-text-weak">Compaction Events</div>
+            <div class="flex flex-col gap-1">
+              <For each={compactionEvents()}>
+                {(event) => (
+                  <div class="flex items-center gap-2 text-11-regular text-text-base">
+                    <span class="px-1.5 py-0.5 rounded bg-surface-base text-text-weak">
+                      {event.trigger === "auto" ? "Auto" : "Manual"}
+                    </span>
+                    <span>
+                      Compacted at {event.preTokens.toLocaleString()} tokens
+                    </span>
+                    <span class="text-text-weaker">
+                      {DateTime.fromMillis(event.timestamp).toLocaleString(DateTime.TIME_WITH_SHORT_OFFSET)}
+                    </span>
                   </div>
                 )}
               </For>
-            </div>
-            <div class="hidden text-11-regular text-text-weaker">
-              Approximate breakdown of input tokens. "Other" includes tool definitions and overhead.
             </div>
           </div>
         </Show>

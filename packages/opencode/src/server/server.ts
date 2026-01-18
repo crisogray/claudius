@@ -2362,6 +2362,34 @@ export namespace Server {
           },
         )
         .post(
+          "/git/delete-untracked",
+          describeRoute({
+            summary: "Delete untracked files",
+            description: "Delete untracked files from the working directory.",
+            operationId: "git.deleteUntracked",
+            responses: {
+              200: {
+                description: "Files deleted successfully",
+                content: {
+                  "application/json": {
+                    schema: resolver(z.object({ ok: z.boolean() })),
+                  },
+                },
+              },
+            },
+          }),
+          validator(
+            "json",
+            z.object({
+              files: z.string().array().meta({ description: "Array of untracked file paths to delete" }),
+            }),
+          ),
+          async (c) => {
+            await Git.deleteUntracked(c.req.valid("json").files)
+            return c.json({ ok: true })
+          },
+        )
+        .post(
           "/git/commit",
           describeRoute({
             summary: "Create commit",

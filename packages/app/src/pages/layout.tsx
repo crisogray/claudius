@@ -1010,7 +1010,7 @@ export default function Layout(props: ParentProps) {
       const [data] = globalSync.child(directory)
       const kind = directory === props.project.worktree ? "local" : "sandbox"
       const name = data.vcs?.branch ?? getFilename(directory)
-      return `${kind} : ${name}`
+      return kind === "local" ? `base: ${name}` : name
     }
 
     const getWorkspaceSessions = (directory: string) => {
@@ -1129,7 +1129,7 @@ export default function Layout(props: ParentProps) {
       const [workspaceStore] = globalSync.child(directory)
       const kind = directory === project.worktree ? "local" : "sandbox"
       const name = workspaceStore.vcs?.branch ?? getFilename(directory)
-      return `${kind} : ${name}`
+      return kind === "local" ? `base: ${name}` : name
     })
 
     return (
@@ -1153,9 +1153,8 @@ export default function Layout(props: ParentProps) {
     )
     const local = createMemo(() => props.directory === props.project.worktree)
     const title = createMemo(() => {
-      const kind = local() ? "local" : "sandbox"
       const name = workspaceStore.vcs?.branch ?? getFilename(props.directory)
-      return `${kind} : ${name}`
+      return local() ? `base: ${name}` : name
     })
     const open = createMemo(() => store.workspaceExpanded[props.directory] ?? true)
     const hasMore = createMemo(() => local() && workspaceStore.session.length < workspaceStore.totalSessions)
@@ -1176,7 +1175,7 @@ export default function Layout(props: ParentProps) {
         >
           <div class="px-2 py-1">
             <div class="group/trigger relative">
-              <Collapsible.Trigger class="flex items-center justify-between w-full pl-2 pr-16 py-1.5 rounded-md hover:bg-surface-raised-base-hover">
+              <Collapsible.Trigger class="flex items-center justify-between w-full pl-2 pr-2 group-hover/trigger:pr-16 group-focus-within/trigger:pr-16 py-1.5 rounded-md hover:bg-surface-raised-base-hover">
                 <div class="flex items-center gap-1 min-w-0">
                   <div class="flex items-center justify-center shrink-0 size-6">
                     <Icon name="branch" size="small" />

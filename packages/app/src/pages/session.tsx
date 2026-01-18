@@ -317,6 +317,19 @@ export default function Page() {
     ),
   )
 
+  const updatePermissionMode = (direction: 1 | -1) => {
+    local.permissionMode.move(direction)
+    const mode = local.permissionMode.current()
+    const sessionStatus = sync.data.session_status[params.id ?? ""]
+    const isWorking = sessionStatus?.type !== "idle"
+    if (params.id && isWorking && mode) {
+      ;(platform.fetch ?? fetch)(`${sdk.url}/session/${params.id}/sdk/permission-mode`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissionMode: mode.id }),
+      }).catch(() => {})
+    }
+  }
 
   const [store, setStore] = createStore({
     activeDraggable: undefined as string | undefined,
@@ -551,7 +564,7 @@ export default function Page() {
       category: "Mode",
       keybind: "shift+tab",
       slash: "mode",
-      onSelect: () => local.permissionMode.move(1),
+      onSelect: () => updatePermissionMode(1),
     },
     {
       id: "agent.cycle.reverse",
@@ -559,7 +572,7 @@ export default function Page() {
       description: "Switch to the previous permission mode",
       category: "Mode",
       keybind: "shift+mod+.",
-      onSelect: () => local.permissionMode.move(-1),
+      onSelect: () => updatePermissionMode(-1),
     },
     {
       id: "model.variant.cycle",

@@ -178,6 +178,14 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       await refresh({ showLoading: true })
     }
 
+    const deleteUntracked = async (files: string[]) => {
+      await api("/git/delete-untracked", {
+        method: "POST",
+        body: JSON.stringify({ files }),
+      })
+      await refresh({ showLoading: true })
+    }
+
     const commit = async (message: string, options?: { amend?: boolean }) => {
       await api("/git/commit", {
         method: "POST",
@@ -271,6 +279,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       stageAll,
       unstageAll,
       discard,
+      deleteUntracked,
       commit,
       diff,
       show,

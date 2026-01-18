@@ -197,9 +197,31 @@ export namespace SDKConvert {
     }
   }
 
+  /**
+   * Per-model usage statistics from SDK result message
+   */
+  export interface ModelUsage {
+    inputTokens: number
+    outputTokens: number
+    cacheReadInputTokens: number
+    cacheCreationInputTokens: number
+    webSearchRequests: number
+    costUSD: number
+    contextWindow: number
+  }
+
+  /**
+   * Permission denial info from SDK
+   */
+  export interface PermissionDenial {
+    tool_name: string
+    tool_use_id: string
+    tool_input: unknown
+  }
+
   export interface SDKResultMessage {
     type: "result"
-    subtype: "success" | "error"
+    subtype: "success" | "error" | "error_max_turns" | "error_during_execution" | "error_max_budget_usd"
     usage: {
       input_tokens: number
       output_tokens: number
@@ -209,6 +231,9 @@ export namespace SDKConvert {
     total_cost_usd?: number
     duration_ms?: number
     duration_api_ms?: number
+    num_turns?: number
+    modelUsage?: Record<string, ModelUsage>
+    permission_denials?: PermissionDenial[]
   }
 
   export interface SDKSystemMessage {
@@ -219,7 +244,22 @@ export namespace SDKConvert {
     tools?: string[]
   }
 
-  export type SDKMessage = SDKAssistantMessage | SDKUserMessage | SDKResultMessage | SDKSystemMessage | SDKPartialAssistantMessage
+  /**
+   * Compaction boundary message from SDK
+   * Indicates when conversation compaction occurred
+   */
+  export interface SDKCompactBoundaryMessage {
+    type: "system"
+    subtype: "compact_boundary"
+    uuid: string
+    session_id: string
+    compact_metadata: {
+      trigger: "manual" | "auto"
+      pre_tokens: number
+    }
+  }
+
+  export type SDKMessage = SDKAssistantMessage | SDKUserMessage | SDKResultMessage | SDKSystemMessage | SDKCompactBoundaryMessage | SDKPartialAssistantMessage
 
   // Partial message streaming types (from @anthropic-ai/claude-agent-sdk with includePartialMessages: true)
   export interface SDKPartialAssistantMessage {

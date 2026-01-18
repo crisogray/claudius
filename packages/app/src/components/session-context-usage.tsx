@@ -3,7 +3,6 @@ import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { ProgressCircle } from "@opencode-ai/ui/progress-circle"
 import { Button } from "@opencode-ai/ui/button"
 import { useParams } from "@solidjs/router"
-import { AssistantMessage } from "@opencode-ai/sdk/v2/client"
 
 import { useLayout } from "@/context/layout"
 import { useSync } from "@/context/sync"
@@ -20,29 +19,59 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
   const variant = createMemo(() => props.variant ?? "button")
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
   const tabs = createMemo(() => layout.tabs(sessionKey()))
-  const messages = createMemo(() => (params.id ? (sync.data.message[params.id] ?? []) : []))
+  const sessionInfo = createMemo(() => (params.id ? sync.session.get(params.id) : undefined))
 
   const cost = createMemo(() => {
-    const total = messages().reduce((sum, x) => sum + (x.role === "assistant" ? x.cost : 0), 0)
+    const sdkTotal = sessionInfo()?.sdk?.totalCostUsd ?? 0
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(total)
+    }).format(sdkTotal)
   })
 
+  // Cache hit rate from SDK modelUsage
+  const cacheHitRate = createMemo(() => {
+    const sdkUsage = sessionInfo()?.sdk?.modelUsage
+    if (!sdkUsage || Object.keys(sdkUsage).length === 0) return null
+    const totals = Object.values(sdkUsage).reduce(
+      (acc, m) => ({
+        read: acc.read + m.cacheReadInputTokens,
+        write: acc.write + m.cacheCreationInputTokens,
+      }),
+      { read: 0, write: 0 },
+    )
+    const total = totals.read + totals.write
+    if (total === 0) return null
+    return Math.round((totals.read / total) * 100)
+  })
+
+  // Web search count from SDK
+  const webSearchCount = createMemo(() => {
+    const usage = sessionInfo()?.sdk?.modelUsage
+    if (!usage) return null
+    const total = Object.values(usage).reduce((sum, m) => sum + (m.webSearchRequests ?? 0), 0)
+    return total > 0 ? total : null
+  })
+
+  // Context usage from SDK modelUsage
   const context = createMemo(() => {
-    const last = messages().findLast((x) => {
-      if (x.role !== "assistant") return false
-      const total = x.tokens.input + x.tokens.output + x.tokens.reasoning + x.tokens.cache.read + x.tokens.cache.write
-      return total > 0
-    }) as AssistantMessage
-    if (!last) return
-    const total =
-      last.tokens.input + last.tokens.output + last.tokens.reasoning + last.tokens.cache.read + last.tokens.cache.write
-    const model = sync.data.provider.all.find((x) => x.id === last.providerID)?.models[last.modelID]
+    const sdkUsage = sessionInfo()?.sdk?.modelUsage
+    if (!sdkUsage || Object.keys(sdkUsage).length === 0) return undefined
+    const totals = Object.values(sdkUsage).reduce(
+      (acc, m) => ({
+        input: acc.input + m.inputTokens,
+        output: acc.output + m.outputTokens,
+        cacheRead: acc.cacheRead + m.cacheReadInputTokens,
+        cacheWrite: acc.cacheWrite + m.cacheCreationInputTokens,
+      }),
+      { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    )
+    const total = totals.input + totals.output + totals.cacheRead + totals.cacheWrite
+    const firstUsage = Object.values(sdkUsage)[0]
+    const limit = firstUsage?.contextWindow
     return {
       tokens: total.toLocaleString(),
-      percentage: model?.limit.context ? Math.round((total / model.limit.context) * 100) : null,
+      percentage: limit ? Math.round((total / limit) * 100) : null,
     }
   })
 
@@ -78,6 +107,18 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
         <span class="text-text-invert-strong">{cost()}</span>
         <span class="text-text-invert-base">Cost</span>
       </div>
+      <Show when={cacheHitRate() !== null}>
+        <div class="flex items-center gap-2">
+          <span class="text-text-invert-strong">{cacheHitRate()}%</span>
+          <span class="text-text-invert-base">Cache Hit</span>
+        </div>
+      </Show>
+      <Show when={webSearchCount() !== null}>
+        <div class="flex items-center gap-2">
+          <span class="text-text-invert-strong">{webSearchCount()}</span>
+          <span class="text-text-invert-base">Web Searches</span>
+        </div>
+      </Show>
       <Show when={variant() === "button"}>
         <div class="text-11-regular text-text-invert-base mt-1">Click to view context</div>
       </Show>

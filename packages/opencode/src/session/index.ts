@@ -88,12 +88,50 @@ export namespace Session {
           sdkUuid: z.string().optional(), // SDK message UUID to resume at
         })
         .optional(),
-      // SDK-specific fields for session resume
+      // SDK-specific fields for session resume and usage tracking
       sdk: z
         .object({
           sessionId: z.string().optional(), // Claude Agent SDK session ID
           model: z.string().optional(), // Model used by SDK
           tools: z.string().array().optional(), // Tools available in SDK session
+          // Usage metrics from SDK result message
+          modelUsage: z
+            .record(
+              z.string(),
+              z.object({
+                inputTokens: z.number(),
+                outputTokens: z.number(),
+                cacheReadInputTokens: z.number(),
+                cacheCreationInputTokens: z.number(),
+                webSearchRequests: z.number(),
+                costUSD: z.number(),
+                contextWindow: z.number(),
+              }),
+            )
+            .optional(),
+          totalCostUsd: z.number().optional(), // Authoritative total cost from SDK
+          durationMs: z.number().optional(), // Total execution time
+          durationApiMs: z.number().optional(), // Time spent in API calls
+          numTurns: z.number().optional(), // Total conversation turns
+          // Compaction events
+          compactionEvents: z
+            .array(
+              z.object({
+                trigger: z.enum(["manual", "auto"]),
+                preTokens: z.number(),
+                timestamp: z.number(),
+              }),
+            )
+            .optional(),
+          // Permission denials
+          permissionDenials: z
+            .array(
+              z.object({
+                toolName: z.string(),
+                toolUseId: z.string(),
+              }),
+            )
+            .optional(),
         })
         .optional(),
       // Fork context - set when this session was forked from another

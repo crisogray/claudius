@@ -242,16 +242,18 @@ export function GitTab() {
                     }}
                     title="Stage"
                   />
-                  <Show when={f.status !== "untracked"}>
-                    <ActionButton
-                      icon="close"
-                      onClick={(e) => {
-                        e.stopPropagation()
+                  <ActionButton
+                    icon="close"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (f.status === "untracked") {
+                        git.deleteUntracked([f.path])
+                      } else {
                         git.discard([f.path])
-                      }}
-                      title="Discard"
-                    />
-                  </Show>
+                      }
+                    }}
+                    title={f.status === "untracked" ? "Delete" : "Discard"}
+                  />
                 </>
               )}
               headerActions={

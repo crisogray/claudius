@@ -272,6 +272,19 @@ export namespace Git {
   }
 
   /**
+   * Delete untracked files from the working directory
+   */
+  export async function deleteUntracked(files: string[]): Promise<void> {
+    if (files.length === 0) return
+    const cwd = Instance.directory
+    for (const file of files) {
+      const fullPath = `${cwd}/${file}`
+      await $`rm -f ${fullPath}`.quiet()
+    }
+    Bus.publish(Event.StatusUpdated, await status())
+  }
+
+  /**
    * Create a commit
    */
   export async function commit(message: string, options?: { amend?: boolean }): Promise<CommitResult> {
