@@ -72,7 +72,7 @@ export default function FileTree(props: {
 
     if (!filterText) {
       setVisiblePaths(null)
-      setCollapsedPaths(new Set())
+      setCollapsedPaths(new Set<string>())
       return
     }
 
@@ -102,10 +102,10 @@ export default function FileTree(props: {
         }
 
         setVisiblePaths(visible)
-        setCollapsedPaths(new Set())
+        setCollapsedPaths(new Set<string>())
       } catch (e) {
         if (e instanceof Error && e.name === "AbortError") return
-        setVisiblePaths(new Set())
+        setVisiblePaths(new Set<string>())
       }
     }, 150)
   })

@@ -133,7 +133,7 @@ export function Markdown(
           data-slot="markdown-fullscreen-button"
           icon="expand"
           variant="ghost"
-          size="small"
+          size="normal"
           onClick={openFullscreen}
         />
         {markdownEl}

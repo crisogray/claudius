@@ -1576,8 +1576,9 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         local.permissionMode.set(mode.id)
                         // If session is actively streaming, update the SDK and persist
                         if (params.id && working()) {
-                          platform
-                            .fetch(`${sdk.url}/session/${params.id}/sdk/permission-mode`, {
+                          ;(platform.fetch ?? fetch)(
+                            `${sdk.url}/session/${params.id}/sdk/permission-mode`,
+                            {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ permissionMode: mode.id }),

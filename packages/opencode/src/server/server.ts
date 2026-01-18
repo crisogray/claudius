@@ -70,6 +70,7 @@ export namespace Server {
   const app = new Hono()
   export const App: () => Hono = lazy(
     () =>
+      // @ts-expect-error - Type instantiation too deep due to long method chain
       app
         .onError((err, c) => {
           log.error("failed", {

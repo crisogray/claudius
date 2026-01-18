@@ -643,6 +643,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
             metadata={metadata()}
             // @ts-expect-error
             output={part.state.output}
+            // @ts-expect-error
             error={part.state.error}
             status={part.state.status}
             hideDetails={props.hideDetails}
