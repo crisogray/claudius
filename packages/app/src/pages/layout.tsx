@@ -547,23 +547,19 @@ export default function Layout(props: ParentProps) {
     queueMicrotask(() => scrollToSession(session.id))
   }
 
-  async function archiveSession(session: Session) {
+  function archiveSession(session: Session) {
     const [store, setStore] = globalSync.child(session.directory)
     const sessions = store.session ?? []
     const index = sessions.findIndex((s) => s.id === session.id)
     const nextSession = sessions[index + 1] ?? sessions[index - 1]
 
-    await globalSDK.client.session.update({
-      directory: session.directory,
-      sessionID: session.id,
-      time: { archived: Date.now() },
-    })
     setStore(
       produce((draft) => {
         const match = Binary.search(draft.session, session.id, (s) => s.id)
         if (match.found) draft.session.splice(match.index, 1)
       }),
     )
+
     if (session.id === params.id) {
       if (nextSession) {
         navigate(`/${params.dir}/session/${nextSession.id}`)
@@ -571,6 +567,12 @@ export default function Layout(props: ParentProps) {
         navigate(`/${params.dir}/session`)
       }
     }
+
+    void globalSDK.client.session.update({
+      directory: session.directory,
+      sessionID: session.id,
+      time: { archived: Date.now() },
+    })
   }
 
   command.register(() => {
