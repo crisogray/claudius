@@ -52,11 +52,19 @@ export const PlanRoute = new Hono()
         requestID: z.string(),
       }),
     ),
+    validator(
+      "json",
+      z.object({
+        permissionMode: z.enum(["default", "acceptEdits", "bypassPermissions"]).optional(),
+      }).optional(),
+    ),
     async (c) => {
       const params = c.req.valid("param")
+      const body = c.req.valid("json")
       await PlanApproval.reply({
         requestID: params.requestID,
         approved: true,
+        permissionMode: body?.permissionMode,
       })
       return c.json(true)
     },

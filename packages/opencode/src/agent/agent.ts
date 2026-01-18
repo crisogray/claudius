@@ -63,12 +63,35 @@ export namespace Agent {
     })
 
   /**
-   * Get the default permission ruleset merged with user config
+   * Permission mode type - matches SDK's PermissionMode
    */
-  export async function getDefaultPermissionRuleset(): Promise<PermissionNext.Ruleset> {
+  export type PermissionMode = "default" | "plan" | "acceptEdits" | "bypassPermissions"
+
+  /**
+   * Get mode-specific permission overrides
+   */
+  function getModeOverrides(mode?: PermissionMode): PermissionNext.Ruleset {
+    switch (mode) {
+      case "acceptEdits":
+        return PermissionNext.fromConfig({ edit: { "*": "allow" } })
+      case "bypassPermissions":
+        return PermissionNext.fromConfig({ "*": "allow" })
+      case "plan":
+        return PermissionNext.fromConfig({ edit: { "*": "deny" }, bash: { "*": "deny" } })
+      default:
+        return []
+    }
+  }
+
+  /**
+   * Get the default permission ruleset merged with user config
+   * Optionally applies mode-specific overrides (between defaults and user config)
+   */
+  export async function getDefaultPermissionRuleset(permissionMode?: PermissionMode): Promise<PermissionNext.Ruleset> {
     const cfg = await Config.get()
     const user = PermissionNext.fromConfig(cfg.permission ?? {})
-    return PermissionNext.merge(defaultPermissionRuleset(), user)
+    const modeOverrides = getModeOverrides(permissionMode)
+    return PermissionNext.merge(defaultPermissionRuleset(), modeOverrides, user)
   }
 
   const state = Instance.state(async () => {

@@ -2,8 +2,10 @@ import { createSignal } from "solid-js"
 import { Button } from "./button"
 import { TextField } from "./text-field"
 
+export type PermissionMode = "default" | "acceptEdits" | "bypassPermissions"
+
 export interface PlanApprovalActionsProps {
-  onApprove: () => void
+  onApprove: (permissionMode?: PermissionMode) => void
   onReject: (message?: string) => void
   variant?: "inline" | "fullscreen"
 }
@@ -39,8 +41,14 @@ export function PlanApprovalActions(props: PlanApprovalActionsProps) {
         <Button variant="ghost" size="small" onClick={handleReject}>
           Reject
         </Button>
-        <Button variant="primary" size="small" onClick={props.onApprove}>
+        <Button variant="secondary" size="small" onClick={() => props.onApprove("default")}>
           Approve
+        </Button>
+        <Button variant="primary" size="small" onClick={() => props.onApprove("acceptEdits")}>
+          Auto-Accept
+        </Button>
+        <Button variant="ghost" size="small" onClick={() => props.onApprove("bypassPermissions")}>
+          Bypass
         </Button>
       </div>
     </>

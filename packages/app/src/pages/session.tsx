@@ -309,6 +309,22 @@ export default function Page() {
     ),
   )
 
+  // Sync UI permission mode when session's permissionMode changes (e.g., after plan approval)
+  // Track time.updated to trigger (solves reconcile in-place issue), compare mode to avoid overriding manual changes
+  createEffect(
+    on(
+      () => {
+        const session = sync.session.get(params.id)
+        return { updated: session?.time?.updated, mode: session?.permissionMode }
+      },
+      (curr, prev) => {
+        if (!curr?.mode) return
+        if (curr.mode === prev?.mode) return // Mode didn't actually change
+        local.permissionMode.set(curr.mode)
+      },
+    ),
+  )
+
 
   const [store, setStore] = createStore({
     activeDraggable: undefined as string | undefined,

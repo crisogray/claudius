@@ -1,9 +1,9 @@
 import { Markdown } from "./markdown"
-import { PlanApprovalActions } from "./plan-approval-actions"
+import { PlanApprovalActions, type PermissionMode } from "./plan-approval-actions"
 
 export interface InlinePlanApprovalProps {
   plan: string
-  onApprove?: () => void
+  onApprove?: (permissionMode?: PermissionMode) => void
   onReject?: (message?: string) => void
 }
 
@@ -14,14 +14,14 @@ export function InlinePlanApproval(props: InlinePlanApprovalProps) {
         <Markdown
           text={props.plan}
           fullscreen
-          onApprove={props.onApprove}
+          onApprove={() => props.onApprove?.()}
           onReject={props.onReject}
         />
       </div>
 
       <PlanApprovalActions
         variant="inline"
-        onApprove={() => props.onApprove?.()}
+        onApprove={(mode) => props.onApprove?.(mode)}
         onReject={(message) => props.onReject?.(message)}
       />
     </div>

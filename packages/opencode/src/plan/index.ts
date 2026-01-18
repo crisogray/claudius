@@ -22,8 +22,11 @@ export namespace PlanApproval {
 
   export const Reply = z.object({
     approved: z.boolean().describe("Whether the user approved the plan"),
+    permissionMode: z.enum(["default", "acceptEdits", "bypassPermissions"]).optional().describe("Permission mode to use after approval"),
   })
   export type Reply = z.infer<typeof Reply>
+
+  export type PermissionMode = "default" | "acceptEdits" | "bypassPermissions"
 
   export const Event = {
     Asked: BusEvent.define("plan.asked", Request),
@@ -34,6 +37,7 @@ export namespace PlanApproval {
         requestID: z.string(),
         approved: z.boolean(),
         message: z.string().optional(),
+        permissionMode: z.enum(["default", "acceptEdits", "bypassPermissions"]).optional(),
       }),
     ),
     Rejected: BusEvent.define(
@@ -48,6 +52,7 @@ export namespace PlanApproval {
   export type AskResult = {
     approved: boolean
     message?: string
+    permissionMode?: PermissionMode
   }
 
   const state = Instance.state(async () => {
@@ -87,7 +92,7 @@ export namespace PlanApproval {
     })
   }
 
-  export async function reply(input: { requestID: string; approved: boolean; message?: string }): Promise<void> {
+  export async function reply(input: { requestID: string; approved: boolean; message?: string; permissionMode?: PermissionMode }): Promise<void> {
     const s = await state()
     const existing = s.pending[input.requestID]
     if (!existing) {
@@ -96,16 +101,17 @@ export namespace PlanApproval {
     }
     delete s.pending[input.requestID]
 
-    log.info("plan replied", { requestID: input.requestID, approved: input.approved, message: input.message })
+    log.info("plan replied", { requestID: input.requestID, approved: input.approved, message: input.message, permissionMode: input.permissionMode })
 
     Bus.publish(Event.Replied, {
       sessionID: existing.info.sessionID,
       requestID: existing.info.id,
       approved: input.approved,
       message: input.message,
+      permissionMode: input.permissionMode,
     })
 
-    existing.resolve({ approved: input.approved, message: input.message })
+    existing.resolve({ approved: input.approved, message: input.message, permissionMode: input.permissionMode })
   }
 
   export async function reject(requestID: string): Promise<void> {

@@ -44,6 +44,7 @@ import { Tooltip } from "./tooltip"
 import { IconButton } from "./icon-button"
 import { InlineQuestion } from "./inline-question"
 import { InlinePlanApproval } from "./inline-plan-approval"
+import type { PermissionMode } from "./plan-approval-actions"
 import { createAutoScroll } from "../hooks"
 
 interface Diagnostic {
@@ -254,6 +255,11 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         title: "Question",
         subtitle: input.questions?.[0]?.question,
       }
+    case "enterplanmode":
+      return {
+        icon: "mcp",
+        title: "Enter Plan Mode",
+      }
     default:
       return {
         icon: "mcp",
@@ -459,7 +465,7 @@ export interface ToolProps {
   onQuestionReply?: (answers: string[][]) => void
   onQuestionReject?: () => void
   planRequest?: () => PlanRequest | undefined
-  onPlanApprove?: () => void
+  onPlanApprove?: (permissionMode?: PermissionMode) => void
   onPlanReject?: (message?: string) => void
 }
 
@@ -563,13 +569,14 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
     })
   }
 
-  const handlePlanApprove = () => {
+  const handlePlanApprove = (permissionMode?: PermissionMode) => {
     const req = planRequest()
     if (!req || !data.respondToPlan) return
     data.respondToPlan({
       sessionID: req.sessionID,
       requestID: req.id,
       approved: true,
+      permissionMode,
     })
   }
 
@@ -1312,7 +1319,7 @@ ToolRegistry.register({
         <Show when={hasPendingPlan()}>
           <InlinePlanApproval
             plan={props.planRequest?.()?.plan ?? ""}
-            onApprove={() => props.onPlanApprove?.()}
+            onApprove={(mode) => props.onPlanApprove?.(mode)}
             onReject={(message) => props.onPlanReject?.(message)}
           />
         </Show>

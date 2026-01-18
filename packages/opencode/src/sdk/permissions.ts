@@ -61,7 +61,7 @@ export namespace SDKPermissions {
       }
 
       const session = await Session.get(sessionID)
-      const defaultRuleset = await Agent.getDefaultPermissionRuleset()
+      const defaultRuleset = await Agent.getDefaultPermissionRuleset(session.permissionMode)
 
       // Get the permission ruleset for this session
       const ruleset = PermissionNext.merge(defaultRuleset, session.permission ?? [])
@@ -223,10 +223,16 @@ export namespace SDKPermissions {
         plan,
       })
 
-      log.info("ExitPlanMode answered", { approved: result.approved, message: result.message })
+      log.info("ExitPlanMode answered", { approved: result.approved, message: result.message, permissionMode: result.permissionMode })
 
       // If plan was approved, allow the tool to proceed
       if (result.approved) {
+        // Always update permission mode on approval, default to "default"
+        const newMode = result.permissionMode ?? "default"
+        await Session.update(sessionID, (draft) => {
+          draft.permissionMode = newMode
+        })
+        log.info("session permission mode updated", { sessionID, permissionMode: newMode })
         return { behavior: "allow", updatedInput: input }
       }
 

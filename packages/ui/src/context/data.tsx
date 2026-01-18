@@ -47,11 +47,14 @@ export type QuestionRejectFn = (input: {
   requestID: string
 }) => void
 
+export type PermissionMode = "default" | "acceptEdits" | "bypassPermissions"
+
 export type PlanRespondFn = (input: {
   sessionID: string
   requestID: string
   approved: boolean
   message?: string
+  permissionMode?: PermissionMode
 }) => void
 
 export type NavigateToSessionFn = (sessionID: string) => void

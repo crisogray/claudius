@@ -78,6 +78,7 @@ export namespace Session {
         archived: z.number().optional(),
       }),
       permission: PermissionNext.Ruleset.optional(),
+      permissionMode: z.enum(["default", "plan", "acceptEdits", "bypassPermissions"]).optional(),
       revert: z
         .object({
           messageID: z.string(),
