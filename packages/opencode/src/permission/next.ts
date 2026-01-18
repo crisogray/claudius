@@ -266,4 +266,20 @@ export namespace PermissionNext {
   export async function list() {
     return state().then((x) => Object.values(x.pending).map((x) => x.info))
   }
+
+  export async function rejectBySession(sessionID: string): Promise<void> {
+    const s = await state()
+    for (const [requestID, pending] of Object.entries(s.pending)) {
+      if (pending.info.sessionID === sessionID) {
+        delete s.pending[requestID]
+        log.info("permission rejected by session interrupt", { requestID, sessionID })
+        Bus.publish(Event.Replied, {
+          sessionID: pending.info.sessionID,
+          requestID: pending.info.id,
+          reply: "reject",
+        })
+        pending.reject(new RejectedError())
+      }
+    }
+  }
 }

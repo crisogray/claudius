@@ -14,6 +14,7 @@ import { SDKModels } from "./models"
 import { SDKPermissions } from "./permissions"
 import { SDKStream } from "./stream"
 import { Identifier } from "@/id/id"
+import { PermissionNext } from "@/permission/next"
 import { PlanApproval } from "@/plan"
 import { Question } from "@/question"
 import { SessionRevert } from "@/session/revert"
@@ -349,9 +350,10 @@ export namespace SDK {
       if (activeQueries.get(input.sessionID) === activeQuery) {
         activeQueries.delete(input.sessionID)
         currentMessages.delete(input.sessionID)
-        // Clean up any pending plan/question requests for this session
+        // Clean up any pending plan/question/permission requests for this session
         await PlanApproval.rejectBySession(input.sessionID)
         await Question.rejectBySession(input.sessionID)
+        await PermissionNext.rejectBySession(input.sessionID)
         // Set session status back to idle
         SessionStatus.set(input.sessionID, { type: "idle" })
       }
@@ -375,9 +377,10 @@ export namespace SDK {
       // Immediately set session status to idle (stops the timer)
       SessionStatus.set(sessionID, { type: "idle" })
 
-      // Clean up any pending plan/question requests for this session
+      // Clean up any pending plan/question/permission requests for this session
       await PlanApproval.rejectBySession(sessionID)
       await Question.rejectBySession(sessionID)
+      await PermissionNext.rejectBySession(sessionID)
 
       // Complete the current message
       const messageID = currentMessages.get(sessionID)
