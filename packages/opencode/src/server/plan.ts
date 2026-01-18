@@ -56,7 +56,7 @@ export const PlanRoute = new Hono()
       "json",
       z.object({
         permissionMode: z.enum(["default", "acceptEdits", "bypassPermissions"]).optional(),
-      }).optional(),
+      }),
     ),
     async (c) => {
       const params = c.req.valid("param")
