@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { SDK } from "@/sdk"
+import { Session } from "@/session"
 
 /**
  * SDK Routes - Claude Agent SDK integration
@@ -58,5 +59,21 @@ export const sdkRoutes = new Hono()
     }>()
 
     await SDK.setModel(sessionID, body.model)
+    return c.json({ ok: true })
+  })
+  .post("/session/:sessionID/sdk/permission-mode", async (c) => {
+    const sessionID = c.req.param("sessionID")
+    const body = await c.req.json<{
+      permissionMode: "default" | "plan" | "acceptEdits" | "bypassPermissions"
+    }>()
+
+    // Update active SDK query
+    await SDK.setPermissionMode(sessionID, body.permissionMode)
+
+    // Persist to session for future prompts
+    await Session.update(sessionID, (draft) => {
+      draft.permissionMode = body.permissionMode
+    })
+
     return c.json({ ok: true })
   })

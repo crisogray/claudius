@@ -43,6 +43,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       log: [] as GitCommit[],
       loading: false,
       error: null as string | null,
+      refreshedAt: 0,
     })
 
     // Helper to make API calls
@@ -54,6 +55,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
           "x-opencode-directory": sdk.directory,
           ...options?.headers,
         },
+        cache: "no-store",
       })
       if (!res.ok) {
         throw new Error(`Git API error: ${res.statusText}`)
@@ -61,20 +63,84 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       return res.json()
     }
 
-    const refresh = async () => {
-      setStore("loading", true)
+    // Compare two GitFileStatus arrays for equality
+    const fileStatusesEqual = (a: GitFileStatus[], b: GitFileStatus[]): boolean => {
+      if (a.length !== b.length) return false
+      for (let i = 0; i < a.length; i++) {
+        const fa = a[i]
+        const fb = b[i]
+        if (
+          fa.path !== fb.path ||
+          fa.status !== fb.status ||
+          fa.staged !== fb.staged ||
+          fa.added !== fb.added ||
+          fa.removed !== fb.removed ||
+          fa.oldPath !== fb.oldPath
+        ) {
+          return false
+        }
+      }
+      return true
+    }
+
+    // Compare two GitStatus objects for equality
+    const statusEqual = (a: GitStatus | null, b: GitStatus | null): boolean => {
+      if (a === b) return true
+      if (!a || !b) return false
+      return (
+        a.branch === b.branch &&
+        a.upstream === b.upstream &&
+        a.ahead === b.ahead &&
+        a.behind === b.behind &&
+        fileStatusesEqual(a.staged, b.staged) &&
+        fileStatusesEqual(a.unstaged, b.unstaged) &&
+        fileStatusesEqual(a.untracked, b.untracked) &&
+        fileStatusesEqual(a.conflicted, b.conflicted)
+      )
+    }
+
+    // Compare two GitCommit arrays for equality
+    const logEqual = (a: GitCommit[], b: GitCommit[]): boolean => {
+      if (a.length !== b.length) return false
+      for (let i = 0; i < a.length; i++) {
+        if (a[i].hash !== b[i].hash) return false
+      }
+      return true
+    }
+
+    const refresh = async (options?: { showLoading?: boolean }) => {
+      // Only show loading for explicit refreshes, not background polls
+      if (options?.showLoading) {
+        setStore("loading", true)
+      }
       try {
         const [status, log] = await Promise.all([
           api<GitStatus>("/git/status"),
           api<GitCommit[]>("/git/log?limit=20"),
         ])
-        setStore("status", status)
-        setStore("log", log)
+
+        // Only update store if status actually changed (prevents unnecessary re-renders)
+        const statusChanged = !statusEqual(store.status, status)
+        const logChanged = !logEqual(store.log, log)
+
+        if (statusChanged) {
+          setStore("status", status)
+        }
+        if (logChanged) {
+          setStore("log", log)
+        }
         setStore("error", null)
+
+        // Only update refreshedAt when something actually changed
+        if (statusChanged || logChanged) {
+          setStore("refreshedAt", Date.now())
+        }
       } catch (e) {
         setStore("error", e instanceof Error ? e.message : "Unknown error")
       } finally {
-        setStore("loading", false)
+        if (options?.showLoading) {
+          setStore("loading", false)
+        }
       }
     }
 
@@ -83,7 +149,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         method: "POST",
         body: JSON.stringify({ files }),
       })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const unstage = async (files: string[]) => {
@@ -91,17 +157,17 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         method: "POST",
         body: JSON.stringify({ files }),
       })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const stageAll = async () => {
       await api("/git/stage-all", { method: "POST" })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const unstageAll = async () => {
       await api("/git/unstage-all", { method: "POST" })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const discard = async (files: string[]) => {
@@ -109,7 +175,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         method: "POST",
         body: JSON.stringify({ files }),
       })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const commit = async (message: string, options?: { amend?: boolean }) => {
@@ -117,7 +183,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         method: "POST",
         body: JSON.stringify({ message, amend: options?.amend }),
       })
-      await refresh()
+      await refresh({ showLoading: true })
     }
 
     const diff = async (file: string, staged = false): Promise<string> => {
@@ -132,7 +198,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
 
     // Initial load
     onMount(() => {
-      refresh()
+      refresh({ showLoading: true })
     })
 
     // Refresh periodically (every 5 seconds)
@@ -193,6 +259,9 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       },
       get error() {
         return store.error
+      },
+      get refreshedAt() {
+        return store.refreshedAt
       },
       fileStatuses,
       folderStatuses,

@@ -73,7 +73,18 @@ export namespace Agent {
   function getModeOverrides(mode?: PermissionMode): PermissionNext.Ruleset {
     switch (mode) {
       case "acceptEdits":
-        return PermissionNext.fromConfig({ edit: { "*": "allow" } })
+        return PermissionNext.fromConfig({
+          edit: { "*": "allow" },
+          bash: {
+            "mkdir *": "allow",
+            "rmdir *": "allow",
+            "rm *": "allow",
+            "mv *": "allow",
+            "cp *": "allow",
+            "cd *": "allow",
+            "touch *": "allow",
+          },
+        })
       case "bypassPermissions":
         return PermissionNext.fromConfig({ "*": "allow" })
       case "plan":

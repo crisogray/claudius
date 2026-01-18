@@ -1288,6 +1288,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return { type: "subtask" as const }
     })
 
+    // If already processing, abort first (reuses same path as click-stop)
+    if (working()) {
+      abort()
+    }
+
     client.session
       .prompt({
         sessionID: session.id,
@@ -1567,7 +1572,19 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                     current={local.permissionMode.current()?.name ?? ""}
                     onSelect={(name) => {
                       const mode = local.permissionMode.list().find((m) => m.name === name)
-                      if (mode) local.permissionMode.set(mode.id)
+                      if (mode) {
+                        local.permissionMode.set(mode.id)
+                        // If session is actively streaming, update the SDK and persist
+                        if (params.id && working()) {
+                          platform
+                            .fetch(`${sdk.url}/session/${params.id}/sdk/permission-mode`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ permissionMode: mode.id }),
+                            })
+                            .catch(() => {})
+                        }
+                      }
                     }}
                     class="capitalize"
                     variant="ghost"

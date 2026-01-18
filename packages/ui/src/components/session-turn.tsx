@@ -241,14 +241,14 @@ export function SessionTurn(
     const next = nextPermission()
     if (!next || !next.tool) return emptyPermissionParts
 
-    const message = assistantMessages().findLast((m) => m.id === next.tool!.messageID)
-    if (!message) return emptyPermissionParts
-
-    const parts = data.store.part[message.id] ?? emptyParts
-    for (const part of parts) {
-      if (part?.type !== "tool") continue
-      const tool = part as ToolPart
-      if (tool.callID === next.tool?.callID) return [{ part: tool, message }]
+    // Search by callID across all messages (messageID may be empty)
+    for (const msg of assistantMessages()) {
+      const parts = data.store.part[msg.id] ?? emptyParts
+      for (const part of parts) {
+        if (part?.type !== "tool") continue
+        const tool = part as ToolPart
+        if (tool.callID === next.tool?.callID) return [{ part: tool, message: msg }]
+      }
     }
 
     return emptyPermissionParts

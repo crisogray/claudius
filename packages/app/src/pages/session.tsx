@@ -297,29 +297,22 @@ export default function Page() {
   }, emptyUserMessages)
   const lastUserMessage = createMemo(() => visibleUserMessages().at(-1))
 
-  createEffect(
-    on(
-      () => lastUserMessage()?.id,
-      () => {
-        const msg = lastUserMessage()
-        if (!msg) return
-        if (msg.permissionMode) local.permissionMode.set(msg.permissionMode)
-        if (msg.model) local.model.set(msg.model)
-      },
-    ),
-  )
-
   // Sync UI permission mode when session's permissionMode changes (e.g., after plan approval)
-  // Track time.updated to trigger (solves reconcile in-place issue), compare mode to avoid overriding manual changes
+  // Track time.updated to trigger on reconcile, use explicit state to compare modes reliably
+  let lastSyncedSessionState: { id: string; mode: string } | undefined
   createEffect(
     on(
       () => {
-        const session = sync.session.get(params.id)
-        return { updated: session?.time?.updated, mode: session?.permissionMode }
+        const id = params.id
+        if (!id) return undefined
+        const session = sync.session.get(id)
+        return { id, updated: session?.time?.updated, mode: session?.permissionMode }
       },
-      (curr, prev) => {
-        if (!curr?.mode) return
-        if (curr.mode === prev?.mode) return // Mode didn't actually change
+      (curr) => {
+        if (!curr?.id || !curr?.mode) return
+        // Skip if mode hasn't changed for this session
+        if (lastSyncedSessionState?.id === curr.id && lastSyncedSessionState?.mode === curr.mode) return
+        lastSyncedSessionState = { id: curr.id, mode: curr.mode }
         local.permissionMode.set(curr.mode)
       },
     ),

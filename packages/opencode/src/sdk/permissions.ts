@@ -1,8 +1,10 @@
 import { Agent } from "@/agent/agent"
+import { Bus } from "@/bus"
 import { PermissionNext } from "@/permission/next"
 import { PlanApproval } from "@/plan"
 import { Question } from "@/question"
 import { Session } from "@/session"
+import { MessageV2 } from "@/session/message-v2"
 import { Log } from "@/util/log"
 import type { CanUseTool, PermissionResult } from "@anthropic-ai/claude-agent-sdk"
 
@@ -52,7 +54,7 @@ export namespace SDKPermissions {
 
       // Handle AskUserQuestion specially - route to Question module
       if (toolName === "AskUserQuestion") {
-        return handleAskUserQuestion(sessionID, toolInput, options)
+        return handleAskUserQuestion(sessionID, toolInput, { ...options, toolUseID: options.toolUseID })
       }
 
       // Handle ExitPlanMode specially - route to PlanApproval module
@@ -137,7 +139,7 @@ export namespace SDKPermissions {
   async function handleAskUserQuestion(
     sessionID: string,
     input: Record<string, unknown>,
-    options: { signal: AbortSignal },
+    options: { signal: AbortSignal; toolUseID: string },
   ): Promise<PermissionResult> {
     log.info("handling AskUserQuestion", { sessionID })
 
@@ -179,6 +181,22 @@ export namespace SDKPermissions {
       })
 
       log.info("AskUserQuestion answered", { answers: answersMap })
+
+      // Update the tool part's input with the answers so they're available in view mode
+      // The updatedInput goes to the SDK but isn't stored in our tool part, so we update it directly
+      const messages = await Session.messages({ sessionID, limit: 5 })
+      for (const msg of messages) {
+        const toolPart = msg.parts.find(
+          (p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === options.toolUseID,
+        )
+        if (toolPart && (toolPart.state.status === "pending" || toolPart.state.status === "running")) {
+          const state = toolPart.state as MessageV2.ToolStatePending | MessageV2.ToolStateRunning
+          state.input = { ...state.input, answers: answersMap }
+          await Session.updatePart(toolPart)
+          Bus.publish(MessageV2.Event.PartUpdated, { part: toolPart })
+          break
+        }
+      }
 
       return {
         behavior: "allow",

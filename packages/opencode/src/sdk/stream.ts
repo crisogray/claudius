@@ -9,7 +9,6 @@ import { Todo } from "@/session/todo"
 import { Snapshot } from "@/snapshot"
 import { Log } from "@/util/log"
 import { SDKConvert } from "./convert"
-import { SDK } from "./index"
 
 export namespace SDKStream {
   const log = Log.create({ service: "sdk.stream" })

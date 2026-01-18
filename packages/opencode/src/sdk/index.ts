@@ -186,6 +186,11 @@ export namespace SDK {
     await Session.updateMessage(userMessage)
     await Session.touch(input.sessionID)
 
+    // Persist permission mode to session for UI sync when returning to this session
+    await Session.update(input.sessionID, (draft) => {
+      draft.permissionMode = permissionMode
+    })
+
     // Add parts to the user message
     for (const part of input.parts) {
       if (part.type === "text") {
@@ -394,6 +399,11 @@ export namespace SDK {
       // Cleanup tracking
       currentMessages.delete(sessionID)
     }
+
+    // Also interrupt any child sessions (subagents)
+    for (const child of await Session.children(sessionID)) {
+      await interrupt(child.id)
+    }
   }
 
   /**
@@ -412,8 +422,8 @@ export namespace SDK {
       const toolInput = preInput.tool_input as Record<string, unknown> | undefined
       const filePath = toolInput?.file_path as string | undefined
 
-      // Allow writes to .opencode/plan/*.md files
-      if (filePath?.includes(".opencode/plan/") && filePath.endsWith(".md")) {
+      // Allow writes to .claude/plans/*.md files
+      if (filePath?.includes(".claude/plans/") && filePath.endsWith(".md")) {
         return {
           hookSpecificOutput: {
             hookEventName: "PreToolUse" as const,
@@ -558,6 +568,17 @@ export namespace SDK {
     if (activeQuery) {
       log.info("setting model", { sessionID, model })
       await activeQuery.setModel(model)
+    }
+  }
+
+  /**
+   * Change permission mode mid-session
+   */
+  export async function setPermissionMode(sessionID: string, mode: PermissionMode) {
+    const activeQuery = activeQueries.get(sessionID)
+    if (activeQuery) {
+      log.info("setting permission mode", { sessionID, mode })
+      await activeQuery.setPermissionMode(mode)
     }
   }
 

@@ -23,9 +23,6 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
   const [beforeContent, setBeforeContent] = createSignal("")
   const [afterContent, setAfterContent] = createSignal("")
 
-  // Get current file content from file context (working tree)
-  const currentContent = createMemo(() => file.getContent(props.path))
-
   // Get the git status for this file
   const gitStatus = createMemo((): GitFileStatus | undefined => {
     return git.fileStatuses().get(props.path)
@@ -38,18 +35,51 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
   })
 
   // Fetch the diff contents based on staged/unstaged mode
-  const fetchDiff = async () => {
+  const fetchDiff = async (opts?: { force?: boolean }) => {
     const path = props.path
     if (!path) return
 
-    setLoading(true)
+    // Only show loading on initial/forced fetch
+    if (opts?.force || !beforeContent()) {
+      setLoading(true)
+    }
     setError(null)
 
     try {
+      let newBefore: string
+      let newAfter: string
+
+      // Check if file is no longer in git status (committed/discarded)
+      const status = gitStatus()
+      if (!status && !opts?.force) {
+        // File has no changes - show identical before/after (empty diff)
+        try {
+          const headContent = await git.show(path, "HEAD")
+          if (headContent !== beforeContent() || headContent !== afterContent()) {
+            setBeforeContent(headContent)
+            setAfterContent(headContent)
+          }
+        } catch {
+          // File might not exist in HEAD (new file that was discarded)
+          if ("" !== beforeContent() || "" !== afterContent()) {
+            setBeforeContent("")
+            setAfterContent("")
+          }
+        }
+        setLoading(false)
+        return
+      }
+
+      // Helper to fetch working tree content directly via API
+      const fetchWorkingTreeContent = async (): Promise<string> => {
+        const result = await sdk.client.file.read({ path })
+        return result.data?.content ?? ""
+      }
+
       if (isNewFile()) {
         // New file: before is empty, after is current content
-        setBeforeContent("")
-        setAfterContent(currentContent() ?? "")
+        newBefore = ""
+        newAfter = await fetchWorkingTreeContent()
       } else if (props.staged) {
         // Staged changes: compare HEAD vs staged (index)
         // Before: committed version (HEAD)
@@ -58,12 +88,12 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
           git.show(path, "HEAD"),
           git.show(path, ":"),
         ])
-        setBeforeContent(headContent)
-        setAfterContent(stagedContent)
+        newBefore = headContent
+        newAfter = stagedContent
       } else {
         // Unstaged changes: compare staged/HEAD vs working tree
         // Before: staged version if exists, otherwise HEAD
-        // After: current working tree content
+        // After: current working tree content (fetched directly via API)
         let baseContent: string
         try {
           // Try to get staged content first
@@ -72,8 +102,16 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
           // Fall back to HEAD if not staged
           baseContent = await git.show(path, "HEAD")
         }
-        setBeforeContent(baseContent)
-        setAfterContent(currentContent() ?? "")
+        newBefore = baseContent
+        newAfter = await fetchWorkingTreeContent()
+      }
+
+      // Only update signals if content actually changed (prevents unnecessary re-renders)
+      if (newBefore !== beforeContent()) {
+        setBeforeContent(newBefore)
+      }
+      if (newAfter !== afterContent()) {
+        setAfterContent(newAfter)
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load diff")
@@ -85,37 +123,36 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
   // Initial load and react to path/staged changes
   createEffect(() => {
     const path = props.path
-    const staged = props.staged
+    const _staged = props.staged // Track staged prop for reactivity
     if (!path) return
 
-    // Load the current file content for unstaged diffs
-    if (!staged) {
-      file.load(path)
-    }
-
-    fetchDiff()
+    fetchDiff({ force: true })
   })
 
-  // For unstaged diffs, react to file content changes
+  // React to git status changes (e.g., staging/unstaging)
+  // Track the specific file's status to ensure reactivity
+  // We need to detect TRANSITIONS from "has status" to "no status" without continuous polling
+  let prevHadStatus = false
+
   createEffect(
     on(
-      currentContent,
-      (content) => {
-        if (!props.staged && content !== undefined) {
-          // Update after content directly for unstaged changes
-          setAfterContent(content)
+      () => {
+        const status = gitStatus()
+        const hadStatus = prevHadStatus
+        prevHadStatus = !!status
+
+        if (status) {
+          // File has changes - track status properties
+          return `${status.staged}:${status.status}`
+        } else if (hadStatus) {
+          // Just transitioned from "has status" to "no status" - trigger one fetch
+          return `none:${git.refreshedAt}`
+        } else {
+          // Already had no status - return stable value (no fetch)
+          return "none:stable"
         }
       },
-      { defer: true }
-    )
-  )
-
-  // React to git status changes (e.g., staging/unstaging)
-  createEffect(
-    on(
-      () => git.status,
       () => {
-        // Refetch when git status changes
         fetchDiff()
       },
       { defer: true }
@@ -134,8 +171,7 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
       const changedPath = file.normalize(event.properties.file)
       if (changedPath !== props.path) return
 
-      // Reload the file content
-      file.load(props.path, { force: true })
+      fetchDiff()
     })
 
     onCleanup(stop)
