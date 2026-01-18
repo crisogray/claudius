@@ -263,11 +263,11 @@ export namespace Git {
   }
 
   /**
-   * Discard changes to a file (revert to HEAD)
+   * Discard unstaged changes to a file (revert to index)
    */
   export async function discard(files: string[]): Promise<void> {
     if (files.length === 0) return
-    await $`git checkout HEAD -- ${files}`.cwd(Instance.directory).quiet()
+    await $`git checkout -- ${files}`.cwd(Instance.directory).quiet()
     Bus.publish(Event.StatusUpdated, await status())
   }
 
