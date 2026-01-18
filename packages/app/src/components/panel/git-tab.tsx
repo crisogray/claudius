@@ -85,8 +85,8 @@ function GitFileSection(props: {
                 <GitStatusBadge status={file} />
                 <FileIcon node={{ path: file.path, type: "file" }} class="w-4 h-4" />
                 <span class="flex-1 text-xs flex items-baseline min-w-0 overflow-hidden">
-                  <span class="text-text-strong shrink-0">{file.path.split("/").pop()}</span>
-                  <span class="text-[10px] text-text-weak ml-1 truncate">{file.path.split("/").slice(0, -1).join("/")}</span>
+                  <span class="text-text-strong shrink-0">{file.path.replace(/\/$/, "").split("/").pop()}</span>
+                  <span class="text-[10px] text-text-weak ml-1 truncate">{file.path.replace(/\/$/, "").split("/").slice(0, -1).join("/")}</span>
                 </span>
                 <DiffStats added={file.added} removed={file.removed} />
                 <div class="hidden group-hover:flex items-center gap-1">

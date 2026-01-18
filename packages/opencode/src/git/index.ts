@@ -276,11 +276,7 @@ export namespace Git {
    */
   export async function deleteUntracked(files: string[]): Promise<void> {
     if (files.length === 0) return
-    const cwd = Instance.directory
-    for (const file of files) {
-      const fullPath = `${cwd}/${file}`
-      await $`rm -f ${fullPath}`.quiet()
-    }
+    await $`rm -f -- ${files}`.cwd(Instance.directory).quiet()
     Bus.publish(Event.StatusUpdated, await status())
   }
 

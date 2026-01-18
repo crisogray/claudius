@@ -1010,9 +1010,9 @@ export default function Layout(props: ParentProps) {
     const workspaceEnabled = createMemo(() => layout.sidebar.workspaces(props.project.worktree)())
     const label = (directory: string) => {
       const [data] = globalSync.child(directory)
-      const kind = directory === props.project.worktree ? "local" : "sandbox"
-      const name = data.vcs?.branch ?? getFilename(directory)
-      return kind === "local" ? `base: ${name}` : name
+      const folder = getFilename(directory)
+      const branch = data.vcs?.branch ?? "unknown"
+      return `${folder}: ${branch}`
     }
 
     const getWorkspaceSessions = (directory: string) => {
@@ -1129,9 +1129,9 @@ export default function Layout(props: ParentProps) {
       if (!directory) return
 
       const [workspaceStore] = globalSync.child(directory)
-      const kind = directory === project.worktree ? "local" : "sandbox"
-      const name = workspaceStore.vcs?.branch ?? getFilename(directory)
-      return kind === "local" ? `base: ${name}` : name
+      const folder = getFilename(directory)
+      const branch = workspaceStore.vcs?.branch ?? "unknown"
+      return `${folder}: ${branch}`
     })
 
     return (
@@ -1155,8 +1155,9 @@ export default function Layout(props: ParentProps) {
     )
     const local = createMemo(() => props.directory === props.project.worktree)
     const title = createMemo(() => {
-      const name = workspaceStore.vcs?.branch ?? getFilename(props.directory)
-      return local() ? `base: ${name}` : name
+      const folder = getFilename(props.directory)
+      const branch = workspaceStore.vcs?.branch ?? "unknown"
+      return `${folder}: ${branch}`
     })
     const open = createMemo(() => store.workspaceExpanded[props.directory] ?? true)
     const hasMore = createMemo(() => local() && workspaceStore.session.length < workspaceStore.totalSessions)
