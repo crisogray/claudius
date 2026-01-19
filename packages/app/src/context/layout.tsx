@@ -37,7 +37,7 @@ type SessionView = {
   reviewPanelOpened?: boolean
 }
 
-export type RightPanelTab = "files" | "git" | "search"
+export type RightPanelTab = "todos" | "files" | "git" | "search"
 
 export type LocalProject = Partial<Project> & { worktree: string; expanded: boolean }
 

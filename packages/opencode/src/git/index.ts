@@ -128,35 +128,36 @@ export namespace Git {
         // Untracked: ? path
         const path = line.slice(2)
         untracked.push({ path, status: "untracked", staged: false, added: 0, removed: 0 })
-      } else if (line.startsWith("1") || line.startsWith("2")) {
-        // Changed entry: 1 XY ... path OR 2 XY ... path oldpath
+      } else if (line.startsWith("1")) {
+        // Ordinary changed entry: 1 XY <sub> <mH> <mI> <mW> <hH> <hI> <path>
         const parts = line.split(" ")
         const xy = parts[1]
-        const path = parts.slice(8).join(" ").split("\t")[0]
+        const path = parts.slice(8).join(" ")
 
-        const indexStatus = xy[0] // X = index status
-        const workStatus = xy[1] // Y = worktree status
+        const indexStatus = xy[0]
+        const workStatus = xy[1]
 
-        // Parse staged changes (index)
         if (indexStatus !== ".") {
-          staged.push({
-            path,
-            status: parseStatusChar(indexStatus),
-            staged: true,
-            added: 0, // Will be filled by numstat
-            removed: 0,
-          })
+          staged.push({ path, status: parseStatusChar(indexStatus), staged: true, added: 0, removed: 0 })
         }
-
-        // Parse unstaged changes (worktree)
         if (workStatus !== ".") {
-          unstaged.push({
-            path,
-            status: parseStatusChar(workStatus),
-            staged: false,
-            added: 0,
-            removed: 0,
-          })
+          unstaged.push({ path, status: parseStatusChar(workStatus), staged: false, added: 0, removed: 0 })
+        }
+      } else if (line.startsWith("2")) {
+        // Renamed/copied entry: 2 XY <sub> <mH> <mI> <mW> <hH> <hI> <X><score> <path>\t<origPath>
+        const parts = line.split(" ")
+        const xy = parts[1]
+        const pathPart = parts.slice(9).join(" ")
+        const [path] = pathPart.split("\t")
+
+        const indexStatus = xy[0]
+        const workStatus = xy[1]
+
+        if (indexStatus !== ".") {
+          staged.push({ path, status: parseStatusChar(indexStatus), staged: true, added: 0, removed: 0 })
+        }
+        if (workStatus !== ".") {
+          unstaged.push({ path, status: parseStatusChar(workStatus), staged: false, added: 0, removed: 0 })
         }
       } else if (line.startsWith("u")) {
         // Unmerged entry (conflict)

@@ -301,6 +301,10 @@
   flex-direction: column;
   gap: 8px;
 
+  &[data-panel] {
+    padding: 0;
+  }
+
   [data-slot="message-part-todo-content"] {
     &[data-completed="completed"] {
       text-decoration: line-through;
