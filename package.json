@@ -91,8 +91,7 @@
   ],
   "overrides": {
     "@types/bun": "catalog:",
-    "@types/node": "catalog:",
-    "@tauri-apps/plugin-http": "2.5.4"
+    "@types/node": "catalog:"
   },
   "patchedDependencies": {
     "ghostty-web@0.3.0": "patches/ghostty-web@0.3.0.patch"

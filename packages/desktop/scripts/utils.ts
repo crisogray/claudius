@@ -46,3 +46,12 @@ export async function copyBinaryToSidecarFolder(source: string, target = RUST_TA
 
   console.log(`Copied ${source} to ${dest}`)
 }
+
+export async function copyCLIJsToSidecarFolder(source: string, _target = RUST_TARGET) {
+  await $`mkdir -p src-tauri/sidecars`
+  // cli.js is platform-independent JavaScript - same file for all targets
+  const dest = `src-tauri/sidecars/cli.js`
+  await $`cp ${source} ${dest}`
+
+  console.log(`Copied ${source} to ${dest}`)
+}

@@ -25,6 +25,7 @@
   },
   "bundle": {
     "createUpdaterArtifacts": true,
+    "resources": ["sidecars/cli.js"],
     "icon": [
       "icons/prod/32x32.png",
       "icons/prod/128x128.png",

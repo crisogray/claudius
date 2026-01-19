@@ -1,3 +1,4 @@
+import path from "path"
 import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
 import { Config } from "@/config/config"
@@ -22,6 +23,46 @@ import { Snapshot } from "@/snapshot"
 // Real Claude Agent SDK
 import { query, type Query } from "@anthropic-ai/claude-agent-sdk"
 import type { HookCallback, PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk"
+
+import fs from "fs"
+
+/**
+ * Get path to Claude Code executable for compiled binaries.
+ * When running as a compiled binary (via Bun.build), import.meta.url points to
+ * a virtual filesystem path (/$bunfs/root/...) where cli.js doesn't exist.
+ * We copy cli.js next to the binary during build, so we point to that.
+ */
+function getClaudeCodeExecutablePath(): string | undefined {
+  // When running as a .js script (dev mode), let SDK find it automatically
+  if (process.execPath.endsWith(".js") || process.argv[1]?.endsWith(".ts")) {
+    return undefined
+  }
+
+  const execDir = path.dirname(process.execPath)
+
+  // Check for cli.js next to the executable (standalone binary or Tauri dev)
+  const localCliJs = path.join(execDir, "cli.js")
+  if (fs.existsSync(localCliJs)) {
+    return localCliJs
+  }
+
+  // Check in Tauri app bundle Resources folder (macOS production)
+  // Executable is at Contents/MacOS/*, resources at Contents/Resources/*
+  const resourcesCliJs = path.join(execDir, "..", "Resources", "sidecars", "cli.js")
+  if (fs.existsSync(resourcesCliJs)) {
+    return resourcesCliJs
+  }
+
+  // Check in sidecars folder relative to target/debug (Tauri dev mode)
+  // In dev mode, sidecar runs from target/debug/ but cli.js is in sidecars/
+  const sidecarsFolderCliJs = path.join(execDir, "..", "..", "sidecars", "cli.js")
+  if (fs.existsSync(sidecarsFolderCliJs)) {
+    return sidecarsFolderCliJs
+  }
+
+  // Fallback to local path (will fail with clear error if not found)
+  return localCliJs
+}
 
 /**
  * SDK Permission modes - maps to SDK's permissionMode option
@@ -289,6 +330,7 @@ export namespace SDK {
       options: {
         model: options.model,
         cwd: options.cwd,
+        pathToClaudeCodeExecutable: getClaudeCodeExecutablePath(),
         tools: options.tools,
         mcpServers: options.mcpServers,
         maxThinkingTokens: options.maxThinkingTokens,
@@ -605,6 +647,7 @@ export namespace SDK {
         options: {
           model: modelID,
           cwd: Instance.directory,
+          pathToClaudeCodeExecutable: getClaudeCodeExecutablePath(),
           tools: [], // Empty array disables all tools
           maxTurns: 1,
           systemPrompt: input.systemPrompt, // Can be a plain string

@@ -135,6 +135,12 @@ for (const item of targets) {
     },
   })
 
+  // Copy cli.js from claude-agent-sdk to dist folder (needed for compiled binaries)
+  const cliJsSource = path.resolve(dir, "node_modules/@anthropic-ai/claude-agent-sdk/cli.js")
+  const cliJsDest = `dist/${name}/bin/cli.js`
+  await Bun.write(cliJsDest, Bun.file(cliJsSource))
+  console.log(`copied cli.js to ${cliJsDest}`)
+
   await Bun.file(`dist/${name}/package.json`).write(
     JSON.stringify(
       {

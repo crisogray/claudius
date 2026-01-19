@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { $ } from "bun"
 
-import { copyBinaryToSidecarFolder, getCurrentSidecar } from "./utils"
+import { copyBinaryToSidecarFolder, copyCLIJsToSidecarFolder, getCurrentSidecar } from "./utils"
 
 const sidecarConfig = getCurrentSidecar()
 
@@ -13,3 +13,4 @@ await $`gh run download ${Bun.env.GITHUB_RUN_ID} -n opencode-cli`.cwd(dir)
 await copyBinaryToSidecarFolder(
   `${dir}/${sidecarConfig.ocBinary}/bin/opencode${process.platform === "win32" ? ".exe" : ""}`,
 )
+await copyCLIJsToSidecarFolder(`${dir}/${sidecarConfig.ocBinary}/bin/cli.js`)
