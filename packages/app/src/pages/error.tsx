@@ -239,11 +239,11 @@ export const ErrorPage: Component<ErrorPageProps> = (props) => {
         </div>
         <div class="flex flex-col items-center gap-2">
           <div class="flex items-center justify-center gap-1">
-            Please report this error to the OpenCode team
+            Please report this error to the Claudius team
             <button
               type="button"
               class="flex items-center text-text-interactive-base gap-1"
-              onClick={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+              onClick={() => platform.openLink("https://claudius.to/desktop-feedback")}
             >
               <div>on Discord</div>
               <Icon name="discord" class="text-text-interactive-base" />

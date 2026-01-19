@@ -34,7 +34,7 @@ jobs:
         run: bun install
 
       - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
+        run: curl -fsSL https://raw.githubusercontent.com/crisogray/claudius/main/install | bash
 
       - name: Build prompt
         env:
@@ -54,7 +54,6 @@ jobs:
 
       - name: Check for duplicate PRs
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |

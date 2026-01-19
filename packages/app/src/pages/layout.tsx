@@ -142,7 +142,7 @@ export default function Layout(props: ParentProps) {
           persistent: true,
           icon: "download",
           title: "Update available",
-          description: `A new version of OpenCode (${version}) is now available to install.`,
+          description: `A new version of Claudius (${version}) is now available to install.`,
           actions: [
             {
               label: "Install and restart",
@@ -852,7 +852,7 @@ export default function Layout(props: ParentProps) {
         <div class="size-full rounded-sm overflow-clip">
           <Avatar
             fallback={name()}
-            src={props.project.id === opencode ? "https://opencode.ai/favicon.svg" : props.project.icon?.url}
+            src={props.project.id === opencode ? "https://claudius.to/favicon.svg" : props.project.icon?.url}
             {...getAvatarColors(props.project.icon?.color)}
             class="size-full rounded-sm"
             style={
@@ -1381,7 +1381,7 @@ export default function Layout(props: ParentProps) {
                 icon="help"
                 variant="ghost"
                 size="large"
-                onClick={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+                onClick={() => platform.openLink("https://claudius.to/desktop-feedback")}
               />
             </Tooltip>
           </div>
@@ -1497,13 +1497,12 @@ export default function Layout(props: ParentProps) {
                 </>
               )}
             </Show>
-            <Show when={providers.all().length > 0 && providers.paid().length === 0}>
+            <Show when={providers.all().length > 0 && providers.connected().length === 0}>
               <div class="shrink-0 px-2 py-3 border-t border-border-weak-base">
                 <div class="rounded-md bg-background-base shadow-xs-border-base">
                   <div class="p-3 flex flex-col gap-2">
                     <div class="text-12-medium text-text-strong">Getting started</div>
-                    <div class="text-text-base">OpenCode includes free models so you can start immediately.</div>
-                    <div class="text-text-base">Connect any provider to use models, inc. Claude, GPT, Gemini etc.</div>
+                    <div class="text-text-base">Connect your Anthropic account to use Claude models.</div>
                   </div>
                   <Button
                     class="flex w-full text-left justify-start text-12-medium text-text-strong stroke-[1.5px] rounded-md rounded-t-none shadow-none border-t border-border-weak-base px-3"
@@ -1511,7 +1510,7 @@ export default function Layout(props: ParentProps) {
                     icon="plus"
                     onClick={connectProvider}
                   >
-                    Connect provider
+                    Connect Anthropic
                   </Button>
                 </div>
               </div>

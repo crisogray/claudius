@@ -125,7 +125,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       It combines a TypeScript/JavaScript core with a Go-based TUI
       to provide an interactive AI coding experience.
     '';
-    homepage = "https://github.com/anomalyco/opencode";
+    homepage = "https://github.com/crisogray/claudius";
     license = lib.licenses.mit;
     platforms = [
       "aarch64-linux"
