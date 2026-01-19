@@ -103,15 +103,12 @@ Add to your [Avante.nvim](https://github.com/yetone/avante.nvim) configuration:
 
 If you need to pass environment variables:
 
-```lua {6-8}
+```lua
 {
   acp_providers = {
     ["opencode"] = {
       command = "opencode",
       args = { "acp" },
-      env = {
-        OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY")
-      }
     }
   }
 }
@@ -138,7 +135,7 @@ require("codecompanion").setup({
 
 This config sets up CodeCompanion to use OpenCode as the ACP agent for chat.
 
-If you need to pass environment variables (like `OPENCODE_API_KEY`), refer to [Configuring Adapters: Environment Variables](https://codecompanion.olimorris.dev/configuration/adapters#environment-variables-setting-an-api-key) in the CodeCompanion.nvim documentation for full details.
+If you need to pass environment variables for your AI provider, refer to [Configuring Adapters: Environment Variables](https://codecompanion.olimorris.dev/configuration/adapters#environment-variables-setting-an-api-key) in the CodeCompanion.nvim documentation for full details.
 
 ## Support
 

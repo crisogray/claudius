@@ -19,11 +19,10 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
+        run: curl -fsSL https://raw.githubusercontent.com/crisogray/claudius/main/install | bash
 
       - name: Check for duplicate issues
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENCODE_PERMISSION: |
             {

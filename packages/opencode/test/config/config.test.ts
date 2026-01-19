@@ -24,7 +24,7 @@ test("loads JSON config file", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           model: "test/model",
           username: "testuser",
         }),
@@ -48,7 +48,7 @@ test("loads JSONC config file", async () => {
         path.join(dir, "opencode.jsonc"),
         `{
         // This is a comment
-        "$schema": "https://opencode.ai/config.json",
+        "$schema": "",
         "model": "test/model",
         "username": "testuser"
       }`,
@@ -71,7 +71,7 @@ test("merges multiple config files with correct precedence", async () => {
       await Bun.write(
         path.join(dir, "opencode.jsonc"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           model: "base",
           username: "base",
         }),
@@ -79,7 +79,7 @@ test("merges multiple config files with correct precedence", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           model: "override",
         }),
       )
@@ -105,7 +105,7 @@ test("handles environment variable substitution", async () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "",
             theme: "{env:TEST_VAR}",
           }),
         )
@@ -134,7 +134,7 @@ test("handles file inclusion substitution", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           theme: "{file:included.txt}",
         }),
       )
@@ -155,7 +155,7 @@ test("validates config schema and throws on invalid fields", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           invalid_field: "should cause error",
         }),
       )
@@ -190,7 +190,7 @@ test("handles agent configuration", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test_agent: {
               model: "test/model",
@@ -223,7 +223,7 @@ test("handles command configuration", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           command: {
             test_command: {
               template: "test template",
@@ -254,7 +254,7 @@ test("migrates autoshare to share field", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           autoshare: true,
         }),
       )
@@ -276,7 +276,7 @@ test("migrates mode field to agent field", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mode: {
             test_mode: {
               model: "test/model",
@@ -529,7 +529,7 @@ test("resolves scoped npm plugins in config", async () => {
 
       await Bun.write(
         path.join(dir, "opencode.json"),
-        JSON.stringify({ $schema: "https://opencode.ai/config.json", plugin: ["@scope/plugin"] }, null, 2),
+        JSON.stringify({ $schema: "", plugin: ["@scope/plugin"] }, null, 2),
       )
     },
   })
@@ -564,7 +564,7 @@ test("merges plugin arrays from global and local configs", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           plugin: ["global-plugin-1", "global-plugin-2"],
         }),
       )
@@ -573,7 +573,7 @@ test("merges plugin arrays from global and local configs", async () => {
       await Bun.write(
         path.join(opencodeDir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           plugin: ["local-plugin-1"],
         }),
       )
@@ -640,7 +640,7 @@ test("merges instructions arrays from global and local configs", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           instructions: ["global-instructions.md", "shared-rules.md"],
         }),
       )
@@ -648,7 +648,7 @@ test("merges instructions arrays from global and local configs", async () => {
       await Bun.write(
         path.join(opencodeDir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           instructions: ["local-instructions.md"],
         }),
       )
@@ -679,7 +679,7 @@ test("deduplicates duplicate instructions from global and local configs", async 
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           instructions: ["duplicate.md", "global-only.md"],
         }),
       )
@@ -687,7 +687,7 @@ test("deduplicates duplicate instructions from global and local configs", async 
       await Bun.write(
         path.join(opencodeDir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           instructions: ["duplicate.md", "local-only.md"],
         }),
       )
@@ -723,7 +723,7 @@ test("deduplicates duplicate plugins from global and local configs", async () =>
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           plugin: ["duplicate-plugin", "global-plugin-1"],
         }),
       )
@@ -732,7 +732,7 @@ test("deduplicates duplicate plugins from global and local configs", async () =>
       await Bun.write(
         path.join(opencodeDir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           plugin: ["duplicate-plugin", "local-plugin-1"],
         }),
       )
@@ -771,7 +771,7 @@ test("migrates legacy tools config to permissions - allow", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -802,7 +802,7 @@ test("migrates legacy tools config to permissions - deny", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -833,7 +833,7 @@ test("migrates legacy write tool to edit permission", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -862,7 +862,7 @@ test("migrates legacy edit tool to edit permission", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -891,7 +891,7 @@ test("migrates legacy patch tool to edit permission", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -920,7 +920,7 @@ test("migrates legacy multiedit tool to edit permission", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -949,7 +949,7 @@ test("migrates mixed legacy tools config", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               tools: {
@@ -984,7 +984,7 @@ test("merges legacy tools with existing permission config", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           agent: {
             test: {
               permission: {
@@ -1017,7 +1017,7 @@ test("permission config preserves key order", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           permission: {
             "*": "deny",
             edit: "ask",
@@ -1065,7 +1065,7 @@ test("project config can override MCP server enabled status", async () => {
       await Bun.write(
         path.join(dir, "opencode.jsonc"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             jira: {
               type: "remote",
@@ -1084,7 +1084,7 @@ test("project config can override MCP server enabled status", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             jira: {
               type: "remote",
@@ -1123,7 +1123,7 @@ test("MCP config deep merges preserving base config properties", async () => {
       await Bun.write(
         path.join(dir, "opencode.jsonc"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             myserver: {
               type: "remote",
@@ -1140,7 +1140,7 @@ test("MCP config deep merges preserving base config properties", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             myserver: {
               type: "remote",
@@ -1175,7 +1175,7 @@ test("local .opencode config can override MCP from project config", async () => 
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             docs: {
               type: "remote",
@@ -1191,7 +1191,7 @@ test("local .opencode config can override MCP from project config", async () => 
       await Bun.write(
         path.join(opencodeDir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "",
           mcp: {
             docs: {
               type: "remote",
@@ -1259,7 +1259,7 @@ test("project config overrides remote well-known config", async () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "",
             mcp: {
               jira: {
                 type: "remote",
@@ -1352,7 +1352,7 @@ describe("deduplicatePlugins", () => {
         await Bun.write(
           path.join(dir, "opencode.json"),
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "",
             plugin: ["my-plugin@1.0.0"],
           }),
         )

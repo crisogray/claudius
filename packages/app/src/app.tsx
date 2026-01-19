@@ -76,7 +76,7 @@ export function AppInterface(props: { defaultUrl?: string }) {
     if (param) return param
 
     // Hosted version connects to localhost
-    if (location.hostname.includes("opencode.ai")) return "http://localhost:4096"
+    if (location.hostname.includes("claudius.to")) return "http://localhost:4096"
 
     // Development mode
     if (import.meta.env.DEV)

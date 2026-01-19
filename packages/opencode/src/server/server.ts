@@ -122,7 +122,7 @@ export namespace Server {
               if (input.startsWith("http://127.0.0.1:")) return input
               if (input === "tauri://localhost" || input === "http://tauri.localhost") return input
 
-              // *.opencode.ai (https only, adjust if needed)
+              // *.claudius.to (https only, adjust if needed)
               if (/^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/.test(input)) {
                 return input
               }
@@ -3174,11 +3174,11 @@ export namespace Server {
         .route("/", sdkRoutes)
         .all("/*", async (c) => {
           const path = c.req.path
-          const response = await proxy(`https://app.opencode.ai${path}`, {
+          const response = await proxy(`https://app.claudius.to${path}`, {
             ...c.req,
             headers: {
               ...c.req.raw.headers,
-              host: "app.opencode.ai",
+              host: "app.claudius.to",
             },
           })
           response.headers.set(

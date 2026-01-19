@@ -118,7 +118,7 @@ opencode auth [command]
 
 #### login
 
-OpenCode is powered by the provider list at [Models.dev](https://models.dev), so you can use `opencode auth login` to configure API keys for any provider you'd like to use. This is stored in `~/.local/share/opencode/auth.json`.
+Use `opencode auth login` to configure your Anthropic API key. This is stored in `~/.local/share/opencode/auth.json`.
 
 ```bash
 opencode auth login
@@ -297,7 +297,7 @@ opencode models anthropic
 
 | Flag        | Description                                                  |
 | ----------- | ------------------------------------------------------------ |
-| `--refresh` | Refresh the models cache from models.dev                     |
+| `--refresh` | Refresh the models cache                                     |
 | `--verbose` | Use more verbose model output (includes metadata like costs) |
 
 Use the `--refresh` flag to update the cached model list. This is useful when new models have been added to a provider and you want to see them in OpenCode.
@@ -437,11 +437,10 @@ Import session data from a JSON file or OpenCode share URL.
 opencode import <file>
 ```
 
-You can import from a local file or an OpenCode share URL.
+You can import from a local session file.
 
 ```bash
 opencode import session.json
-opencode import https://opncd.ai/s/abc123
 ```
 
 ---

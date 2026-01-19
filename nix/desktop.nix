@@ -136,7 +136,7 @@ rustPlatform.buildRustPackage rec {
 
   meta = with lib; {
     description = "OpenCode Desktop App";
-    homepage = "https://opencode.ai";
+    homepage = "https://claudius.to";
     license = licenses.mit;
     maintainers = with maintainers; [ ];
     mainProgram = "opencode-desktop";

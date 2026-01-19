@@ -40,7 +40,7 @@ import { getDirectory, getFilename } from "@opencode-ai/util/path"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { ImagePreview } from "@opencode-ai/ui/image-preview"
 import { ModelSelectorPopover } from "@/components/dialog-select-model"
-import { DialogSelectModelUnpaid } from "@/components/dialog-select-model-unpaid"
+import { DialogConnectProvider } from "@/components/dialog-connect-provider"
 import { useProviders } from "@/hooks/use-providers"
 import { useCommand } from "@/context/command"
 import { Persist, persisted } from "@/utils/persist"
@@ -1592,11 +1592,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   />
                 </TooltipKeybind>
                 <Show
-                  when={providers.paid().length > 0}
+                  when={providers.connected().length > 0}
                   fallback={
-                    <TooltipKeybind placement="top" title="Choose model" keybind={command.keybind("model.choose")}>
-                      <Button as="div" variant="ghost" onClick={() => dialog.show(() => <DialogSelectModelUnpaid />)}>
-                        {local.model.current()?.name ?? "Select model"}
+                    <TooltipKeybind placement="top" title="Connect Anthropic" keybind={command.keybind("model.choose")}>
+                      <Button as="div" variant="ghost" onClick={() => dialog.show(() => <DialogConnectProvider provider="anthropic" />)}>
+                        Connect Anthropic
                         <Icon name="chevron-down" size="small" />
                       </Button>
                     </TooltipKeybind>

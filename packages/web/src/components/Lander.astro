@@ -24,7 +24,7 @@ const discord = config.social.filter(s => s.icon === 'discord')[0];
 
 const command = "curl -fsSL"
 const protocol = "https://"
-const url = "opencode.ai/install"
+const url = "raw.githubusercontent.com/crisogray/claudius/main/install"
 const bash = "| bash"
 
 let darkImage: ImageMetadata | undefined;
@@ -76,9 +76,8 @@ if (image) {
         <li><b>Native TUI</b>: A responsive, native, themeable terminal UI.</li>
         <li><b>LSP enabled</b>: Automatically loads the right LSPs for the LLM.</li>
         <li><b>Multi-session</b>: Start multiple agents in parallel on the same project.</li>
-        <li><b>Shareable links</b>: Share a link to any sessions for reference or to debug.</li>
         <li><b>Claude Pro</b>: Log in with Anthropic to use your Claude Pro or Max account.</li>
-        <li><b>Use any model</b>: Supports 75+ LLM providers through <a href="https://models.dev">Models.dev</a>, including local models.</li>
+        <li><b>Claude models</b>: Supports all Claude models including Opus 4.5, Sonnet, and Haiku.</li>
       </ul>
     </section>
 
@@ -133,9 +132,9 @@ if (image) {
       </div>
       <div class="col4">
         <h3>Mise</h3>
-        <button class="command" data-command="mise use -g github:anomalyco/opencode">
+        <button class="command" data-command="mise use -g github:crisogray/claudius">
           <code>
-            <span>mise use -g</span> <span class="highlight">github:anomalyco/opencode</span>
+            <span>mise use -g</span> <span class="highlight">github:crisogray/claudius</span>
           </code>
           <span class="copy">
             <CopyIcon />

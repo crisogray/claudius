@@ -52,7 +52,8 @@ Use the `command` option in your OpenCode [config](/docs/config):
 
 ```json title="opencode.jsonc" {4-12}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://claudius.to/config.json",
+  
   "command": {
     // This becomes the name of the command
     "test": {
@@ -224,6 +225,7 @@ The `template` option defines the prompt that will be sent to the LLM when the c
 
 ```json title="opencode.json"
 {
+  "$schema": "https://claudius.to/config.json",
   "command": {
     "test": {
       "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes."
@@ -242,6 +244,7 @@ Use the `description` option to provide a brief description of what the command 
 
 ```json title="opencode.json"
 {
+  "$schema": "https://claudius.to/config.json",
   "command": {
     "test": {
       "description": "Run tests with coverage"
@@ -262,6 +265,7 @@ To disable this behavior, set `subtask` to `false`.
 
 ```json title="opencode.json"
 {
+  "$schema": "https://claudius.to/config.json",
   "command": {
     "review": {
       "agent": "plan"
@@ -282,6 +286,7 @@ even if `mode` is set to `primary` on the [agent](/docs/agents) configuration.
 
 ```json title="opencode.json"
 {
+  "$schema": "https://claudius.to/config.json",
   "command": {
     "analyze": {
       "subtask": true
@@ -300,6 +305,7 @@ Use the `model` config to override the default model for this command.
 
 ```json title="opencode.json"
 {
+  "$schema": "https://claudius.to/config.json",
   "command": {
     "analyze": {
       "model": "anthropic/claude-3-5-sonnet-20241022"

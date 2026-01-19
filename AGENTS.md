@@ -1,6 +1,6 @@
 # ADE: Agent Development Environment
 
-Fork of [OpenCode](https://github.com/anomalyco/opencode) focused on desktop app development.
+Fork of [OpenCode](https://github.com/crisogray/claudius) focused on desktop app development.
 
 ## Architecture
 
@@ -261,7 +261,7 @@ cp packages/opencode/dist/opencode-darwin-arm64/bin/opencode \
 ## Upstream Sync
 
 ```bash
-git remote add upstream https://github.com/anomalyco/opencode.git
+git remote add upstream https://github.com/crisogray/claudius.git
 git fetch upstream
 git cherry-pick <commit>  # For specific fixes
 ```

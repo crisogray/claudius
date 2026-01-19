@@ -6,19 +6,11 @@ import { parseArgs } from "util"
 
 export const team = [
   "actions-user",
-  "opencode",
-  "rekram1-node",
-  "thdxr",
-  "kommander",
-  "jayair",
-  "fwang",
-  "adamdotdevin",
-  "iamdavidhill",
-  "opencode-agent[bot]",
+  "crisogray",
 ]
 
 export async function getLatestRelease() {
-  return fetch("https://api.github.com/repos/anomalyco/opencode/releases/latest")
+  return fetch("https://api.github.com/repos/crisogray/claudius/releases/latest")
     .then((res) => {
       if (!res.ok) throw new Error(res.statusText)
       return res.json()
@@ -39,7 +31,7 @@ export async function getCommits(from: string, to: string): Promise<Commit[]> {
 
   // Get commit data with GitHub usernames from the API
   const compare =
-    await $`gh api "/repos/anomalyco/opencode/compare/${fromRef}...${toRef}" --jq '.commits[] | {sha: .sha, login: .author.login, message: .commit.message}'`.text()
+    await $`gh api "/repos/crisogray/claudius/compare/${fromRef}...${toRef}" --jq '.commits[] | {sha: .sha, login: .author.login, message: .commit.message}'`.text()
 
   const commitData = new Map<string, { login: string | null; message: string }>()
   for (const line of compare.split("\n").filter(Boolean)) {
@@ -49,7 +41,7 @@ export async function getCommits(from: string, to: string): Promise<Commit[]> {
 
   // Get commits that touch the relevant packages
   const log =
-    await $`git log ${fromRef}..${toRef} --oneline --format="%H" -- packages/opencode packages/sdk packages/plugin packages/desktop packages/app sdks/vscode packages/extensions github`.text()
+    await $`git log ${fromRef}..${toRef} --oneline --format="%H" -- packages/opencode packages/sdk packages/plugin packages/desktop packages/app sdks/vscode packages/extensions`.text()
   const hashes = log.split("\n").filter(Boolean)
 
   const commits: Commit[] = []
@@ -73,7 +65,6 @@ export async function getCommits(from: string, to: string): Promise<Commit[]> {
       else if (file.startsWith("packages/plugin/")) areas.add("plugin")
       else if (file.startsWith("packages/extensions/")) areas.add("extensions/zed")
       else if (file.startsWith("sdks/vscode/")) areas.add("extensions/vscode")
-      else if (file.startsWith("github/")) areas.add("github")
     }
 
     if (areas.size === 0) continue
@@ -120,12 +111,11 @@ const sections = {
   plugin: "SDK",
   "extensions/zed": "Extensions",
   "extensions/vscode": "Extensions",
-  github: "Extensions",
 } as const
 
 function getSection(areas: Set<string>): string {
   // Priority order for multi-area commits
-  const priority = ["core", "tui", "app", "tauri", "sdk", "plugin", "extensions/zed", "extensions/vscode", "github"]
+  const priority = ["core", "tui", "app", "tauri", "sdk", "plugin", "extensions/zed", "extensions/vscode"]
   for (const area of priority) {
     if (areas.has(area)) return sections[area as keyof typeof sections]
   }
@@ -195,7 +185,7 @@ export async function getContributors(from: string, to: string) {
   const fromRef = from.startsWith("v") ? from : `v${from}`
   const toRef = to === "HEAD" ? to : to.startsWith("v") ? to : `v${to}`
   const compare =
-    await $`gh api "/repos/anomalyco/opencode/compare/${fromRef}...${toRef}" --jq '.commits[] | {login: .author.login, message: .commit.message}'`.text()
+    await $`gh api "/repos/crisogray/claudius/compare/${fromRef}...${toRef}" --jq '.commits[] | {login: .author.login, message: .commit.message}'`.text()
   const contributors = new Map<string, string[]>()
 
   for (const line of compare.split("\n").filter(Boolean)) {
