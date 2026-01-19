@@ -2814,6 +2814,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "tokio",
+ "uuid",
  "webkit2gtk",
 ]
 

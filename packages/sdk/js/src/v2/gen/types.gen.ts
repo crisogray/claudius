@@ -4,6 +4,20 @@ export type ClientOptions = {
   baseUrl: `${string}://${string}` | (string & {})
 }
 
+export type EventInstallationUpdated = {
+  type: "installation.updated"
+  properties: {
+    version: string
+  }
+}
+
+export type EventInstallationUpdateAvailable = {
+  type: "installation.update-available"
+  properties: {
+    version: string
+  }
+}
+
 export type Project = {
   id: string
   worktree: string
@@ -30,20 +44,6 @@ export type EventServerInstanceDisposed = {
   type: "server.instance.disposed"
   properties: {
     directory: string
-  }
-}
-
-export type EventInstallationUpdated = {
-  type: "installation.updated"
-  properties: {
-    version: string
-  }
-}
-
-export type EventInstallationUpdateAvailable = {
-  type: "installation.update-available"
-  properties: {
-    version: string
   }
 }
 
@@ -775,7 +775,7 @@ export type Session = {
     model?: string
     tools?: Array<string>
     modelUsage?: {
-      [modelName: string]: {
+      [key: string]: {
         inputTokens: number
         outputTokens: number
         cacheReadInputTokens: number
@@ -946,10 +946,10 @@ export type EventGlobalDisposed = {
 }
 
 export type Event =
-  | EventProjectUpdated
-  | EventServerInstanceDisposed
   | EventInstallationUpdated
   | EventInstallationUpdateAvailable
+  | EventProjectUpdated
+  | EventServerInstanceDisposed
   | EventLspClientDiagnostics
   | EventLspUpdated
   | EventMessageUpdated
@@ -4222,6 +4222,31 @@ export type GitDiscardResponses = {
 }
 
 export type GitDiscardResponse = GitDiscardResponses[keyof GitDiscardResponses]
+
+export type GitDeleteUntrackedData = {
+  body?: {
+    /**
+     * Array of untracked file paths to delete
+     */
+    files: Array<string>
+  }
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/git/delete-untracked"
+}
+
+export type GitDeleteUntrackedResponses = {
+  /**
+   * Files deleted successfully
+   */
+  200: {
+    ok: boolean
+  }
+}
+
+export type GitDeleteUntrackedResponse = GitDeleteUntrackedResponses[keyof GitDeleteUntrackedResponses]
 
 export type GitCommitData = {
   body?: {

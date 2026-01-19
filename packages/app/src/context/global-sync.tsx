@@ -196,6 +196,7 @@ function createGlobalSync() {
     if (!cache) return
     const sdk = createOpencodeClient({
       baseUrl: globalSDK.url,
+      fetch: platform.fetch,
       directory,
       throwOnError: true,
     })
@@ -549,6 +550,7 @@ function createGlobalSync() {
       case "lsp.updated": {
         const sdk = createOpencodeClient({
           baseUrl: globalSDK.url,
+          fetch: platform.fetch,
           directory,
           throwOnError: true,
         })

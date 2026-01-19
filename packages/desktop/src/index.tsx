@@ -13,7 +13,7 @@ import { AsyncStorage } from "@solid-primitives/storage"
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http"
 import { Store } from "@tauri-apps/plugin-store"
 import { Logo } from "@opencode-ai/ui/logo"
-import { createSignal, Show, Accessor, JSX, createResource, onMount, onCleanup, Suspense } from "solid-js"
+import { createSignal, Show, Accessor, JSX, createResource, onMount, onCleanup } from "solid-js"
 
 import { UPDATER_ENABLED } from "./updater"
 import { createMenu } from "./menu"
@@ -336,18 +336,16 @@ render(() => {
   )
 }, root!)
 
+type ServerReadyData = { url: string; password: string | null }
+
 // Gate component that waits for the server to be ready
-function ServerGate(props: { children: (data: Accessor<{ url: string; password: string | null }>) => JSX.Element }) {
-  const [data] = createResource(async () => {
-    const url = await invoke<string>("ensure_server_ready")
-    const password = await invoke<string | null>("get_server_password").catch(() => null)
-    return { url, password }
-  })
+function ServerGate(props: { children: (data: Accessor<ServerReadyData>) => JSX.Element }) {
+  const [serverData] = createResource<ServerReadyData>(() => invoke("ensure_server_ready"))
 
   return (
     // Not using suspense as not all components are compatible with it (undefined refs)
     <Show
-      when={data.state !== "pending" && data()}
+      when={serverData.state !== "pending" && serverData()}
       fallback={
         <div class="h-screen w-screen flex flex-col items-center justify-center bg-background-base">
           <Logo class="w-xl opacity-12 animate-pulse" />
@@ -355,7 +353,7 @@ function ServerGate(props: { children: (data: Accessor<{ url: string; password: 
         </div>
       }
     >
-      {props.children(() => data()!)}
+      {(data) => props.children(data)}
     </Show>
   )
 }

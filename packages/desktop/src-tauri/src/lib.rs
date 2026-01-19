@@ -1,35 +1,42 @@
 mod cli;
 mod window_customizer;
 
-use cli::{get_config, get_sidecar_path, get_user_shell, install_cli, sync_cli};
+use cli::{install_cli, sync_cli};
 use futures::FutureExt;
+use futures::future;
 use std::{
     collections::VecDeque,
     net::TcpListener,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
-use tauri::{AppHandle, LogicalSize, Manager, RunEvent, State, WebviewWindowBuilder, path::BaseDirectory};
+use tauri::{AppHandle, LogicalSize, Manager, RunEvent, State, WebviewWindowBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogResult};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
-use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
+use tokio::sync::oneshot;
 
 use crate::window_customizer::PinchZoomDisablePlugin;
 
 const SETTINGS_STORE: &str = "opencode.settings.dat";
 const DEFAULT_SERVER_URL_KEY: &str = "defaultServerUrl";
 
+#[derive(Clone, serde::Serialize)]
+struct ServerReadyData {
+    url: String,
+    password: Option<String>,
+}
+
 #[derive(Clone)]
 struct ServerState {
     child: Arc<Mutex<Option<CommandChild>>>,
-    status: futures::future::Shared<tokio::sync::oneshot::Receiver<Result<String, String>>>,
+    status: future::Shared<oneshot::Receiver<Result<ServerReadyData, String>>>,
 }
 
 impl ServerState {
     pub fn new(
         child: Option<CommandChild>,
-        status: tokio::sync::oneshot::Receiver<Result<String, String>>,
+        status: oneshot::Receiver<Result<ServerReadyData, String>>,
     ) -> Self {
         Self {
             child: Arc::new(Mutex::new(child)),
@@ -81,7 +88,7 @@ async fn get_logs(app: AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn ensure_server_ready(state: State<'_, ServerState>) -> Result<String, String> {
+async fn ensure_server_ready(state: State<'_, ServerState>) -> Result<ServerReadyData, String> {
     state
         .status
         .clone()
@@ -90,7 +97,7 @@ async fn ensure_server_ready(state: State<'_, ServerState>) -> Result<String, St
 }
 
 #[tauri::command]
-async fn get_default_server_url(app: AppHandle) -> Result<Option<String>, String> {
+fn get_default_server_url(app: AppHandle) -> Result<Option<String>, String> {
     let store = app
         .store(SETTINGS_STORE)
         .map_err(|e| format!("Failed to open settings store: {}", e))?;
@@ -138,43 +145,16 @@ fn get_sidecar_port() -> u32 {
         }) as u32
 }
 
-fn spawn_sidecar(app: &AppHandle, port: u32) -> CommandChild {
+fn spawn_sidecar(app: &AppHandle, port: u32, password: &str) -> CommandChild {
     let log_state = app.state::<LogState>();
     let log_state_clone = log_state.inner().clone();
 
-    let state_dir = app
-        .path()
-        .resolve("", BaseDirectory::AppLocalData)
-        .expect("Failed to resolve app local data dir");
+    println!("spawning sidecar on port {port}");
 
-    #[cfg(target_os = "windows")]
-    let (mut rx, child) = app
-        .shell()
-        .sidecar("opencode-cli")
-        .unwrap()
-        .env("OPENCODE_CLIENT", "desktop")
-        .env("XDG_STATE_HOME", &state_dir)
-        .args(["serve", &format!("--port={port}")])
+    let (mut rx, child) = cli::create_command(app, format!("serve --port {port}").as_str())
+        .env("OPENCODE_SERVER_PASSWORD", password)
         .spawn()
         .expect("Failed to spawn opencode");
-
-    #[cfg(not(target_os = "windows"))]
-    let (mut rx, child) = {
-        let sidecar = get_sidecar_path(app);
-        let shell = get_user_shell();
-        app.shell()
-            .command(&shell)
-            .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
-            .env("OPENCODE_CLIENT", "desktop")
-            .env("XDG_STATE_HOME", &state_dir)
-            .args([
-                "-il",
-                "-c",
-                &format!("\"{}\" serve --port={}", sidecar.display(), port),
-            ])
-            .spawn()
-            .expect("Failed to spawn opencode")
-    };
 
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
@@ -213,7 +193,7 @@ fn spawn_sidecar(app: &AppHandle, port: u32) -> CommandChild {
     child
 }
 
-async fn check_server_health(url: &str) -> bool {
+async fn check_server_health(url: &str, password: Option<&str>) -> bool {
     let health_url = format!("{}/global/health", url.trim_end_matches('/'));
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(3))
@@ -223,101 +203,16 @@ async fn check_server_health(url: &str) -> bool {
         return false;
     };
 
-    client
-        .get(&health_url)
-        .send()
+    let mut req = client.get(&health_url);
+
+    if let Some(password) = password {
+        req = req.basic_auth("opencode", Some(password));
+    }
+
+    req.send()
         .await
         .map(|r| r.status().is_success())
         .unwrap_or(false)
-}
-
-fn get_server_url_from_config(app: &AppHandle) -> Option<String> {
-    let sidecar = get_sidecar_path(app);
-    let config = get_config(&sidecar)?;
-    let server = config.server?;
-
-    let hostname = server.hostname.unwrap_or_else(|| "127.0.0.1".to_string());
-    let port = server.port?;
-
-    Some(format!("http://{}:{}", hostname, port))
-}
-
-fn get_stored_server_url(app: &AppHandle) -> Option<String> {
-    let store = app.store(SETTINGS_STORE).ok()?;
-    let value = store.get(DEFAULT_SERVER_URL_KEY)?;
-    value.as_str().map(String::from)
-}
-
-async fn spawn_local_server(app: &AppHandle, port: u32) -> Result<(Option<CommandChild>, String), String> {
-    let url = format!("http://127.0.0.1:{}", port);
-
-    // Check if server is already running
-    if check_server_health(&url).await {
-        return Ok((None, url));
-    }
-
-    let child = spawn_sidecar(app, port);
-    let timestamp = Instant::now();
-
-    loop {
-        if timestamp.elapsed() > Duration::from_secs(7) {
-            return Err(format!(
-                "Failed to spawn OpenCode Server. Logs:\n{}",
-                get_logs(app.clone()).await.unwrap_or_default()
-            ));
-        }
-
-        tokio::time::sleep(Duration::from_millis(10)).await;
-
-        if check_server_health(&url).await {
-            println!("Server ready after {:?}", timestamp.elapsed());
-            return Ok((Some(child), url));
-        }
-    }
-}
-
-async fn setup_server_connection(app: &AppHandle, port: u32) -> Result<(Option<CommandChild>, String), String> {
-    // Priority 1: Check for stored default server URL (user preference)
-    if let Some(url) = get_stored_server_url(app) {
-        println!("Using stored default server URL: {}", url);
-
-        loop {
-            if check_server_health(&url).await {
-                println!("Connected to configured server: {}", url);
-                return Ok((None, url));
-            }
-
-            let res = app
-                .dialog()
-                .message(format!(
-                    "Could not connect to configured server:\n{}\n\nWould you like to retry or start a local server instead?",
-                    url
-                ))
-                .title("Connection Failed")
-                .buttons(MessageDialogButtons::OkCancelCustom(
-                    "Retry".to_string(),
-                    "Start Local".to_string(),
-                ))
-                .blocking_show_with_result();
-
-            match res {
-                MessageDialogResult::Custom(name) if name == "Retry" => continue,
-                _ => break,
-            }
-        }
-    }
-
-    // Priority 2: Check for config file server settings
-    if let Some(url) = get_server_url_from_config(app) {
-        println!("Using server URL from config: {}", url);
-        if check_server_health(&url).await {
-            println!("Connected to configured server: {}", url);
-            return Ok((None, url));
-        }
-    }
-
-    // Priority 3: Spawn local server
-    spawn_local_server(app, port).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -368,9 +263,6 @@ pub fn run() {
             // Initialize log state
             app.manage(LogState(Arc::new(Mutex::new(VecDeque::new()))));
 
-            // Get port and create window immediately for faster perceived startup
-            let port = get_sidecar_port();
-
             let primary_monitor = app.primary_monitor().ok().flatten();
             let size = primary_monitor
                 .map(|m| m.size().to_logical(m.scale_factor()))
@@ -401,23 +293,37 @@ pub fn run() {
 
             let _window = window_builder.build().expect("Failed to create window");
 
-            let (tx, rx) = tokio::sync::oneshot::channel();
+            let (tx, rx) = oneshot::channel();
             app.manage(ServerState::new(None, rx));
 
             {
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    let result = setup_server_connection(&app, port).await;
+                    let mut custom_url = None;
 
-                    let url_result = match result {
-                        Ok((child, url)) => {
+                    if let Some(url) = get_default_server_url(app.clone()).ok().flatten() {
+                        println!("Using desktop-specific custom URL: {url}");
+                        custom_url = Some(url);
+                    }
+
+                    if custom_url.is_none() {
+                        if let Some(cli_config) = cli::get_config(&app).await {
+                            if let Some(url) = get_server_url_from_config(&cli_config) {
+                                println!("Using custom server URL from config: {url}");
+                                custom_url = Some(url);
+                            }
+                        }
+                    }
+
+                    let res = match setup_server_connection(&app, custom_url).await {
+                        Ok((child, data)) => {
                             app.state::<ServerState>().set_child(child);
-                            Ok(url)
+                            Ok(data)
                         }
                         Err(e) => Err(e),
                     };
 
-                    let _ = tx.send(url_result);
+                    let _ = tx.send(res);
                 });
             }
 
@@ -447,4 +353,106 @@ pub fn run() {
                 kill_sidecar(app.clone());
             }
         });
+}
+
+fn get_server_url_from_config(config: &cli::Config) -> Option<String> {
+    let server = config.server.as_ref()?;
+    let port = server.port?;
+    println!("server.port found in OC config: {port}");
+    let hostname = server.hostname.as_ref();
+
+    Some(format!(
+        "http://{}:{}",
+        hostname.map(|v| v.as_str()).unwrap_or("127.0.0.1"),
+        port
+    ))
+}
+
+async fn setup_server_connection(
+    app: &AppHandle,
+    custom_url: Option<String>,
+) -> Result<(Option<CommandChild>, ServerReadyData), String> {
+    if let Some(url) = custom_url {
+        loop {
+            if check_server_health(&url, None).await {
+                println!("Connected to custom server: {}", url);
+                return Ok((
+                    None,
+                    ServerReadyData {
+                        url: url.clone(),
+                        password: None,
+                    },
+                ));
+            }
+
+            const RETRY: &str = "Retry";
+
+            let res = app.dialog()
+              .message(format!("Could not connect to configured server:\n{}\n\nWould you like to retry or start a local server instead?", url))
+              .title("Connection Failed")
+              .buttons(MessageDialogButtons::OkCancelCustom(RETRY.to_string(), "Start Local".to_string()))
+              .blocking_show_with_result();
+
+            match res {
+                MessageDialogResult::Custom(name) if name == RETRY => {
+                    continue;
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+    }
+
+    let local_port = get_sidecar_port();
+    let local_url = format!("http://127.0.0.1:{local_port}");
+
+    if !check_server_health(&local_url, None).await {
+        let password = uuid::Uuid::new_v4().to_string();
+
+        match spawn_local_server(app, local_port, &password).await {
+            Ok(child) => Ok((
+                Some(child),
+                ServerReadyData {
+                    url: local_url,
+                    password: Some(password),
+                },
+            )),
+            Err(err) => Err(err),
+        }
+    } else {
+        Ok((
+            None,
+            ServerReadyData {
+                url: local_url,
+                password: None,
+            },
+        ))
+    }
+}
+
+async fn spawn_local_server(
+    app: &AppHandle,
+    port: u32,
+    password: &str,
+) -> Result<CommandChild, String> {
+    let child = spawn_sidecar(app, port, password);
+    let url = format!("http://127.0.0.1:{port}");
+
+    let timestamp = Instant::now();
+    loop {
+        if timestamp.elapsed() > Duration::from_secs(30) {
+            break Err(format!(
+                "Failed to spawn OpenCode Server. Logs:\n{}",
+                get_logs(app.clone()).await.unwrap()
+            ));
+        }
+
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        if check_server_health(&url, Some(password)).await {
+            println!("Server ready after {:?}", timestamp.elapsed());
+            break Ok(child);
+        }
+    }
 }

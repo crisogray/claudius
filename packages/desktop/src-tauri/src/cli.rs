@@ -1,54 +1,28 @@
-use serde::Deserialize;
-use std::process::Command;
-use tauri::Manager;
+use tauri::{path::BaseDirectory, AppHandle, Manager};
+use tauri_plugin_shell::{process::Command, ShellExt};
 
 const CLI_INSTALL_DIR: &str = ".opencode/bin";
 const CLI_BINARY_NAME: &str = "opencode";
 
-#[derive(Debug, Deserialize)]
-pub struct Config {
-    pub server: Option<ServerConfig>,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct ServerConfig {
     pub hostname: Option<String>,
     pub port: Option<u32>,
 }
 
-pub fn get_user_shell() -> String {
-    std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+#[derive(serde::Deserialize)]
+pub struct Config {
+    pub server: Option<ServerConfig>,
 }
 
-pub fn create_command(sidecar_path: &std::path::Path) -> Command {
-    #[cfg(target_os = "windows")]
-    {
-        Command::new(sidecar_path)
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let shell = get_user_shell();
-        let mut cmd = Command::new(&shell);
-        cmd.arg("-il").arg("-c").arg(format!(
-            "\"{}\" \"$@\"",
-            sidecar_path.display()
-        )).arg("--");
-        cmd
-    }
-}
-
-pub fn get_config(sidecar_path: &std::path::Path) -> Option<Config> {
-    let mut cmd = create_command(sidecar_path);
-    cmd.args(["debug", "config"]);
-
-    let output = cmd.output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    serde_json::from_str(&stdout).ok()
+pub async fn get_config(app: &AppHandle) -> Option<Config> {
+    create_command(app, "debug config")
+        .output()
+        .await
+        .inspect_err(|e| eprintln!("Failed to read OC config: {e}"))
+        .ok()
+        .and_then(|out| String::from_utf8(out.stdout.to_vec()).ok())
+        .and_then(|s| serde_json::from_str::<Config>(&s).ok())
 }
 
 fn get_cli_install_path() -> Option<std::path::PathBuf> {
@@ -164,4 +138,37 @@ pub fn sync_cli(app: tauri::AppHandle) -> Result<(), String> {
     println!("Synced installed CLI");
 
     Ok(())
+}
+
+fn get_user_shell() -> String {
+    std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+}
+
+pub fn create_command(app: &tauri::AppHandle, args: &str) -> Command {
+    let state_dir = app
+        .path()
+        .resolve("", BaseDirectory::AppLocalData)
+        .expect("Failed to resolve app local data dir");
+
+    #[cfg(target_os = "windows")]
+    return app
+        .shell()
+        .sidecar("opencode-cli")
+        .unwrap()
+        .args(args.split_whitespace())
+        .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
+        .env("OPENCODE_CLIENT", "desktop")
+        .env("XDG_STATE_HOME", &state_dir);
+
+    #[cfg(not(target_os = "windows"))]
+    return {
+        let sidecar = get_sidecar_path(app);
+        let shell = get_user_shell();
+        app.shell()
+            .command(&shell)
+            .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
+            .env("OPENCODE_CLIENT", "desktop")
+            .env("XDG_STATE_HOME", &state_dir)
+            .args(["-il", "-c", &format!("\"{}\" {}", sidecar.display(), args)])
+    };
 }

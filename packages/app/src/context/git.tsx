@@ -2,6 +2,7 @@ import { createMemo, onCleanup, onMount } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useSDK } from "./sdk"
+import { usePlatform } from "./platform"
 
 // Types matching the backend Git namespace
 export type GitFileStatus = {
@@ -38,6 +39,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
   name: "Git",
   init: () => {
     const sdk = useSDK()
+    const platform = usePlatform()
     const [store, setStore] = createStore({
       status: null as GitStatus | null,
       log: [] as GitCommit[],
@@ -46,9 +48,9 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       refreshedAt: 0,
     })
 
-    // Helper to make API calls
+    // Helper to make API calls (uses platform.fetch for Tauri auth support, falls back to fetch for web)
     const api = async <T,>(path: string, options?: RequestInit): Promise<T> => {
-      const res = await fetch(`${sdk.url}${path}`, {
+      const res = await (platform.fetch ?? fetch)(`${sdk.url}${path}`, {
         ...options,
         headers: {
           "Content-Type": "application/json",

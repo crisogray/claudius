@@ -92,7 +92,7 @@ export namespace Server {
           })
         })
         .use((c, next) => {
-          const password = Flag.OPENCODE_PASSWORD
+          const password = Flag.OPENCODE_SERVER_PASSWORD
           if (!password) return next()
           return basicAuth({ username: "opencode", password })(c, next)
         })

@@ -5,6 +5,7 @@ import { Installation } from "./installation"
 import { NamedError } from "@opencode-ai/util/error"
 import { ServeCommand } from "./cli/cmd/serve"
 import { DebugCommand } from "./cli/cmd/debug"
+import { GenerateCommand } from "./cli/cmd/generate"
 import { EOL } from "os"
 
 process.on("unhandledRejection", (e) => {
@@ -58,6 +59,7 @@ const cli = yargs(hideBin(process.argv))
   .completion("completion", "generate shell completion script")
   .command(ServeCommand)
   .command(DebugCommand)
+  .command(GenerateCommand)
   .fail((msg, err) => {
     if (
       msg?.startsWith("Unknown argument") ||
