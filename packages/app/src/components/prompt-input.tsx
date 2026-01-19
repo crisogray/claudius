@@ -298,7 +298,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     event.stopPropagation()
 
     const items = Array.from(clipboardData.items)
-    const imageItems = items.filter((item) => ACCEPTED_FILE_TYPES.includes(item.type))
+    const fileItems = items.filter((item) => item.kind === "file")
+    const imageItems = fileItems.filter((item) => ACCEPTED_FILE_TYPES.includes(item.type))
 
     if (imageItems.length > 0) {
       for (const item of imageItems) {
@@ -308,7 +309,16 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       return
     }
 
+    if (fileItems.length > 0) {
+      showToast({
+        title: "Unsupported paste",
+        description: "Only images or PDFs can be pasted here.",
+      })
+      return
+    }
+
     const plainText = clipboardData.getData("text/plain") ?? ""
+    if (!plainText) return
     addPart({ type: "text", content: plainText, start: 0, end: 0 })
   }
 
