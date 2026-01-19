@@ -845,14 +845,13 @@ export default function Layout(props: ParentProps) {
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const name = createMemo(() => props.project.name || getFilename(props.project.worktree))
     const mask = "radial-gradient(circle 6px at calc(100% - 3px) 3px, transparent 6px, black 6.5px)"
-    const opencode = "4b0ea68d7af9a6031a7ffda7ad66e0cb83315750"
 
     return (
       <div class={`relative size-8 shrink-0 rounded-sm ${props.class ?? ""}`}>
         <div class="size-full rounded-sm overflow-clip">
           <Avatar
             fallback={name()}
-            src={props.project.id === opencode ? "https://claudius.to/favicon.svg" : props.project.icon?.url}
+            src={props.project.icon?.url}
             {...getAvatarColors(props.project.icon?.color)}
             class="size-full rounded-sm"
             style={

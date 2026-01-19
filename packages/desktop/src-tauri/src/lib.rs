@@ -152,7 +152,6 @@ fn spawn_sidecar(app: &AppHandle, port: u32) -> CommandChild {
         .shell()
         .sidecar("opencode-cli")
         .unwrap()
-        .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
         .env("OPENCODE_CLIENT", "desktop")
         .env("XDG_STATE_HOME", &state_dir)
         .args(["serve", &format!("--port={port}")])
