@@ -1,0 +1,579 @@
+---
+import { Image } from 'astro:assets';
+import config from "../../config.mjs";
+import logo from '../assets/logo-wreath.svg';
+import favicon from '../assets/favicon.ico';
+
+const themes = ['brown', 'green', 'blue', 'purple'];
+const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
+---
+
+<html lang="en" data-theme={randomTheme} data-next-theme={nextTheme}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Claudius</title>
+    <link rel="icon" type="image/x-icon" href={favicon} />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <div class="logo">
+          <Image src={logo} alt="Claudius" class="logo-img" width={32} />
+        </div>
+        <nav>
+          <a href={config.github} target="_blank">Source</a>
+          <a href="#" class="nav-cta" id="nav-download">Download</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="intro">
+          <h1>Claudius</h1>
+          <p class="lead">An agentic development environment for Claude, built on OpenCode.</p>
+        </section>
+
+        <section class="cta-row">
+          <div class="download-group">
+            <div class="download-main">
+              <a href="#" class="btn" id="main-download">
+                <span class="dl-label">Download</span>
+              </a>
+              <a href={config.github} class="link" target="_blank">or view on GitHub &rarr;</a>
+            </div>
+            <div class="other-platforms">
+              <button class="platforms-toggle" id="platforms-toggle">Other platforms</button>
+              <div class="platforms-dropdown" id="platforms-dropdown">
+                <a href="#" data-platform="mac-arm">macOS (Apple Silicon)</a>
+                <a href="#" data-platform="mac-intel">macOS (Intel)</a>
+                <a href="#" data-platform="windows">Windows</a>
+                <a href="#" data-platform="linux">Linux</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="visual">
+          <div class="demo-placeholder">
+            <span>demo screenshot / gif</span>
+          </div>
+        </section>
+
+        <section class="grid">
+          <div class="card">
+            <h3>ToS Compliant</h3>
+            <p>Built for Anthropic's usage policy. Use Claude the right way.</p>
+          </div>
+          <div class="card">
+            <h3>Enhanced Git Features</h3>
+            <p>Search, explore, edit, diff.<br/>PR integration coming soon.</p>
+          </div>
+          <div class="card">
+            <h3>Parallel Tasks</h3>
+            <p>Git worktrees let you run multiple agents simultaneously.</p>
+          </div>
+          <div class="card">
+            <h3>Open Source</h3>
+            <p>Bring your own keys. Self-host. Customize everything.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <span>&copy; 2025</span>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <span class="theme-label">green</span>
+        </button>
+        <div class="social">
+          <a href={config.twitter} target="_blank">tw</a>
+          <a href={config.github} target="_blank">gh</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<style>
+  @font-face {
+    font-family: 'Tiempos Text';
+    src: url('../assets/fonts/TiemposText-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'Tiempos Text';
+    src: url('../assets/fonts/TiemposText-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  /* Brown theme */
+  [data-theme="brown"] {
+    --bg: #f5f0e8;
+    --text: #3d2e24;
+    --muted: #7a6555;
+    --accent: #b83a2e;
+    --surface: #e8dfd2;
+    --border: #3d2e24;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="brown"] {
+      --bg: #2a211a;
+      --text: #f5f0e8;
+      --muted: #a69282;
+      --accent: #e05a4a;
+      --surface: #3d3129;
+      --border: #f5f0e8;
+    }
+  }
+
+  /* Green theme */
+  [data-theme="green"] {
+    --bg: #f6f7f4;
+    --text: #1a1f16;
+    --muted: #5c6356;
+    --accent: #4d7c0f;
+    --surface: #e4e7dc;
+    --border: #1a1f16;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="green"] {
+      --bg: #1a1f16;
+      --text: #f6f7f4;
+      --muted: #a3a89c;
+      --accent: #84cc16;
+      --surface: #2d3328;
+      --border: #f6f7f4;
+    }
+  }
+
+  /* Blue theme */
+  [data-theme="blue"] {
+    --bg: #f4f6f8;
+    --text: #1a2433;
+    --muted: #5a6678;
+    --accent: #2563eb;
+    --surface: #e1e6ed;
+    --border: #1a2433;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="blue"] {
+      --bg: #1a2433;
+      --text: #f4f6f8;
+      --muted: #94a3b8;
+      --accent: #60a5fa;
+      --surface: #283447;
+      --border: #f4f6f8;
+    }
+  }
+
+  /* Purple theme */
+  [data-theme="purple"] {
+    --bg: #f6f5f8;
+    --text: #1f1a24;
+    --muted: #635870;
+    --accent: #7c3aed;
+    --surface: #e9e6ef;
+    --border: #1f1a24;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="purple"] {
+      --bg: #1f1a24;
+      --text: #f6f5f8;
+      --muted: #a89eb8;
+      --accent: #a78bfa;
+      --surface: #2d2735;
+      --border: #f6f5f8;
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .logo img {
+    height: 32px;
+    width: auto;
+  }
+
+  .logo-img {
+    filter: invert(0);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .logo-img {
+      filter: invert(1);
+    }
+  }
+
+  nav {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  nav .nav-cta {
+    padding: 0.5rem 1rem;
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  nav .nav-cta:hover {
+    opacity: 0.9;
+    color: var(--bg);
+  }
+
+  main {
+    flex: 1;
+    padding: 3rem 0;
+  }
+
+  .intro {
+    margin-bottom: 3rem;
+  }
+
+  h1 {
+    font-family: 'Tiempos Text', Georgia, serif;
+    font-size: clamp(3rem, 10vw, 5rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .lead {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .visual {
+    margin: 3rem 0;
+  }
+
+  .demo-placeholder {
+    border: 2px dashed var(--border);
+    background: var(--surface);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 2px solid var(--border);
+    margin: 3rem 0;
+  }
+
+  @media (max-width: 600px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .card {
+    padding: 1.5rem;
+    background: var(--bg);
+  }
+
+  .card h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .card p {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .cta-row {
+    margin: 2rem 0;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: var(--text);
+    color: var(--bg);
+    text-decoration: none;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .btn:hover {
+    opacity: 0.9;
+  }
+
+  .download-group {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .download-main {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .other-platforms {
+    position: relative;
+  }
+
+  .platforms-toggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .platforms-toggle:hover {
+    color: var(--text);
+  }
+
+  .platforms-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    min-width: 180px;
+    z-index: 10;
+  }
+
+  .platforms-dropdown.open {
+    display: block;
+  }
+
+  .platforms-dropdown a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.75rem;
+  }
+
+  .platforms-dropdown a:hover {
+    background: var(--surface);
+  }
+
+  .link {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .link:hover {
+    color: var(--text);
+  }
+
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 0;
+    border-top: 2px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .social {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .social a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .social a:hover {
+    color: var(--text);
+  }
+
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  footer:hover .theme-toggle {
+    opacity: 1;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--text);
+    color: var(--text);
+  }
+</style>
+
+<script>
+  // Theme toggle (theme is set server-side, no flash)
+  const toggle = document.getElementById('theme-toggle');
+  const label = toggle?.querySelector('.theme-label');
+  const themes = ['brown', 'green', 'blue', 'purple'];
+
+  // Initialize label from SSR-provided next theme
+  const initialNext = document.documentElement.getAttribute('data-next-theme');
+  if (label && initialNext) label.textContent = initialNext;
+
+  toggle?.addEventListener('click', () => {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'brown';
+    const currentIndex = themes.indexOf(current);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const next = themes[nextIndex];
+    html.setAttribute('data-theme', next);
+    if (label) label.textContent = themes[(nextIndex + 1) % themes.length];
+  });
+
+  // Download URLs - update these with actual release URLs
+  // Download URLs - point to GitHub Releases
+  // Note: Exact filenames may need adjustment after first release
+  const downloads = {
+    'mac-arm': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_aarch64.dmg',
+    'mac-intel': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_x64.dmg',
+    'windows': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_x64-setup.exe',
+    'linux': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_amd64.AppImage',
+  };
+
+  const platformLabels = {
+    'mac-arm': 'Download for macOS (Apple Silicon)',
+    'mac-intel': 'Download for macOS (Intel)',
+    'windows': 'Download for Windows',
+    'linux': 'Download for Linux',
+  };
+
+  // Detect OS
+  function detectPlatform() {
+    const ua = navigator.userAgent;
+    const platform = navigator.platform;
+
+    if (/Mac/.test(platform)) {
+      // Check for Apple Silicon via WebGL renderer
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl');
+      const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
+      const renderer = debugInfo ? gl?.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
+
+      // Apple Silicon Macs typically show "Apple" in the renderer
+      if (/Apple/.test(renderer) && !/Intel/.test(renderer)) {
+        return 'mac-arm';
+      }
+      return 'mac-intel';
+    }
+    if (/Win/.test(platform)) return 'windows';
+    if (/Linux/.test(platform)) return 'linux';
+    return 'mac-arm'; // Default fallback
+  }
+
+  const detectedPlatform = detectPlatform();
+  const mainDownload = document.getElementById('main-download');
+  const navDownload = document.getElementById('nav-download');
+  const dlLabel = mainDownload?.querySelector('.dl-label');
+
+  // Set main download button
+  if (mainDownload) {
+    mainDownload.href = downloads[detectedPlatform];
+  }
+  if (dlLabel) {
+    dlLabel.textContent = platformLabels[detectedPlatform];
+  }
+  if (navDownload) {
+    navDownload.href = downloads[detectedPlatform];
+  }
+
+  // Set dropdown links
+  document.querySelectorAll('.platforms-dropdown a').forEach(link => {
+    const platform = link.getAttribute('data-platform');
+    if (platform && downloads[platform]) {
+      link.href = downloads[platform];
+    }
+  });
+
+  // Toggle dropdown
+  const platformsToggle = document.getElementById('platforms-toggle');
+  const platformsDropdown = document.getElementById('platforms-dropdown');
+
+  platformsToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    platformsDropdown?.classList.toggle('open');
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener('click', () => {
+    platformsDropdown?.classList.remove('open');
+  });
+</script>

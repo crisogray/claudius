@@ -1260,6 +1260,7 @@ export default function Page() {
             class="@container relative flex-1 min-w-0 h-full min-h-0 flex flex-col bg-background-stronger"
             style={{
               "--prompt-height": store.promptHeight ? `${store.promptHeight}px` : undefined,
+              "--terminal-height": view().terminal.opened() ? `${layout.terminal.height()}px` : undefined,
             }}
           >
             <DragDropProvider
@@ -1432,9 +1433,9 @@ export default function Page() {
                                     data-message-id={message.id}
                                     classList={{
                                       "min-w-0 w-full max-w-full": true,
-                                      "last:min-h-[calc(100vh-4.5rem-var(--prompt-height,10rem)-64px)]":
+                                      "last:min-h-[calc(100vh-4.5rem-var(--prompt-height,10rem)-var(--terminal-height,0px)-64px)]":
                                         platform.platform !== "desktop",
-                                      "last:min-h-[calc(100vh-6rem-var(--prompt-height,10rem)-64px)]":
+                                      "last:min-h-[calc(100vh-6rem-var(--prompt-height,10rem)-var(--terminal-height,0px)-64px)]":
                                         platform.platform === "desktop",
                                     }}
                                   >
