@@ -12,12 +12,31 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | Clean Applies | 54 commits (Desktop, App, UI, Sidebar, Edit Dialog, Core, Docs) | ✅ DONE |
-| Phase 1 | Bug Fixes (6 commits) | ⏳ TODO |
-| Phase 2 | List/Search Robustness (2 commits) | ⏳ TODO |
-| Phase 3 | Pure Styling (~25 commits) | ⏳ TODO |
+| Phase 1 | Bug Fixes (6 commits) | ✅ DONE |
+| Phase 2 | List/Search Robustness (2 commits) | ✅ DONE |
+| Phase 3 | Pure Styling (17 of 25 commits) | ✅ DONE (9 deferred) |
 | Phase 4 | Workspace Management (3 commits) | ⏳ TODO |
 | Phase 5 | Session Layout Architecture (6 commits) | ❌ **SKIP** (add hover card manually) |
 | Phase 6 | Misc Features (5 commits) | ⏳ TODO |
+
+### Deferred Commits (require dependencies)
+
+**From Phase 3 - Need Hover Card (Phase 5 feature):**
+| Hash | Description |
+|------|-------------|
+| `cf284e32a` | update session hover popover styling |
+| `a05c33470` | retain session hover state when popover open |
+| `ad31b555a` | position session messages popover at top |
+| `7b336add8` | update session messages popover gutter to 28px |
+| `b91b76e9e` | add 8px padding to recent sessions popover |
+| `c89085399` | fix: keep project avatar hover while popover open |
+| `ded9bd26b` | fix: adjust session list tooltip trigger/delay |
+| `389d97ece` | fix: adjust project path tooltip placement |
+
+**From Phase 3 - Need Phase 4 (InlineEditor/rename):**
+| Hash | Description |
+|------|-------------|
+| `95f7403da` | fix(app): truncate workspace title |
 
 **Note**: Phase 5 is being **SKIPPED** because:
 - Upstream removes the message rail (we want to keep it in active sessions)
@@ -436,16 +455,20 @@ All commits touching nix/* or flake.* files:
 
 ### Progress
 ```
-Clean applies: 54 commits ✅
-Phased conflicts: ~48 commits ⏳
-Skipped: ~93 commits ❌
+Clean applies:    54 commits ✅
+Phase 1-3:        25 commits ✅ (+ 1 fix commit)
+Deferred:          9 commits ⏳ (need hover card or Phase 4)
+Remaining:        ~14 commits ⏳ (Phase 4, 6)
+Skipped:          ~93 commits ❌
+────────────────────────────
+Total applied:    79 commits
 ```
 
 ---
 
 ## Phased Approach (Remaining Work)
 
-### ⏳ Phase 1: Bug Fixes (6 commits)
+### ✅ Phase 1: Bug Fixes (6 commits) - DONE
 
 | Hash | Description | Conflict Level |
 |------|-------------|----------------|
@@ -456,17 +479,17 @@ Skipped: ~93 commits ❌
 | `416f419a8` | fix: add default icon to sessions | Low |
 | `4be0ba19c` | fix: web mobile menu | Low |
 
-### ⏳ Phase 2: List/Search Robustness (2 commits)
+### ✅ Phase 2: List/Search Robustness (2 commits) - DONE
 
 | Hash | Description | Conflict Level |
 |------|-------------|----------------|
 | `07dc8d8ce` | fix: escape CSS selector keys | Low |
 | `092428633` | fix(app): layout jumping (custom scrollIntoView) | Low |
 
-### ⏳ Phase 3: Pure Styling (~25 commits)
+### ✅ Phase 3: Pure Styling (17 of 25 commits) - DONE
 
-Avatar, Workspace, Search/Dialog, and Popover styling fixes.
-See "Medium Priority Conflicts" tables above for full list.
+Applied: Avatar (5), Workspace (1), Search/Dialog (8), Edit Dialog (3)
+Deferred: Popover styling (8) - needs hover card, Workspace title (1) - needs Phase 4
 
 ### ⏳ Phase 4: Workspace Management (3 commits)
 
