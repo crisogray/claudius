@@ -1,6 +1,6 @@
 import { $ } from "bun"
 
-import { copyBinaryToSidecarFolder, copyCLIJsToSidecarFolder, getCurrentSidecar } from "./utils"
+import { copyBinaryToSidecarFolder, copyCLIJsToSidecarFolder, getCurrentSidecar, downloadRipgrep } from "./utils"
 
 const RUST_TARGET = Bun.env.TAURI_ENV_TARGET_TRIPLE
 
@@ -13,3 +13,4 @@ await $`cd ../opencode && bun run build --single`
 
 await copyBinaryToSidecarFolder(binaryPath, RUST_TARGET)
 await copyCLIJsToSidecarFolder(cliJsPath, RUST_TARGET)
+await downloadRipgrep(RUST_TARGET)

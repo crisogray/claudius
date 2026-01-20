@@ -106,7 +106,7 @@ export function RightPanel() {
                 onInput={(e) => setFilter(e.currentTarget.value)}
               />
             </div>
-            <div class="flex-1 overflow-auto py-2">
+            <div class="flex-1 overflow-auto no-scrollbar py-2">
               <FileTree
                 path="."
                 filter={filter()}

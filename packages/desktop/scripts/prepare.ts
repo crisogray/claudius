@@ -1,7 +1,13 @@
 #!/usr/bin/env bun
 import { $ } from "bun"
 
-import { copyBinaryToSidecarFolder, copyCLIJsToSidecarFolder, getCurrentSidecar } from "./utils"
+import {
+  copyBinaryToSidecarFolder,
+  copyCLIJsToSidecarFolder,
+  getCurrentSidecar,
+  downloadRipgrep,
+  SIDECAR_BINARIES,
+} from "./utils"
 
 const sidecarConfig = getCurrentSidecar()
 
@@ -14,3 +20,9 @@ await copyBinaryToSidecarFolder(
   `${dir}/${sidecarConfig.ocBinary}/bin/opencode${process.platform === "win32" ? ".exe" : ""}`,
 )
 await copyCLIJsToSidecarFolder(`${dir}/${sidecarConfig.ocBinary}/bin/cli.js`)
+
+// Download ripgrep for all platforms
+console.log("Downloading ripgrep for all platforms...")
+for (const { rustTarget } of SIDECAR_BINARIES) {
+  await downloadRipgrep(rustTarget)
+}
