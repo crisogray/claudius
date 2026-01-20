@@ -176,7 +176,10 @@ export namespace SDK {
 
     for (const part of input.parts) {
       if (part.type === "text") {
-        contentBlocks.push({ type: "text", text: part.text })
+        // Only add text blocks if they have content (avoid empty string text blocks)
+        if (part.text.trim()) {
+          contentBlocks.push({ type: "text", text: part.text })
+        }
       } else if (part.type === "file") {
         const filePath = (part as any).path as string
         if (filePath.startsWith("data:")) {
@@ -325,8 +328,9 @@ export namespace SDK {
     }
 
     // Start real SDK query - use generator when we have images, string otherwise
+    // Use undefined instead of empty string when there's no text content
     const activeQuery = query({
-      prompt: hasImages ? (createMessageGenerator() as any) : prompt,
+      prompt: hasImages ? (createMessageGenerator() as any) : prompt || undefined,
       options: {
         model: options.model,
         cwd: options.cwd,
