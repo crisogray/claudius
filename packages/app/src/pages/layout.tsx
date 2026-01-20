@@ -868,6 +868,8 @@ createEffect(
     setStore("activeWorkspace", undefined)
   }
 
+  const displayName = (project: LocalProject) => project.name || getFilename(project.worktree)
+
   const ProjectIcon = (props: { project: LocalProject; class?: string; notify?: boolean }): JSX.Element => {
     const notification = useNotification()
     const notifications = createMemo(() => notification.project.unseen(props.project.worktree))
