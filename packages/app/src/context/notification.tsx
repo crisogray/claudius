@@ -140,8 +140,6 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
           try {
             requestPlayer?.play()
           } catch {}
-          const href = `/${base64Encode(directory)}/session/${sessionID}`
-          void platform.notify("Input needed", session?.title ?? sessionID, href)
           break
         }
       }
