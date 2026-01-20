@@ -16,13 +16,13 @@
 | Phase 2 | List/Search Robustness (2 commits) | ⏳ TODO |
 | Phase 3 | Pure Styling (~25 commits) | ⏳ TODO |
 | Phase 4 | Workspace Management (3 commits) | ⏳ TODO |
-| Phase 5 | Session Layout Architecture (6 commits) | ⏳ TODO - **Needs careful approach** |
+| Phase 5 | Session Layout Architecture (6 commits) | ❌ **SKIP** (add hover card manually) |
 | Phase 6 | Misc Features (5 commits) | ⏳ TODO |
 
-**Note**: Phase 5 (Session Layout Architecture) requires special attention. The upstream implementation changed the session title system significantly:
-- **Upstream**: Uses `props.sessionTitle` (session-level title) with conditional display logic
-- **Our fork**: Uses `msg().summary?.title` (message-level summary) always displayed
-- These are fundamentally different data sources - careful manual resolution needed
+**Note**: Phase 5 is being **SKIPPED** because:
+- Upstream removes the message rail (we want to keep it in active sessions)
+- Upstream refactors title system to `props.sessionTitle` (we prefer `msg().summary?.title`)
+- We'll manually add hover card for sidebar sessions without the title baggage
 
 ---
 
@@ -32,7 +32,7 @@
 |----------|----------|
 | Share/Unshare | **SKIP** - Remove sharing entirely |
 | Workspace management | **ACCEPT** - Rename, delete, reset |
-| Session layout | **ACCEPT WITH CARE** - Preserve our title approach |
+| Session layout | **SKIP** - Keep rail, add hover card manually |
 | Bug fixes | **ACCEPT ALL** |
 | Pure styling | **ACCEPT ALL** (note: session row deliberately different) |
 
@@ -476,22 +476,23 @@ See "Medium Priority Conflicts" tables above for full list.
 | `f26de6c52` | feat(app): delete workspace | Medium |
 | `093a3e787` | feat(app): reset worktree | Medium |
 
-### ⏳ Phase 5: Session Layout Architecture (6 commits) - CAREFUL
+### ❌ Phase 5: Session Layout Architecture (6 commits) - SKIP
 
-**WARNING**: These commits change the title system significantly.
+**Decision**: Skip all 6 commits. Will manually add hover card instead.
 
-| Hash | Description | Conflict Level |
-|------|-------------|----------------|
-| `1f11a8a6e` | feat(app): improved session layout | **High** |
-| `befd0f163` | feat(app): new session layout | **High** |
-| `7811e01c8` | fix(app): new layout improvements | **High** |
-| `eb779a7cc` | chore: cleanup | Low |
-| `c720a2163` | chore: cleanup | Low |
-| `bec294b78` | fix(app): remove copy button from summary | Low |
+| Hash | Description | Status |
+|------|-------------|--------|
+| `1f11a8a6e` | feat(app): improved session layout | SKIP |
+| `befd0f163` | feat(app): new session layout | SKIP |
+| `7811e01c8` | fix(app): new layout improvements | SKIP |
+| `eb779a7cc` | chore: cleanup | SKIP |
+| `c720a2163` | chore: cleanup | SKIP |
+| `bec294b78` | fix(app): remove copy button from summary | SKIP |
 
-**Key conflict**: Upstream uses `props.sessionTitle` with conditional `titleShown` logic.
-Our fork uses `msg().summary?.title` displayed unconditionally.
-Must preserve our approach when resolving these conflicts.
+**Why skip**:
+- Removes message rail (we want to keep it)
+- Refactors title to `props.sessionTitle` (we prefer `msg().summary?.title`)
+- Hover card feature will be added manually without the baggage
 
 ### ⏳ Phase 6: Misc Features (5 commits)
 
@@ -522,8 +523,9 @@ Policy decision: Remove sharing entirely
 
 **Recommended Approach**:
 1. Apply phases 1-4 one at a time, verify build after each phase
-2. Apply phase 5 (Session Layout) with extra care - review each change manually
-3. Apply phase 6 last
+2. Skip phase 5 entirely
+3. Apply phase 6
+4. Manually add hover card to sidebar sessions
 
 **What to preserve in our fork**:
 - Two-row session item design in layout.tsx
