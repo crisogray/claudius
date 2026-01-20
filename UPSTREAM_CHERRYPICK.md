@@ -15,7 +15,7 @@
 | Phase 1 | Bug Fixes (6 commits) | ✅ DONE |
 | Phase 2 | List/Search Robustness (2 commits) | ✅ DONE |
 | Phase 3 | Pure Styling (17 of 25 commits) | ✅ DONE (9 deferred) |
-| Phase 4 | Workspace Management (3 commits) | ⏳ TODO |
+| Phase 4 | Workspace Management (3 commits) | ✅ DONE |
 | Phase 5 | Session Layout Architecture (6 commits) | ❌ **SKIP** (add hover card manually) |
 | Phase 6 | Misc Features (5 commits) | ⏳ TODO |
 
@@ -33,10 +33,10 @@
 | `ded9bd26b` | fix: adjust session list tooltip trigger/delay |
 | `389d97ece` | fix: adjust project path tooltip placement |
 
-**From Phase 3 - Need Phase 4 (InlineEditor/rename):**
-| Hash | Description |
-|------|-------------|
-| `95f7403da` | fix(app): truncate workspace title |
+**From Phase 3 - Now ready (Phase 4 done):**
+| Hash | Description | Status |
+|------|-------------|--------|
+| `95f7403da` | fix(app): truncate workspace title | ⏳ Ready to apply |
 
 **Note**: Phase 5 is being **SKIPPED** because:
 - Upstream removes the message rail (we want to keep it in active sessions)
@@ -456,12 +456,13 @@ All commits touching nix/* or flake.* files:
 ### Progress
 ```
 Clean applies:    54 commits ✅
-Phase 1-3:        25 commits ✅ (+ 1 fix commit)
-Deferred:          9 commits ⏳ (need hover card or Phase 4)
-Remaining:        ~14 commits ⏳ (Phase 4, 6)
+Phase 1-3:        25 commits ✅
+Phase 4:           3 commits ✅ (+ 1 fix commit)
+Deferred:          8 commits ⏳ (need hover card)
+Remaining:         5 commits ⏳ (Phase 6)
 Skipped:          ~93 commits ❌
 ────────────────────────────
-Total applied:    79 commits
+Total applied:    83 commits
 ```
 
 ---
@@ -491,13 +492,18 @@ Total applied:    79 commits
 Applied: Avatar (5), Workspace (1), Search/Dialog (8), Edit Dialog (3)
 Deferred: Popover styling (8) - needs hover card, Workspace title (1) - needs Phase 4
 
-### ⏳ Phase 4: Workspace Management (3 commits)
+### ✅ Phase 4: Workspace Management (3 commits) - DONE
 
-| Hash | Description | Conflict Level |
-|------|-------------|----------------|
-| `086603494` | feat(app): edit project and session titles | Medium |
-| `f26de6c52` | feat(app): delete workspace | Medium |
-| `093a3e787` | feat(app): reset worktree | Medium |
+| Hash | Description | Status |
+|------|-------------|--------|
+| `086603494` | feat(app): edit project and session titles | ✅ Applied (+ fix for SessionItem) |
+| `f26de6c52` | feat(app): delete workspace | ✅ Applied |
+| `093a3e787` | feat(app): reset worktree | ✅ Applied |
+
+**Notes**:
+- Kept our `${folder}: ${branch}` format instead of upstream's "local"/"sandbox" labels
+- Added `workspaceName?.[]` optional chaining to prevent runtime errors
+- Fixed SessionItem duplicate title/diff from merge conflict
 
 ### ❌ Phase 5: Session Layout Architecture (6 commits) - SKIP
 
