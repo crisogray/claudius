@@ -18,15 +18,16 @@
     "@solid-primitives/storage": "catalog:",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-http": "2.5.4",
+    "@tauri-apps/plugin-notification": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-os": "~2",
-    "@tauri-apps/plugin-notification": "~2",
     "@tauri-apps/plugin-process": "~2",
     "@tauri-apps/plugin-shell": "~2",
     "@tauri-apps/plugin-store": "~2",
     "@tauri-apps/plugin-updater": "~2",
-    "@tauri-apps/plugin-http": "2.5.4",
     "@tauri-apps/plugin-window-state": "~2",
+    "@zip.js/zip.js": "2.8.15",
     "solid-js": "catalog:"
   },
   "devDependencies": {
