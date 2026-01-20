@@ -916,6 +916,9 @@ export default function Page() {
   createResizeObserver(
     () => promptDock,
     ({ height }) => {
+      // Ignore resize events when window is not visible to prevent scroll jumps
+      if (document.visibilityState === "hidden") return
+
       const next = Math.ceil(height)
 
       if (next === store.promptHeight) return
@@ -1386,7 +1389,7 @@ export default function Page() {
                       <div class="relative w-full h-full min-w-0">
                         <div class="absolute inset-0 pointer-events-none z-10">
                           <SessionMessageRail
-                            messages={visibleUserMessages()}
+                            messages={renderedUserMessages()}
                             current={activeMessage()}
                             onMessageSelect={scrollToMessage}
                             wide={false}
