@@ -44,7 +44,6 @@ jobs:
       - name: Run opencode
         if: steps.commits.outputs.has_commits == 'true'
         uses: sst/opencode/github@latest
-        env:
         with:
           model: opencode/gpt-5.2
           agent: docs
