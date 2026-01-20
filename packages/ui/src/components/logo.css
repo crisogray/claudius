@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Tiempos Text';
+  src: url('../assets/fonts/TiemposText-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
 [data-component="logo-mark"] {
   width: 16px;
   aspect-ratio: 4/5;
