@@ -358,9 +358,9 @@ export default function Page() {
   })
 
   const activeMessage = createMemo(() => {
-    if (!store.messageId) return lastUserMessage()
-    const found = visibleUserMessages()?.find((m) => m.id === store.messageId)
-    return found ?? lastUserMessage()
+    return store.messageId
+      ? (visibleUserMessages()?.find((m) => m.id === store.messageId) ?? lastUserMessage())
+      : lastUserMessage()
   })
   const setActiveMessage = (message: UserMessage | undefined) => {
     setStore("messageId", message?.id)
@@ -1130,7 +1130,14 @@ export default function Page() {
               <div class="flex-1 min-h-0 overflow-hidden">
                 <Switch>
                   <Match when={params.id}>
-                    <Show when={activeMessage()}>
+                    <Show
+                      when={activeMessage()}
+                      fallback={
+                        <div class="size-full flex items-center justify-center text-text-weak">
+                          Loading...
+                        </div>
+                      }
+                    >
                       <Show
                         when={!mobileReview()}
                         fallback={
@@ -1343,7 +1350,7 @@ export default function Page() {
                   classList={{ hidden: activeTab() !== "session" }}
                 >
                   <Show
-                    when={params.id && activeMessage()}
+                    when={params.id}
                     fallback={
                         <NewSessionView
                           worktree={newSessionWorktree()}
@@ -1362,6 +1369,14 @@ export default function Page() {
                             navigate(`/${base64Encode(target)}/session`)
                           }}
                         />
+                      }
+                    >
+                    <Show
+                      when={activeMessage()}
+                      fallback={
+                        <div class="size-full flex items-center justify-center text-text-weak">
+                          Loading...
+                        </div>
                       }
                     >
                       <div class="relative w-full h-full min-w-0">
@@ -1488,6 +1503,7 @@ export default function Page() {
                           </div>
                         </div>
                       </div>
+                    </Show>
                     </Show>
                 </Tabs.Content>
                 <Show when={reviewTab()}>

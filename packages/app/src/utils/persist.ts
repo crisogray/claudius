@@ -3,6 +3,7 @@ import { makePersisted, type AsyncStorage, type SyncStorage } from "@solid-primi
 import { checksum } from "@opencode-ai/util/encode"
 import { createResource, type Accessor } from "solid-js"
 import type { SetStoreFunction, Store } from "solid-js/store"
+import { LRUCache } from "lru-cache"
 
 type InitType = Promise<string> | string | null
 type PersistedWithReady<T> = [Store<T>, SetStoreFunction<T>, InitType, Accessor<boolean>]
@@ -16,6 +17,11 @@ type PersistTarget = {
 
 const LEGACY_STORAGE = "default.dat"
 const GLOBAL_STORAGE = "opencode.global.dat"
+
+// Memory cache with LRU eviction for instant storage reads on revisit
+// We use a wrapper to cache null values (representing "storage was empty")
+type CachedValue = { value: string | null }
+const memoryCache = new LRUCache<string, CachedValue>({ max: 1000 })
 
 function snapshot(value: unknown) {
   return JSON.parse(JSON.stringify(value)) as unknown
@@ -59,7 +65,7 @@ function parse(value: string) {
   }
 }
 
-function workspaceStorage(dir: string) {
+export function workspaceStorage(dir: string) {
   const head = dir.slice(0, 12) || "workspace"
   const sum = checksum(dir) ?? "0"
   return `opencode.workspace.${head}.${sum}.dat`
@@ -72,6 +78,15 @@ function localStorageWithPrefix(prefix: string): SyncStorage {
     setItem: (key, value) => localStorage.setItem(base + key, value),
     removeItem: (key) => localStorage.removeItem(base + key),
   }
+}
+
+/** Prefetch a workspace store to avoid cold-start latency on session switch */
+export function prefetchWorkspaceStorage(dir: string, platform: { storage?: (name?: string) => unknown }) {
+  if (!platform.storage) return
+  const storageName = workspaceStorage(dir)
+  // Trigger store load by accessing it - getItem on a dummy key forces Store.load()
+  const storage = platform.storage(storageName) as { getItem?: (key: string) => Promise<unknown> }
+  storage?.getItem?.("__prefetch__")?.catch?.(() => undefined)
 }
 
 export const Persist = {
@@ -182,21 +197,38 @@ export function persisted<T>(
     const current = currentStorage as AsyncStorage
     const legacyStore = legacyStorage as AsyncStorage | undefined
 
+    const cacheKey = (key: string) => `${config.storage ?? "default"}:${key}`
+
     const api: AsyncStorage = {
       getItem: async (key) => {
+        const ck = cacheKey(key)
+
+        // Check memory cache first for instant return on revisit
+        const cached = memoryCache.get(ck)
+        if (cached !== undefined) {
+          return cached.value
+        }
+
         const raw = await current.getItem(key)
         if (raw !== null) {
           const parsed = parse(raw)
-          if (parsed === undefined) return raw
+          if (parsed === undefined) {
+            memoryCache.set(ck, { value: raw })
+            return raw
+          }
 
           const migrated = config.migrate ? config.migrate(parsed) : parsed
           const merged = merge(defaults, migrated)
           const next = JSON.stringify(merged)
           if (raw !== next) await current.setItem(key, next)
+          memoryCache.set(ck, { value: next })
           return next
         }
 
-        if (!legacyStore) return null
+        if (!legacyStore) {
+          memoryCache.set(ck, { value: null })
+          return null
+        }
 
         for (const legacyKey of legacy) {
           const legacyRaw = await legacyStore.getItem(legacyKey)
@@ -206,21 +238,30 @@ export function persisted<T>(
           await legacyStore.removeItem(legacyKey)
 
           const parsed = parse(legacyRaw)
-          if (parsed === undefined) return legacyRaw
+          if (parsed === undefined) {
+            memoryCache.set(ck, { value: legacyRaw })
+            return legacyRaw
+          }
 
           const migrated = config.migrate ? config.migrate(parsed) : parsed
           const merged = merge(defaults, migrated)
           const next = JSON.stringify(merged)
           if (legacyRaw !== next) await current.setItem(key, next)
+          memoryCache.set(ck, { value: next })
           return next
         }
 
+        memoryCache.set(ck, { value: null })
         return null
       },
       setItem: async (key, value) => {
+        const ck = cacheKey(key)
+        memoryCache.set(ck, { value })
         await current.setItem(key, value)
       },
       removeItem: async (key) => {
+        const ck = cacheKey(key)
+        memoryCache.delete(ck)
         await current.removeItem(key)
       },
     }

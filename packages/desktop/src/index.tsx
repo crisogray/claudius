@@ -88,7 +88,7 @@ const createPlatform = (password: Accessor<string | null>): Platform => ({
       length(): Promise<number>
     }
 
-    const WRITE_DEBOUNCE_MS = 250
+    const THROTTLE_MS = 250
 
     const storeCache = new Map<string, Promise<StoreLike>>()
     const apiCache = new Map<string, AsyncStorage & { flush: () => Promise<void> }>()
@@ -134,6 +134,7 @@ const createPlatform = (password: Accessor<string | null>): Platform => ({
       const pending = new Map<string, string | null>()
       let timer: ReturnType<typeof setTimeout> | undefined
       let flushing: Promise<void> | undefined
+      let lastFlush = 0
 
       const flush = async () => {
         if (flushing) return flushing
@@ -158,12 +159,25 @@ const createPlatform = (password: Accessor<string | null>): Platform => ({
         return flushing
       }
 
+      // Leading + trailing throttle: flush immediately if enough time has passed,
+      // then schedule a trailing flush to catch any queued writes
       const schedule = () => {
-        if (timer) return
+        const now = Date.now()
+        const elapsed = now - lastFlush
+
+        if (elapsed >= THROTTLE_MS) {
+          // Leading edge: flush immediately
+          lastFlush = now
+          void flush()
+        }
+
+        // Always schedule trailing edge flush (reset timer if already scheduled)
+        if (timer) clearTimeout(timer)
         timer = setTimeout(() => {
           timer = undefined
+          lastFlush = Date.now()
           void flush()
-        }, WRITE_DEBOUNCE_MS)
+        }, THROTTLE_MS)
       }
 
       const api: AsyncStorage & { flush: () => Promise<void> } = {
@@ -204,6 +218,12 @@ const createPlatform = (password: Accessor<string | null>): Platform => ({
       }
 
       return api
+    }
+
+    // Prefetch common stores on init to avoid cache miss latency
+    const PREFETCH_STORES = ["default.dat", "opencode.global.dat"]
+    for (const storeName of PREFETCH_STORES) {
+      getStore(storeName) // Warm the store cache
     }
 
     return (name = "default.dat") => {
@@ -271,25 +291,37 @@ const createPlatform = (password: Accessor<string | null>): Platform => ({
   },
 
   // @ts-expect-error
-  fetch: (input, init) => {
-    const pw = password()
+  fetch: (() => {
+    // Cache encoded auth header to avoid btoa() on every request
+    let cachedAuth: { password: string; encoded: string } | null = null
 
-    const addHeader = (headers: Headers, password: string) => {
-      headers.append("Authorization", `Basic ${btoa(`opencode:${password}`)}`)
-    }
+    return (input: RequestInfo | URL, init?: RequestInit) => {
+      const pw = password()
 
-    if (input instanceof Request) {
-      if (pw) addHeader(input.headers, pw)
-      return tauriFetch(input)
-    } else {
-      const headers = new Headers(init?.headers)
-      if (pw) addHeader(headers, pw)
-      return tauriFetch(input, {
-        ...(init as any),
-        headers: headers,
-      })
+      // Only re-encode when password changes
+      if (pw && (!cachedAuth || cachedAuth.password !== pw)) {
+        cachedAuth = { password: pw, encoded: `Basic ${btoa(`opencode:${pw}`)}` }
+      } else if (!pw) {
+        cachedAuth = null
+      }
+
+      const addHeader = (headers: Headers) => {
+        if (cachedAuth) headers.append("Authorization", cachedAuth.encoded)
+      }
+
+      if (input instanceof Request) {
+        addHeader(input.headers)
+        return tauriFetch(input)
+      } else {
+        const headers = new Headers(init?.headers)
+        addHeader(headers)
+        return tauriFetch(input, {
+          ...(init as any),
+          headers: headers,
+        })
+      }
     }
-  },
+  })(),
 
   getDefaultServerUrl: async () => {
     const result = await invoke<string | null>("get_default_server_url").catch(() => null)

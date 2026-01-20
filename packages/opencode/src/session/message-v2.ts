@@ -218,6 +218,8 @@ export namespace MessageV2 {
         write: z.number(),
       }),
     }),
+    // Pre-computed diffs for this step (avoids re-computation in summary)
+    precomputedDiff: z.array(Snapshot.FileDiff).optional(),
   }).meta({
     ref: "StepFinishPart",
   })
@@ -465,12 +467,37 @@ export namespace MessageV2 {
     }
   })
 
+  // Batch load all messages in parallel (faster than streaming for bulk loads)
+  export const batchLoad = fn(
+    z.object({
+      sessionID: Identifier.schema("session"),
+      limit: z.number().optional(),
+    }),
+    async (input) => {
+      const list = await Array.fromAsync(await Storage.list(["message", input.sessionID]))
+      // Reverse to get chronological order, then limit
+      const messageKeys = list.reverse()
+      const limitedKeys = input.limit ? messageKeys.slice(0, input.limit) : messageKeys
+
+      // Load all messages in parallel
+      const messages = await Promise.all(
+        limitedKeys.map((item) =>
+          get({
+            sessionID: input.sessionID,
+            messageID: item[2],
+          })
+        )
+      )
+      return messages
+    },
+  )
+
   export const parts = fn(Identifier.schema("message"), async (messageID) => {
-    const result = [] as MessageV2.Part[]
-    for (const item of await Storage.list(["part", messageID])) {
-      const read = await Storage.read<MessageV2.Part>(item)
-      result.push(read)
-    }
+    const items = await Storage.list(["part", messageID])
+    // Read all parts in parallel instead of sequentially
+    const result = await Promise.all(
+      items.map((item) => Storage.read<MessageV2.Part>(item))
+    )
     result.sort((a, b) => (a.id > b.id ? 1 : -1))
     return result
   })
@@ -481,10 +508,12 @@ export namespace MessageV2 {
       messageID: Identifier.schema("message"),
     }),
     async (input) => {
-      return {
-        info: await Storage.read<MessageV2.Info>(["message", input.sessionID, input.messageID]),
-        parts: await parts(input.messageID),
-      }
+      // Read message info and parts in parallel
+      const [info, partsResult] = await Promise.all([
+        Storage.read<MessageV2.Info>(["message", input.sessionID, input.messageID]),
+        parts(input.messageID),
+      ])
+      return { info, parts: partsResult }
     },
   )
 

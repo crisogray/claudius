@@ -40,6 +40,7 @@ export type ContextItem = FileContext
 
 export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
   name: "Local",
+  gate: false, // Don't block children while loading persisted storage
   init: () => {
     const sdk = useSDK()
     const sync = useSync()

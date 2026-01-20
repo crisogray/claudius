@@ -1,10 +1,12 @@
-import { createMemo, Show, type ParentProps } from "solid-js"
+import { createMemo, onMount, Show, type ParentProps } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider, useSDK } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
 import { GitProvider } from "@/context/git"
 import { LocalProvider } from "@/context/local"
 import { LspProvider } from "@/context/lsp"
+import { usePlatform } from "@/context/platform"
+import { prefetchWorkspaceStorage } from "@/utils/persist"
 
 import { base64Decode } from "@opencode-ai/util/encode"
 import { DataProvider } from "@opencode-ai/ui/context"
@@ -13,9 +15,14 @@ import { iife } from "@opencode-ai/util/iife"
 export default function Layout(props: ParentProps) {
   const params = useParams()
   const navigate = useNavigate()
-  const directory = createMemo(() => {
-    return base64Decode(params.dir!)
+  const platform = usePlatform()
+  const directory = createMemo(() => base64Decode(params.dir!))
+
+  // Prefetch workspace storage to avoid 2s delay on first session switch
+  onMount(() => {
+    prefetchWorkspaceStorage(directory(), platform)
   })
+
   return (
     <Show when={params.dir} keyed>
       <SDKProvider directory={directory()}>

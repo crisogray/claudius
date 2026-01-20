@@ -275,8 +275,9 @@ export namespace SDK {
     Bus.publish(MessageV2.Event.Updated, { info: userMessage })
     Bus.publish(Event.Started, { sessionID: input.sessionID, prompt })
 
-    // Capture initial snapshot at user message time (before SDK startup delay)
-    const initialSnapshot = await Snapshot.track()
+    // Snapshot capture is deferred to stream.ts where we can check if write tools are enabled
+    // This avoids expensive git operations for read-only queries
+    const initialSnapshot = undefined
 
     // Set session status to busy
     SessionStatus.set(input.sessionID, { type: "busy" })

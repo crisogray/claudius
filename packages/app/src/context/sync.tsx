@@ -14,7 +14,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     const sdk = useSDK()
     const [store, setStore] = globalSync.child(sdk.directory)
     const absolute = (path: string) => (store.path.directory + "/" + path).replace("//", "/")
-    const chunk = 400
+    const chunk = 50
     const inflight = new Map<string, Promise<void>>()
     const inflightDiff = new Map<string, Promise<void>>()
     const inflightTodo = new Map<string, Promise<void>>()
@@ -50,6 +50,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       if (meta.loading[sessionID]) return
 
       setMeta("loading", sessionID, true)
+
       await retry(() => sdk.client.session.messages({ sessionID, limit }))
         .then((messages) => {
           const items = (messages.data ?? []).filter((x) => !!x?.info?.id)

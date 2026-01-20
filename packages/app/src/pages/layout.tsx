@@ -374,7 +374,7 @@ export default function Layout(props: ParentProps) {
   }
 
   const prefetchChunk = 200
-  const prefetchConcurrency = 1
+  const prefetchConcurrency = 3
   const prefetchPendingLimit = 6
   const prefetchToken = { value: 0 }
   const prefetchQueues = new Map<string, PrefetchQueue>()

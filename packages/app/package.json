@@ -48,6 +48,7 @@
     "diff": "catalog:",
     "fuzzysort": "catalog:",
     "ghostty-web": "0.3.0",
+    "lru-cache": "11.2.4",
     "luxon": "catalog:",
     "marked": "catalog:",
     "marked-shiki": "catalog:",

@@ -13,6 +13,7 @@ import { Flag } from "@/flag/flag"
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })
+  const IDLE_TIMEOUT_MS = 4 * 60 * 1000 // 4 minutes
 
   export const Event = {
     Updated: BusEvent.define("lsp.updated", z.object({})),
@@ -138,10 +139,25 @@ export namespace LSP {
         spawning: new Map<string, Promise<LSPClient.Info | undefined>>(),
       }
     },
-    async (state) => {
-      await Promise.all(state.clients.map((client) => client.shutdown()))
+    async (s) => {
+      for (const client of s.clients) {
+        client.clearIdleTimer()
+      }
+      await Promise.all(s.clients.map((client) => client.shutdown()))
     },
   )
+
+  async function resetClientActivity(client: LSPClient.Info) {
+    client.resetIdleTimer(IDLE_TIMEOUT_MS, async () => {
+      log.info("LSP server idle timeout", { serverID: client.serverID, root: client.root })
+      const s = await state()
+      const idx = s.clients.indexOf(client)
+      if (idx !== -1) {
+        s.clients.splice(idx, 1)
+      }
+      await client.shutdown()
+    })
+  }
 
   export async function init() {
     return state()
@@ -277,6 +293,7 @@ export namespace LSP {
   export async function touchFile(input: string, waitForDiagnostics?: boolean) {
     log.info("touching file", { file: input })
     const clients = await getClients(input)
+    for (const client of clients) resetClientActivity(client)
     await Promise.all(
       clients.map(async (client) => {
         const wait = waitForDiagnostics ? client.waitForDiagnostics({ path: input }) : Promise.resolve()
@@ -291,6 +308,7 @@ export namespace LSP {
   export async function openFile(input: string) {
     log.info("opening file", { file: input })
     const clients = await getClients(input)
+    for (const client of clients) resetClientActivity(client)
     await Promise.all(clients.map((client) => client.notify.open({ path: input }))).catch((err) => {
       log.error("failed to open file", { err, file: input })
     })
@@ -299,6 +317,7 @@ export namespace LSP {
   export async function changeFile(input: { path: string; text: string }) {
     log.info("changing file", { file: input.path })
     const clients = await getClients(input.path)
+    for (const client of clients) resetClientActivity(client)
     await Promise.all(clients.map((client) => client.notify.change(input))).catch((err) => {
       log.error("failed to change file", { err, file: input.path })
     })
@@ -307,6 +326,7 @@ export namespace LSP {
   export async function saveFile(input: { path: string; text?: string }) {
     log.info("saving file", { file: input.path })
     const clients = await getClients(input.path)
+    for (const client of clients) resetClientActivity(client)
     await Promise.all(clients.map((client) => client.notify.save(input))).catch((err) => {
       log.error("failed to save file", { err, file: input.path })
     })
@@ -315,6 +335,7 @@ export namespace LSP {
   export async function closeFile(input: string) {
     log.info("closing file", { file: input })
     const clients = await getClients(input)
+    for (const client of clients) resetClientActivity(client)
     await Promise.all(clients.map((client) => client.notify.close({ path: input }))).catch((err) => {
       log.error("failed to close file", { err, file: input })
     })
@@ -585,12 +606,14 @@ export namespace LSP {
 
   async function runAll<T>(input: (client: LSPClient.Info) => Promise<T>): Promise<T[]> {
     const clients = await state().then((x) => x.clients)
+    for (const client of clients) resetClientActivity(client)
     const tasks = clients.map((x) => input(x))
     return Promise.all(tasks)
   }
 
   async function run<T>(file: string, input: (client: LSPClient.Info) => Promise<T>): Promise<T[]> {
     const clients = await getClients(file)
+    for (const client of clients) resetClientActivity(client)
     const tasks = clients.map((x) => input(x))
     return Promise.all(tasks)
   }

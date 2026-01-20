@@ -13,6 +13,14 @@ import { SDKConvert } from "./convert"
 export namespace SDKStream {
   const log = Log.create({ service: "sdk.stream" })
 
+  // Tools that can modify the filesystem
+  const WRITE_TOOLS = new Set(["Write", "Edit", "Bash", "NotebookEdit"])
+
+  function hasWriteTools(tools: string[] | undefined): boolean {
+    if (!tools) return true // Default to capturing snapshot if unknown
+    return tools.some((tool) => WRITE_TOOLS.has(tool))
+  }
+
   /**
    * Normalize tool input for consistent storage
    * Converts SDK snake_case params to camelCase for UI compatibility
@@ -200,8 +208,12 @@ export namespace SDKStream {
         switch (message.type) {
           case "system": {
             if (message.subtype === "init") {
-              // Use pre-captured snapshot if provided, otherwise capture now
-              initialSnapshot = context.initialSnapshot ?? await Snapshot.track()
+              // Only capture snapshot if write tools are enabled (skip for read-only queries)
+              if (hasWriteTools(message.tools)) {
+                initialSnapshot = context.initialSnapshot ?? await Snapshot.track()
+              } else {
+                log.info("skipping snapshot for read-only query", { tools: message.tools })
+              }
 
               // Update session with SDK session ID for resume
               if (message.session_id) {
@@ -768,7 +780,11 @@ export namespace SDKStream {
     const finalSnapshot = await Snapshot.track()
     if (!finalSnapshot) return
 
-    // Add StepFinishPart
+    // Pre-compute diffs now while we have the snapshots (avoids re-computation in summary)
+    // This uses the parallelized diffFull for better performance
+    const precomputedDiff = await Snapshot.diffFull(initialSnapshot, finalSnapshot)
+
+    // Add StepFinishPart with pre-computed diff
     const stepFinishPart: MessageV2.StepFinishPart = {
       id: Identifier.ascending("part"),
       sessionID,
@@ -778,6 +794,7 @@ export namespace SDKStream {
       snapshot: finalSnapshot,
       cost,
       tokens,
+      precomputedDiff: precomputedDiff.length > 0 ? precomputedDiff : undefined,
     }
     await Session.updatePart(stepFinishPart)
 
@@ -795,7 +812,7 @@ export namespace SDKStream {
       await Session.updatePart(patchPart)
     }
 
-    // Trigger diff computation, storage, and Bus event
+    // Trigger summary computation (now uses pre-computed diffs when available)
     // Pass userMessageID since SessionSummary expects a user message
     log.info("triggering SessionSummary.summarize", { sessionID, userMessageID })
     SessionSummary.summarize({ sessionID, messageID: userMessageID })

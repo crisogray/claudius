@@ -165,7 +165,9 @@ export namespace Snapshot {
   export type FileDiff = z.infer<typeof FileDiff>
   export async function diffFull(from: string, to: string): Promise<FileDiff[]> {
     const git = gitdir()
-    const result: FileDiff[] = []
+
+    // First, collect all file info from numstat output
+    const fileInfos: Array<{ file: string; additions: string; deletions: string }> = []
     for await (const line of $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff --no-ext-diff --no-renames --numstat ${from} ${to} -- .`
       .quiet()
       .cwd(Instance.directory)
@@ -173,30 +175,49 @@ export namespace Snapshot {
       .lines()) {
       if (!line) continue
       const [additions, deletions, file] = line.split("\t")
-      const isBinaryFile = additions === "-" && deletions === "-"
-      const before = isBinaryFile
-        ? ""
-        : await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} show ${from}:${file}`
-            .quiet()
-            .nothrow()
-            .text()
-      const after = isBinaryFile
-        ? ""
-        : await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} show ${to}:${file}`
-            .quiet()
-            .nothrow()
-            .text()
-      const added = isBinaryFile ? 0 : parseInt(additions)
-      const deleted = isBinaryFile ? 0 : parseInt(deletions)
-      result.push({
-        file,
-        before,
-        after,
-        additions: Number.isFinite(added) ? added : 0,
-        deletions: Number.isFinite(deleted) ? deleted : 0,
-      })
+      fileInfos.push({ file, additions, deletions })
     }
-    return result
+
+    // Process files in parallel batches to avoid overwhelming git
+    const BATCH_SIZE = 10
+    const results: FileDiff[] = []
+
+    for (let i = 0; i < fileInfos.length; i += BATCH_SIZE) {
+      const batch = fileInfos.slice(i, i + BATCH_SIZE)
+      const batchResults = await Promise.all(
+        batch.map(async ({ file, additions, deletions }) => {
+          const isBinaryFile = additions === "-" && deletions === "-"
+
+          // Fetch before and after content in parallel for each file
+          const [before, after] = isBinaryFile
+            ? ["", ""]
+            : await Promise.all([
+                $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} show ${from}:${file}`
+                  .quiet()
+                  .nothrow()
+                  .text(),
+                $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} show ${to}:${file}`
+                  .quiet()
+                  .nothrow()
+                  .text(),
+              ])
+
+          const added = isBinaryFile ? 0 : parseInt(additions)
+          const deleted = isBinaryFile ? 0 : parseInt(deletions)
+
+          return {
+            file,
+            before,
+            after,
+            additions: Number.isFinite(added) ? added : 0,
+            deletions: Number.isFinite(deleted) ? deleted : 0,
+          }
+        }),
+      )
+      results.push(...batchResults)
+    }
+
+    return results
   }
 
   function gitdir() {

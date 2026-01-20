@@ -155,6 +155,9 @@ export namespace LSPClient {
       [path: string]: number
     } = {}
 
+    let idleTimer: ReturnType<typeof setTimeout> | undefined
+    let lastActivity = Date.now()
+
     const result = {
       root: input.root,
       get serverID() {
@@ -162,6 +165,20 @@ export namespace LSPClient {
       },
       get connection() {
         return connection
+      },
+      get lastActivity() {
+        return lastActivity
+      },
+      resetIdleTimer(timeoutMs: number, onIdle: () => void) {
+        if (idleTimer) clearTimeout(idleTimer)
+        lastActivity = Date.now()
+        idleTimer = setTimeout(onIdle, timeoutMs)
+      },
+      clearIdleTimer() {
+        if (idleTimer) {
+          clearTimeout(idleTimer)
+          idleTimer = undefined
+        }
       },
       notify: {
         async open(input: { path: string }) {

@@ -28,7 +28,7 @@ import { iife } from "@opencode-ai/util/iife"
 import { Suspense } from "solid-js"
 
 const Home = lazy(() => import("@/pages/home"))
-const Session = lazy(() => import("@/pages/session"))
+import Session from "@/pages/session"
 const Loading = () => <div class="size-full flex items-center justify-center text-text-weak">Loading...</div>
 
 declare global {
