@@ -323,7 +323,7 @@ function createGlobalSync() {
           }),
         )
         if (!event.properties.info.parentID) {
-          setStore("sessionTotal", store.sessionTotal + 1)
+          setStore("totalSessions", store.totalSessions + 1)
         }
         break
       }

@@ -3,6 +3,38 @@
 **Range**: v1.1.23 → v1.1.27
 **Date**: 2026-01-20
 **Total Commits**: ~230
+**Status**: ✅ Clean applies DONE (54 commits) | ⏳ Phased conflicts TODO
+
+---
+
+## Current State
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Clean Applies | 54 commits (Desktop, App, UI, Sidebar, Edit Dialog, Core, Docs) | ✅ DONE |
+| Phase 1 | Bug Fixes (6 commits) | ⏳ TODO |
+| Phase 2 | List/Search Robustness (2 commits) | ⏳ TODO |
+| Phase 3 | Pure Styling (~25 commits) | ⏳ TODO |
+| Phase 4 | Workspace Management (3 commits) | ⏳ TODO |
+| Phase 5 | Session Layout Architecture (6 commits) | ⏳ TODO - **Needs careful approach** |
+| Phase 6 | Misc Features (5 commits) | ⏳ TODO |
+
+**Note**: Phase 5 (Session Layout Architecture) requires special attention. The upstream implementation changed the session title system significantly:
+- **Upstream**: Uses `props.sessionTitle` (session-level title) with conditional display logic
+- **Our fork**: Uses `msg().summary?.title` (message-level summary) always displayed
+- These are fundamentally different data sources - careful manual resolution needed
+
+---
+
+## Policy Decisions
+
+| Category | Decision |
+|----------|----------|
+| Share/Unshare | **SKIP** - Remove sharing entirely |
+| Workspace management | **ACCEPT** - Rename, delete, reset |
+| Session layout | **ACCEPT WITH CARE** - Preserve our title approach |
+| Bug fixes | **ACCEPT ALL** |
+| Pure styling | **ACCEPT ALL** (note: session row deliberately different) |
 
 ---
 
@@ -26,9 +58,9 @@ Our migration from Vercel AI SDK to Claude Agent SDK has **deleted several core 
 
 ---
 
-## Priority: Desktop/App Clean Applies
+## ✅ DONE: Desktop/App Clean Applies (54 commits)
 
-These commits apply cleanly and are **high value** for desktop:
+These commits have been cherry-picked successfully:
 
 ### Desktop UI Fixes (Clean Apply)
 | Hash | Description | Value |
@@ -115,9 +147,10 @@ These commits apply cleanly and are **high value** for desktop:
 
 ---
 
-## Priority: Desktop/App Conflicts (Should Merge)
+## ⏳ TODO: Desktop/App Conflicts (Phased Approach)
 
-These have conflicts but are **valuable desktop features** worth manual resolution:
+These have conflicts but are **valuable desktop features** worth manual resolution.
+See "Phased Approach" section below for recommended order:
 
 ### High Priority Conflicts
 | Hash | Description | Conflict Reason | Effort |
@@ -382,12 +415,15 @@ All commits touching nix/* or flake.* files:
 
 ## Summary
 
-| Category | Clean | Conflict (Worth Merge) | Irrelevant/Skip |
-|----------|-------|------------------------|-----------------|
-| Desktop Core | 5 | 5 | 0 |
-| App UI Fixes | 13 | 50+ | 0 |
-| UI Components | 12 | 15 | 0 |
-| Core/Config | 8 | 3 | 0 |
+| Category | Clean (Done) | Conflict (TODO) | Irrelevant/Skip |
+|----------|--------------|-----------------|-----------------|
+| Desktop Core | 5 ✅ | 5 | 0 |
+| App UI Fixes | 13 ✅ | 50+ | 0 |
+| UI Components | 12 ✅ | 15 | 0 |
+| Core/Config | 8 ✅ | 3 | 0 |
+| Sidebar/Layout | 9 ✅ | - | 0 |
+| Edit Dialog | 4 ✅ | - | 0 |
+| Docs | 4 ✅ | 4 | 0 |
 | TUI | 0 | 0 | 21 |
 | Console/Zen | 0 | 0 | 12 |
 | Provider/LLM | 0 | 0 | 17 |
@@ -396,46 +432,100 @@ All commits touching nix/* or flake.* files:
 | Nix | 0 | 0 | 20+ |
 | Releases/Stats | 0 | 0 | 7 |
 | Tests/E2E | 2 | 8 | 0 |
-| Docs | 4 | 4 | 0 |
-| **Total** | **~44** | **~85** | **~93** |
+| **Total** | **54 ✅** | **~48** | **~93** |
 
----
-
-## Recommended Approach
-
-### Phase 1: Clean Applies (Low Risk)
-Apply all ~44 clean commits via:
-```bash
-git cherry-pick <hash>
+### Progress
+```
+Clean applies: 54 commits ✅
+Phased conflicts: ~48 commits ⏳
+Skipped: ~93 commits ❌
 ```
 
-### Phase 2: High-Value Conflicts (Medium Risk)
-Manually resolve these high-value desktop/app features:
-1. `befd0f163` - feat(app): new session layout
-2. `7811e01c8` - fix(app): new layout improvements
-3. `657f3d508` - feat(app): unified search for commands/files
-4. `06bc4dcb0` - feat(desktop): session unshare button
-5. `086603494` - feat(app): edit project and session titles
-6. `f26de6c52` - feat(app): delete workspace
-7. `093a3e787` - feat(app): reset worktree
+---
 
-### Phase 3: UI Polish Conflicts (Low Risk)
-Batch apply layout.tsx changes by rebasing layout file manually.
+## Phased Approach (Remaining Work)
 
-### Phase 4: Skip
-Ignore all TUI, console, provider/llm, nix, and SDK-migration-affected commits.
+### ⏳ Phase 1: Bug Fixes (6 commits)
+
+| Hash | Description | Conflict Level |
+|------|-------------|----------------|
+| `13276aee8` | fix(desktop): getComputedStyle polyfill all platforms | Low |
+| `704276753` | bug: moved createMemo down | Low |
+| `e92d5b592` | fix(app): can't expand workspaces | Medium |
+| `2ccaa10e7` | fix(app): open workspace on session nav | Low |
+| `416f419a8` | fix: add default icon to sessions | Low |
+| `4be0ba19c` | fix: web mobile menu | Low |
+
+### ⏳ Phase 2: List/Search Robustness (2 commits)
+
+| Hash | Description | Conflict Level |
+|------|-------------|----------------|
+| `07dc8d8ce` | fix: escape CSS selector keys | Low |
+| `092428633` | fix(app): layout jumping (custom scrollIntoView) | Low |
+
+### ⏳ Phase 3: Pure Styling (~25 commits)
+
+Avatar, Workspace, Search/Dialog, and Popover styling fixes.
+See "Medium Priority Conflicts" tables above for full list.
+
+### ⏳ Phase 4: Workspace Management (3 commits)
+
+| Hash | Description | Conflict Level |
+|------|-------------|----------------|
+| `086603494` | feat(app): edit project and session titles | Medium |
+| `f26de6c52` | feat(app): delete workspace | Medium |
+| `093a3e787` | feat(app): reset worktree | Medium |
+
+### ⏳ Phase 5: Session Layout Architecture (6 commits) - CAREFUL
+
+**WARNING**: These commits change the title system significantly.
+
+| Hash | Description | Conflict Level |
+|------|-------------|----------------|
+| `1f11a8a6e` | feat(app): improved session layout | **High** |
+| `befd0f163` | feat(app): new session layout | **High** |
+| `7811e01c8` | fix(app): new layout improvements | **High** |
+| `eb779a7cc` | chore: cleanup | Low |
+| `c720a2163` | chore: cleanup | Low |
+| `bec294b78` | fix(app): remove copy button from summary | Low |
+
+**Key conflict**: Upstream uses `props.sessionTitle` with conditional `titleShown` logic.
+Our fork uses `msg().summary?.title` displayed unconditionally.
+Must preserve our approach when resolving these conflicts.
+
+### ⏳ Phase 6: Misc Features (5 commits)
+
+| Hash | Description | Conflict Level |
+|------|-------------|----------------|
+| `a4d182441` | fix(app): no more favicons | Low |
+| `6e00348bd` | fix(app): remember last opened project | Low |
+| `0384e6b0e` | fix: update desktop initializing splash logo | Low |
+| `4ddfa86e7` | fix(app): message list overflow & scrolling | Low |
+| `353115a89` | fix(app): user message expand on click | Low |
+
+### ❌ SKIP: Share Functionality
+
+Policy decision: Remove sharing entirely
+
+- SKIP `06bc4dcb0` - feat(desktop): session unshare button
+- SKIP `ad2e03284` - refactor(desktop): session search button styling
+- SKIP `08005d755` - refactor(desktop): share button layout shift
 
 ---
 
-## Difficulty Assessment
+## Notes
 
-**Before SDK Migration**:
-- Conflict rate: ~60%
-- Many provider/llm/prompt conflicts required understanding of complex code paths
+**Key Files with Many Conflicts**:
+- `layout.tsx` - Many sidebar/workspace commits touch this file
+- `session-turn.tsx` - Session layout changes touch this file
+- `session.tsx` - Various session-related commits
 
-**After SDK Migration**:
-- Conflict rate: ~38% (many provider commits now simply N/A)
-- Remaining conflicts are mostly UI/layout files (easier to resolve)
-- Main challenge: `layout.tsx` has ~50 conflicting commits (consider rebasing that file)
+**Recommended Approach**:
+1. Apply phases 1-4 one at a time, verify build after each phase
+2. Apply phase 5 (Session Layout) with extra care - review each change manually
+3. Apply phase 6 last
 
-**Net Impact**: Migration made cherry-picking **easier** by eliminating the hardest conflicts (provider/llm code). Remaining work is mostly straightforward UI conflict resolution.
+**What to preserve in our fork**:
+- Two-row session item design in layout.tsx
+- `msg().summary?.title` approach for session titles (not upstream's `props.sessionTitle`)
+- "Claudius" branding (not OpenCode)
