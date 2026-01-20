@@ -1255,14 +1255,14 @@ createEffect(() => {
             onFocus={() => prefetchSession(props.session, "high")}
           >
             <div class="flex items-center self-stretch gap-6 justify-between transition-[padding] group-hover/session:pr-7 group-focus-within/session:pr-7 group-active/session:pr-7">
-              <span
-                classList={{
-                  "text-14-regular text-text-strong overflow-hidden text-ellipsis truncate": true,
-                  "animate-pulse": isWorking(),
-                }}
-              >
-{props.session.title}
-              </span>
+              <InlineEditor
+                id={`session:${props.session.id}`}
+                value={() => props.session.title}
+                onSave={(next) => renameSession(props.session, next)}
+                class="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate"
+                displayClass="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate"
+                stopPropagation
+              />
               <div class="shrink-0 group-hover/session:hidden group-active/session:hidden group-focus-within/session:hidden">
                 <Switch fallback={<Icon name="dash" size="small" class="text-icon-weak" />}>
                   <Match when={isWorking()}>
@@ -1291,21 +1291,6 @@ createEffect(() => {
                   </Match>
                 </Switch>
               </div>
-              <InlineEditor
-                id={`session:${props.session.id}`}
-                value={() => props.session.title}
-                onSave={(next) => renameSession(props.session, next)}
-                class="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate"
-                displayClass="text-14-regular text-text-strong grow-1 min-w-0 overflow-hidden text-ellipsis truncate"
-                stopPropagation
-              />
-              <Show when={props.session.summary}>
-                {(summary) => (
-                  <div class="group-hover/session:hidden group-active/session:hidden group-focus-within/session:hidden">
-                    <DiffChanges changes={summary()} />
-                  </div>
-                )}
-              </Show>
             </div>
             <Show when={props.session.summary?.files}>
               <div class="flex justify-between items-center self-stretch">
