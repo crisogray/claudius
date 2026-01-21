@@ -387,7 +387,7 @@ function ServerGate(props: { children: (data: Accessor<ServerReadyData>) => JSX.
       when={serverData.state !== "pending" && serverData()}
       fallback={
         <div class="h-screen w-screen flex flex-col items-center justify-center bg-background-base">
-          <Logo class="w-xl opacity-12 animate-pulse" />
+          <Logo class="w-xl opacity-40 animate-pulse" />
           <div class="mt-8 text-14-regular text-text-weak">Starting server...</div>
         </div>
       }
