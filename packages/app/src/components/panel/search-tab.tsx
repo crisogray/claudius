@@ -4,6 +4,7 @@ import { useSDK } from "@/context/sdk"
 import { useFile } from "@/context/file"
 import { useLayout } from "@/context/layout"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
+import { IconButton } from "@opencode-ai/ui/icon-button"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
 import type { FindTextResponse } from "@opencode-ai/sdk/v2/client"
 
@@ -107,16 +108,21 @@ export function SearchTab() {
   return (
     <div class="h-full flex flex-col text-sm">
       <div class="p-2 border-b border-border-weak-base">
-        <input
-          type="text"
-          placeholder="Search in files..."
-          class="w-full px-2 py-1 text-sm bg-background-element rounded-md border border-border-base focus:border-primary focus:outline-none"
-          value={query()}
-          onInput={(e) => {
-            setQuery(e.currentTarget.value)
-            search(e.currentTarget.value)
-          }}
-        />
+        <div class="flex items-center gap-2 px-2 h-8 bg-background-element rounded-md border border-border-base focus-within:border-primary">
+          <input
+            type="text"
+            placeholder="Search in files..."
+            class="flex-1 text-sm bg-transparent outline-none"
+            value={query()}
+            onInput={(e) => {
+              setQuery(e.currentTarget.value)
+              search(e.currentTarget.value)
+            }}
+          />
+          <Show when={query()}>
+            <IconButton icon="circle-x" variant="ghost" class="-mr-1" onClick={() => setQuery("")} />
+          </Show>
+        </div>
       </div>
       <Show when={!loading() && results().length > 0}>
         <div class="px-2 py-1 bg-background-strong text-xs text-text-muted">

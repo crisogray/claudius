@@ -6,6 +6,7 @@ import { useGit } from "@/context/git"
 import { useSync } from "@/context/sync"
 import { Tabs } from "@opencode-ai/ui/tabs"
 import { Icon } from "@opencode-ai/ui/icon"
+import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
 import FileTree from "@/components/file-tree"
@@ -98,13 +99,18 @@ export function RightPanel() {
 
           <Tabs.Content value="files" class="flex-1 min-h-0 flex flex-col">
             <div class="p-2 border-b border-border-weak-base">
-              <input
-                type="text"
-                placeholder="Filter files..."
-                class="w-full px-2 py-1 text-sm bg-background-element rounded-md border border-border-base focus:border-primary focus:outline-none"
-                value={filter()}
-                onInput={(e) => setFilter(e.currentTarget.value)}
-              />
+              <div class="flex items-center gap-2 px-2 h-8 bg-background-element rounded-md border border-border-base focus-within:border-primary">
+                <input
+                  type="text"
+                  placeholder="Filter files..."
+                  class="flex-1 text-sm bg-transparent outline-none"
+                  value={filter()}
+                  onInput={(e) => setFilter(e.currentTarget.value)}
+                />
+                <Show when={filter()}>
+                  <IconButton icon="circle-x" variant="ghost" class="-mr-1" onClick={() => setFilter("")} />
+                </Show>
+              </div>
             </div>
             <div class="flex-1 overflow-auto no-scrollbar py-2">
               <FileTree
