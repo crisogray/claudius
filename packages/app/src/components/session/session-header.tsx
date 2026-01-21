@@ -205,7 +205,7 @@ export function SessionHeader() {
                   </Button>
                 </TooltipKeybind>
               </div>
-              <Show when={shareEnabled() && currentSession()}>
+              {/* <Show when={shareEnabled() && currentSession()}>
                 <Popover
                   title="Share session"
                   trigger={
@@ -240,7 +240,7 @@ export function SessionHeader() {
                     )
                   })}
                 </Popover>
-              </Show>
+              </Show> */}
             </div>
           </Portal>
         )}
