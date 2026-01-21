@@ -47,6 +47,7 @@ import {
 } from "@thisbeyond/solid-dnd"
 import type { DragEvent } from "@thisbeyond/solid-dnd"
 import { useProviders } from "@/hooks/use-providers"
+import { useProjectUserRequests } from "@/hooks/use-project-user-requests"
 import { showToast, Toast, toaster } from "@opencode-ai/ui/toast"
 import { useGlobalSDK } from "@/context/global-sdk"
 import { useNotification } from "@/context/notification"
@@ -1229,6 +1230,11 @@ export default function Layout(props: ParentProps) {
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const name = createMemo(() => props.project.name || getFilename(props.project.worktree))
     const mask = "radial-gradient(circle 5px at calc(100% - 4px) 4px, transparent 5px, black 5.5px)"
+    const { hasUserRequest } = useProjectUserRequests(() => props.project)
+    const showIndicator = createMemo(() => {
+      if (!props.notify) return false
+      return hasError() || hasUserRequest() || notifications().length > 0
+    })
 
     return (
       <div class={`relative size-8 shrink-0 rounded ${props.class ?? ""}`}>
@@ -1238,19 +1244,16 @@ export default function Layout(props: ParentProps) {
             src={props.project.icon?.url}
             {...getAvatarColors(props.project.icon?.color)}
             class="size-full rounded"
-            style={
-              notifications().length > 0 && props.notify
-                ? { "-webkit-mask-image": mask, "mask-image": mask }
-                : undefined
-            }
+            style={showIndicator() ? { "-webkit-mask-image": mask, "mask-image": mask } : undefined}
           />
         </div>
-        <Show when={notifications().length > 0 && props.notify}>
+        <Show when={showIndicator()}>
           <div
             classList={{
               "absolute top-px right-px size-1.5 rounded-full z-10": true,
               "bg-icon-critical-base": hasError(),
-              "bg-text-interactive-base": !hasError(),
+              "bg-surface-warning-strong": !hasError() && hasUserRequest(),
+              "bg-text-interactive-base": !hasError() && !hasUserRequest(),
             }}
           />
         </Show>
