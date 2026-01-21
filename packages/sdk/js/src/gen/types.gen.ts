@@ -1814,6 +1814,14 @@ export type WorktreeCreateInput = {
   startCommand?: string
 }
 
+export type WorktreeRemoveInput = {
+  directory: string
+}
+
+export type WorktreeResetInput = {
+  directory: string
+}
+
 export type VcsInfo = {
   branch: string
 }
@@ -2384,6 +2392,33 @@ export type PathGetResponses = {
 
 export type PathGetResponse = PathGetResponses[keyof PathGetResponses]
 
+export type WorktreeRemoveData = {
+  body?: WorktreeRemoveInput
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/experimental/worktree"
+}
+
+export type WorktreeRemoveErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type WorktreeRemoveError = WorktreeRemoveErrors[keyof WorktreeRemoveErrors]
+
+export type WorktreeRemoveResponses = {
+  /**
+   * Worktree removed
+   */
+  200: boolean
+}
+
+export type WorktreeRemoveResponse = WorktreeRemoveResponses[keyof WorktreeRemoveResponses]
+
 export type WorktreeListData = {
   body?: never
   path?: never
@@ -2428,6 +2463,33 @@ export type WorktreeCreateResponses = {
 }
 
 export type WorktreeCreateResponse = WorktreeCreateResponses[keyof WorktreeCreateResponses]
+
+export type WorktreeResetData = {
+  body?: WorktreeResetInput
+  path?: never
+  query?: {
+    directory?: string
+  }
+  url: "/experimental/worktree/reset"
+}
+
+export type WorktreeResetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type WorktreeResetError = WorktreeResetErrors[keyof WorktreeResetErrors]
+
+export type WorktreeResetResponses = {
+  /**
+   * Worktree reset
+   */
+  200: boolean
+}
+
+export type WorktreeResetResponse = WorktreeResetResponses[keyof WorktreeResetResponses]
 
 export type VcsGetData = {
   body?: never
