@@ -9,7 +9,11 @@ import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
 
 // Small action button for git operations
-function ActionButton(props: { icon: "plus" | "close" | "pencil-line"; onClick: (e: MouseEvent) => void; title: string }) {
+function ActionButton(props: {
+  icon: "plus" | "close" | "pencil-line"
+  onClick: (e: MouseEvent) => void
+  title: string
+}) {
   return (
     <button
       class="size-4 flex items-center justify-center rounded hover:bg-background-element text-text-muted cursor-pointer"
@@ -33,11 +37,7 @@ function GitStatusBadge(props: { status: GitFileStatus }) {
 
   const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-text-weak" }
 
-  return (
-    <span class={`text-[10px] font-mono font-medium ${config().class}`}>
-      {config().letter}
-    </span>
-  )
+  return <span class={`text-[10px] font-mono font-medium ${config().class}`}>{config().letter}</span>
 }
 
 function DiffStats(props: { added: number; removed: number }) {
@@ -45,10 +45,14 @@ function DiffStats(props: { added: number; removed: number }) {
     <Show when={props.added > 0 || props.removed > 0}>
       <span class="!text-[10px] font-mono flex gap-1" data-component="diff-changes">
         <Show when={props.added > 0}>
-          <span class="!text-[10px]" data-slot="diff-changes-additions">+{props.added}</span>
+          <span class="!text-[10px]" data-slot="diff-changes-additions">
+            +{props.added}
+          </span>
         </Show>
         <Show when={props.removed > 0}>
-          <span class="!text-[10px]" data-slot="diff-changes-deletions">-{props.removed}</span>
+          <span class="!text-[10px]" data-slot="diff-changes-deletions">
+            -{props.removed}
+          </span>
         </Show>
       </span>
     </Show>
@@ -86,12 +90,12 @@ function GitFileSection(props: {
                 <FileIcon node={{ path: file.path, type: "file" }} class="w-4 h-4" />
                 <span class="flex-1 text-xs flex items-baseline min-w-0 overflow-hidden">
                   <span class="text-text-strong shrink-0">{file.path.replace(/\/$/, "").split("/").pop()}</span>
-                  <span class="text-[10px] text-text-weak ml-1 truncate">{file.path.replace(/\/$/, "").split("/").slice(0, -1).join("/")}</span>
+                  <span class="text-[10px] text-text-weak ml-1 truncate">
+                    {file.path.replace(/\/$/, "").split("/").slice(0, -1).join("/")}
+                  </span>
                 </span>
                 <DiffStats added={file.added} removed={file.removed} />
-                <div class="hidden group-hover:flex items-center gap-1">
-                  {props.actions?.(file)}
-                </div>
+                <div class="hidden group-hover:flex items-center gap-1">{props.actions?.(file)}</div>
               </div>
             )}
           </For>
@@ -133,9 +137,7 @@ export function GitTab() {
   }
 
   const hasStaged = createMemo(() => (git.status?.staged.length ?? 0) > 0)
-  const hasUnstaged = createMemo(
-    () => (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0,
-  )
+  const hasUnstaged = createMemo(() => (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0)
   const hasChanges = createMemo(
     () =>
       (git.status?.staged.length ?? 0) + (git.status?.unstaged.length ?? 0) + (git.status?.untracked.length ?? 0) > 0,
@@ -316,7 +318,11 @@ export function GitTab() {
 
         {/* History */}
         <Show when={git.log.length > 0}>
-          <Collapsible defaultOpen={false} variant="ghost" class="w-full border-t border-border-weak-base rounded-none bg-background-strong">
+          <Collapsible
+            defaultOpen={false}
+            variant="ghost"
+            class="w-full border-t border-border-weak-base rounded-none bg-background-strong"
+          >
             <Collapsible.Trigger class="w-full">
               <div class="w-full p-2 flex items-center gap-2 border-b border-border-weak-base">
                 <Collapsible.Arrow class="text-text-muted/60" />

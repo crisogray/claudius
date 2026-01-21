@@ -61,10 +61,7 @@ export async function copyCLIJsToSidecarFolder(source: string, _target = RUST_TA
 
 // Ripgrep platform mappings
 const RIPGREP_VERSION = "14.1.1"
-const RIPGREP_PLATFORMS: Record<
-  string,
-  { platform: string; extension: "tar.gz" | "zip"; platformKey: string }
-> = {
+const RIPGREP_PLATFORMS: Record<string, { platform: string; extension: "tar.gz" | "zip"; platformKey: string }> = {
   "aarch64-apple-darwin": {
     platform: "aarch64-apple-darwin",
     extension: "tar.gz",

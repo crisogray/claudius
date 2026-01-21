@@ -58,7 +58,6 @@ You can customize formatters through the `formatter` section in your OpenCode co
 
 ```json title="opencode.json"
 {
-  
   "formatter": {}
 }
 ```
@@ -82,7 +81,6 @@ To disable **all** formatters globally, set `formatter` to `false`:
 
 ```json title="opencode.json" {3}
 {
-  
   "formatter": false
 }
 ```
@@ -91,7 +89,6 @@ To disable a **specific** formatter, set `disabled` to `true`:
 
 ```json title="opencode.json" {5}
 {
-  
   "formatter": {
     "prettier": {
       "disabled": true
@@ -108,7 +105,6 @@ You can override the built-in formatters or add new ones by specifying the comma
 
 ```json title="opencode.json" {4-14}
 {
-  
   "formatter": {
     "prettier": {
       "command": ["npx", "prettier", "--write", "$FILE"],

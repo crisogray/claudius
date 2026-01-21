@@ -126,7 +126,8 @@ export function SearchTab() {
       </div>
       <Show when={!loading() && results().length > 0}>
         <div class="px-2 py-1 bg-background-strong text-xs text-text-muted">
-          {totalCount()} {totalCount() === 1 ? 'result' : 'results'} in {grouped().length} {grouped().length === 1 ? 'file' : 'files'}
+          {totalCount()} {totalCount() === 1 ? "result" : "results"} in {grouped().length}{" "}
+          {grouped().length === 1 ? "file" : "files"}
         </div>
       </Show>
       <div class="flex-1 overflow-y-auto">

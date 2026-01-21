@@ -74,7 +74,12 @@ export function FileEditor(props: FileEditorProps) {
     if (!lsp || props.enableLsp === false) return undefined
 
     return {
-      completion: async (params: { line: number; character: number; triggerKind?: number; triggerCharacter?: string }) => {
+      completion: async (params: {
+        line: number
+        character: number
+        triggerKind?: number
+        triggerCharacter?: string
+      }) => {
         return lsp!.completion({
           path: props.path,
           line: params.line,
@@ -132,9 +137,7 @@ export function FileEditor(props: FileEditorProps) {
         <div class="flex items-center justify-center h-full text-text-weak">Loading...</div>
       </Show>
       <Show when={state()?.error}>
-        {(err) => (
-          <div class="flex items-center justify-center h-full text-text-weak">{err()}</div>
-        )}
+        {(err) => <div class="flex items-center justify-center h-full text-text-weak">{err()}</div>}
       </Show>
       <Show when={state()?.loaded}>
         <div class="flex-1 min-h-0 overflow-hidden">

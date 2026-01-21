@@ -203,10 +203,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       })
 
       const current = createMemo(() => {
-        const key = getFirstValidModel(
-          () => ephemeral.model,
-          fallbackModel,
-        )
+        const key = getFirstValidModel(() => ephemeral.model, fallbackModel)
         if (!key) return undefined
         return find(key)
       })
@@ -486,7 +483,13 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         expand(path: string) {
           // Create node if it doesn't exist
           if (!store.node[path]) {
-            setStore("node", path, { path, name: path.split("/").pop() || path, type: "directory" as const, expanded: true, loaded: true })
+            setStore("node", path, {
+              path,
+              name: path.split("/").pop() || path,
+              type: "directory" as const,
+              expanded: true,
+              loaded: true,
+            })
             list(path)
             return
           }

@@ -68,7 +68,6 @@ You can customize LSP servers through the `lsp` section in your opencode config.
 
 ```json title="opencode.json"
 {
-  
   "lsp": {}
 }
 ```
@@ -93,7 +92,6 @@ To disable **all** LSP servers globally, set `lsp` to `false`:
 
 ```json title="opencode.json" {3}
 {
-  
   "lsp": false
 }
 ```
@@ -102,7 +100,6 @@ To disable a **specific** LSP server, set `disabled` to `true`:
 
 ```json title="opencode.json" {5}
 {
-  
   "lsp": {
     "typescript": {
       "disabled": true
@@ -119,7 +116,6 @@ You can add custom LSP servers by specifying the command and file extensions:
 
 ```json title="opencode.json" {4-7}
 {
-  
   "lsp": {
     "custom-lsp": {
       "command": ["custom-lsp-server", "--stdio"],

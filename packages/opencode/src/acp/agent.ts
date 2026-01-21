@@ -803,7 +803,7 @@ export namespace ACP {
       this.sessionManager.get(params.sessionId)
       // Validate mode exists in permission modes
       const validModes = PERMISSION_MODES.map((m) => m.id)
-      if (!validModes.includes(params.modeId as typeof validModes[number])) {
+      if (!validModes.includes(params.modeId as (typeof validModes)[number])) {
         throw new Error(`Invalid mode: ${params.modeId}`)
       }
       this.sessionManager.setMode(params.sessionId, params.modeId)

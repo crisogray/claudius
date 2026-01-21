@@ -10,18 +10,18 @@ The SDK offers a V2 preview with simpler multi-turn patterns. Consider for futur
 
 ```typescript
 // V2: Much simpler multi-turn conversations
-import { unstable_v2_createSession, unstable_v2_resumeSession } from '@anthropic-ai/claude-agent-sdk'
+import { unstable_v2_createSession, unstable_v2_resumeSession } from "@anthropic-ai/claude-agent-sdk"
 
-await using session = unstable_v2_createSession({ model: 'claude-sonnet-4-5-20250929' })
+await using session = unstable_v2_createSession({ model: "claude-sonnet-4-5-20250929" })
 
 // Turn 1
-await session.send('Hello!')
+await session.send("Hello!")
 for await (const msg of session.stream()) {
   // Process messages
 }
 
 // Turn 2 - session maintains context
-await session.send('Follow up question')
+await session.send("Follow up question")
 for await (const msg of session.stream()) {
   // Process messages
 }
@@ -30,6 +30,7 @@ for await (const msg of session.stream()) {
 ```
 
 **Integration Strategy**:
+
 - Initially use V1 API (more feature-complete)
 - Add V2 adapter when it stabilizes
 - V2's `send()`/`stream()` pattern maps well to opencode's Bus events
@@ -40,11 +41,11 @@ for await (const msg of session.stream()) {
 
 These Query methods could be exposed to the UI in future:
 
-| Method | Purpose | UI Integration |
-|--------|---------|----------------|
-| `setMaxThinkingTokens(n)` | Adjust thinking budget mid-conversation | Settings panel slider |
-| `mcpServerStatus()` | Get connected MCP server status | MCP status panel |
-| `accountInfo()` | Get account info (email, org, tier) | Account/settings display |
+| Method                    | Purpose                                 | UI Integration           |
+| ------------------------- | --------------------------------------- | ------------------------ |
+| `setMaxThinkingTokens(n)` | Adjust thinking budget mid-conversation | Settings panel slider    |
+| `mcpServerStatus()`       | Get connected MCP server status         | MCP status panel         |
+| `accountInfo()`           | Get account info (email, org, tier)     | Account/settings display |
 
 ```typescript
 // packages/opencode/src/sdk/query.ts
@@ -70,31 +71,31 @@ function AccountDisplay() {
 
 ## 3. Additional Options
 
-| Option | Type | Purpose | opencode Integration |
-|--------|------|---------|---------------------|
-| `forkSession` | boolean | Fork to new session ID when resuming | Session branching feature |
-| `maxBudgetUsd` | number | Maximum cost for query | Cost limits in config |
-| `fallbackModel` | string | Model to use if primary fails | Reliability/graceful degradation |
-| `resumeSessionAt` | string | Resume at specific message UUID | Enhanced revert/checkpoint |
-| `settingSources` | array | Control which filesystem settings load | Config precedence control |
-| `strictMcpConfig` | boolean | Enforce strict MCP validation | Debugging/validation mode |
+| Option            | Type    | Purpose                                | opencode Integration             |
+| ----------------- | ------- | -------------------------------------- | -------------------------------- |
+| `forkSession`     | boolean | Fork to new session ID when resuming   | Session branching feature        |
+| `maxBudgetUsd`    | number  | Maximum cost for query                 | Cost limits in config            |
+| `fallbackModel`   | string  | Model to use if primary fails          | Reliability/graceful degradation |
+| `resumeSessionAt` | string  | Resume at specific message UUID        | Enhanced revert/checkpoint       |
+| `settingSources`  | array   | Control which filesystem settings load | Config precedence control        |
+| `strictMcpConfig` | boolean | Enforce strict MCP validation          | Debugging/validation mode        |
 
 ```typescript
 // packages/opencode/src/sdk/config.ts
 
 interface SDKConfigExtended {
   // Cost management
-  maxBudgetUsd?: number        // From config.limits.maxCostPerSession
+  maxBudgetUsd?: number // From config.limits.maxCostPerSession
 
   // Reliability
-  fallbackModel?: string       // From config.model.fallback
+  fallbackModel?: string // From config.model.fallback
 
   // Session management
-  forkSession?: boolean        // When resuming, create branch
-  resumeSessionAt?: string     // Resume at specific message UUID
+  forkSession?: boolean // When resuming, create branch
+  resumeSessionAt?: string // Resume at specific message UUID
 
   // Settings isolation
-  settingSources?: ('user' | 'project' | 'local')[]  // Control what settings load
+  settingSources?: ("user" | "project" | "local")[] // Control what settings load
 }
 
 function buildSDKOptions(config: Config, session: Session.Info): Options {
@@ -103,7 +104,7 @@ function buildSDKOptions(config: Config, session: Session.Info): Options {
     maxBudgetUsd: config.limits?.maxCostPerSession,
     fallbackModel: config.model?.fallback,
     forkSession: session.fork ?? false,
-    settingSources: config.sdk?.settingSources ?? ['project'],
+    settingSources: config.sdk?.settingSources ?? ["project"],
   }
 }
 ```
@@ -120,94 +121,114 @@ These hooks could enhance the plugin system:
 function buildHooks(): Partial<Record<HookEvent, HookCallbackMatcher[]>> {
   return {
     // Tool execution failure
-    PostToolUseFailure: [{
-      hooks: [async (input, toolUseID, options) => {
-        const failInput = input as PostToolUseFailureHookInput
-        await Plugin.trigger("tool.execute.error", {
-          sessionID: input.session_id,
-          tool: failInput.tool_name,
-          error: failInput.error,
-          isInterrupt: failInput.is_interrupt
-        })
+    PostToolUseFailure: [
+      {
+        hooks: [
+          async (input, toolUseID, options) => {
+            const failInput = input as PostToolUseFailureHookInput
+            await Plugin.trigger("tool.execute.error", {
+              sessionID: input.session_id,
+              tool: failInput.tool_name,
+              error: failInput.error,
+              isInterrupt: failInput.is_interrupt,
+            })
 
-        Bus.publish(SDK.Event.ToolError, {
-          sessionID: input.session_id,
-          toolUseID,
-          toolName: failInput.tool_name,
-          error: failInput.error
-        })
-        return { continue: true }
-      }]
-    }],
+            Bus.publish(SDK.Event.ToolError, {
+              sessionID: input.session_id,
+              toolUseID,
+              toolName: failInput.tool_name,
+              error: failInput.error,
+            })
+            return { continue: true }
+          },
+        ],
+      },
+    ],
 
     // User prompt submission (can add context)
-    UserPromptSubmit: [{
-      hooks: [async (input, toolUseID, options) => {
-        const promptInput = input as UserPromptSubmitHookInput
-        await Plugin.trigger("prompt.submit", {
-          sessionID: input.session_id,
-          prompt: promptInput.prompt
-        })
+    UserPromptSubmit: [
+      {
+        hooks: [
+          async (input, toolUseID, options) => {
+            const promptInput = input as UserPromptSubmitHookInput
+            await Plugin.trigger("prompt.submit", {
+              sessionID: input.session_id,
+              prompt: promptInput.prompt,
+            })
 
-        const context = await getAdditionalContext(input.session_id)
-        if (context) {
-          return {
-            hookSpecificOutput: {
-              hookEventName: 'UserPromptSubmit',
-              additionalContext: context
+            const context = await getAdditionalContext(input.session_id)
+            if (context) {
+              return {
+                hookSpecificOutput: {
+                  hookEventName: "UserPromptSubmit",
+                  additionalContext: context,
+                },
+              }
             }
-          }
-        }
-        return { continue: true }
-      }]
-    }],
+            return { continue: true }
+          },
+        ],
+      },
+    ],
 
     // Stop hook
-    Stop: [{
-      hooks: [async (input, toolUseID, options) => {
-        const stopInput = input as StopHookInput
-        await Plugin.trigger("session.stop", {
-          sessionID: input.session_id,
-          stopHookActive: stopInput.stop_hook_active
-        })
-        return { continue: true }
-      }]
-    }],
+    Stop: [
+      {
+        hooks: [
+          async (input, toolUseID, options) => {
+            const stopInput = input as StopHookInput
+            await Plugin.trigger("session.stop", {
+              sessionID: input.session_id,
+              stopHookActive: stopInput.stop_hook_active,
+            })
+            return { continue: true }
+          },
+        ],
+      },
+    ],
 
     // Pre-compaction (archive before summarize)
-    PreCompact: [{
-      hooks: [async (input, toolUseID, options) => {
-        const compactInput = input as PreCompactHookInput
+    PreCompact: [
+      {
+        hooks: [
+          async (input, toolUseID, options) => {
+            const compactInput = input as PreCompactHookInput
 
-        if (compactInput.trigger === 'auto') {
-          await archiveTranscript(input.session_id, input.transcript_path)
-        }
+            if (compactInput.trigger === "auto") {
+              await archiveTranscript(input.session_id, input.transcript_path)
+            }
 
-        await Plugin.trigger("session.compact.before", {
-          sessionID: input.session_id,
-          trigger: compactInput.trigger,
-          customInstructions: compactInput.custom_instructions
-        })
-        return { continue: true }
-      }]
-    }],
+            await Plugin.trigger("session.compact.before", {
+              sessionID: input.session_id,
+              trigger: compactInput.trigger,
+              customInstructions: compactInput.custom_instructions,
+            })
+            return { continue: true }
+          },
+        ],
+      },
+    ],
 
     // Permission request (custom handling)
-    PermissionRequest: [{
-      hooks: [async (input, toolUseID, options) => {
-        const permInput = input as PermissionRequestHookInput
+    PermissionRequest: [
+      {
+        hooks: [
+          async (input, toolUseID, options) => {
+            const permInput = input as PermissionRequestHookInput
 
-        Bus.publish(SDK.Event.PermissionRequest, {
-          sessionID: input.session_id,
-          toolUseID,
-          toolName: permInput.tool_name,
-          toolInput: permInput.tool_input,
-          suggestions: permInput.permission_suggestions
-        })
+            Bus.publish(SDK.Event.PermissionRequest, {
+              sessionID: input.session_id,
+              toolUseID,
+              toolName: permInput.tool_name,
+              toolInput: permInput.tool_input,
+              suggestions: permInput.permission_suggestions,
+            })
 
-        return { continue: true }
-      }]
-    }],
+            return { continue: true }
+          },
+        ],
+      },
+    ],
   }
 }
 ```
@@ -227,10 +248,10 @@ export async function getSDKPlugins(): Promise<SdkPluginConfig[]> {
   const opencodePlugins = await Plugin.list()
 
   return opencodePlugins
-    .filter(p => p.sdk !== false)
-    .map(p => ({
-      type: 'local' as const,
-      path: p.path
+    .filter((p) => p.sdk !== false)
+    .map((p) => ({
+      type: "local" as const,
+      path: p.path,
     }))
 }
 
@@ -396,8 +417,8 @@ Fine-grained control over sandbox violation handling:
 // packages/opencode/src/sdk/config.ts
 
 interface SandboxIgnoreViolations {
-  file?: string[]      // File paths to ignore violations for
-  network?: string[]   // Network patterns to ignore
+  file?: string[] // File paths to ignore violations for
+  network?: string[] // Network patterns to ignore
 }
 
 function buildSandboxConfig(config: Config): SandboxSettings {
@@ -406,18 +427,18 @@ function buildSandboxConfig(config: Config): SandboxSettings {
     autoAllowBashIfSandboxed: true,
 
     ignoreViolations: {
-      file: ['/tmp/*', '/var/tmp/*', config.paths?.temp ?? ''],
-      network: config.sandbox?.allowedNetworkPatterns ?? []
+      file: ["/tmp/*", "/var/tmp/*", config.paths?.temp ?? ""],
+      network: config.sandbox?.allowedNetworkPatterns ?? [],
     },
 
     enableWeakerNestedSandbox: config.sandbox?.weakerNested ?? false,
 
     network: {
       allowLocalBinding: true,
-      allowUnixSockets: ['/var/run/docker.sock'],
+      allowUnixSockets: ["/var/run/docker.sock"],
       httpProxyPort: config.proxy?.http,
-      socksProxyPort: config.proxy?.socks
-    }
+      socksProxyPort: config.proxy?.socks,
+    },
   }
 }
 ```
@@ -481,14 +502,14 @@ Support different JavaScript runtimes:
 // packages/opencode/src/sdk/config.ts
 
 interface RuntimeConfig {
-  executable?: 'bun' | 'deno' | 'node'  // Default: auto-detected
-  executableArgs?: string[]              // Arguments for runtime
+  executable?: "bun" | "deno" | "node" // Default: auto-detected
+  executableArgs?: string[] // Arguments for runtime
 }
 
 function buildRuntimeConfig(config: Config): RuntimeConfig {
   return {
     executable: config.sdk?.runtime,
-    executableArgs: config.sdk?.runtimeArgs ?? []
+    executableArgs: config.sdk?.runtimeArgs ?? [],
   }
 }
 
@@ -502,22 +523,22 @@ const options: Options = {
 
 ## Priority Summary
 
-| Feature | Category | Priority | Integration Effort |
-|---------|----------|----------|-------------------|
-| V2 Interface | Future | Low | Medium (when stable) |
-| Query methods (account, MCP status) | UI | Medium | Low |
-| `maxBudgetUsd` | Cost control | Medium | Low |
-| `fallbackModel` | Reliability | Medium | Low |
-| `forkSession` | Session branching | Medium | Medium |
-| `resumeSessionAt` | Checkpoints | Medium | Low |
-| Additional hooks (5 total) | Plugin system | Medium | Medium |
-| Plugin system | Extensibility | Medium | Medium |
-| SSE/HTTP MCP servers | MCP | Medium | Low |
-| Permission denial tracking | UI/Audit | Medium | Low |
-| Extended model usage | Analytics | Low | Low |
-| Sandbox ignore violations | Security | Low | Low |
-| Account info display | UI | Low | Low |
-| Runtime configuration | Infrastructure | Low | Low |
+| Feature                             | Category          | Priority | Integration Effort   |
+| ----------------------------------- | ----------------- | -------- | -------------------- |
+| V2 Interface                        | Future            | Low      | Medium (when stable) |
+| Query methods (account, MCP status) | UI                | Medium   | Low                  |
+| `maxBudgetUsd`                      | Cost control      | Medium   | Low                  |
+| `fallbackModel`                     | Reliability       | Medium   | Low                  |
+| `forkSession`                       | Session branching | Medium   | Medium               |
+| `resumeSessionAt`                   | Checkpoints       | Medium   | Low                  |
+| Additional hooks (5 total)          | Plugin system     | Medium   | Medium               |
+| Plugin system                       | Extensibility     | Medium   | Medium               |
+| SSE/HTTP MCP servers                | MCP               | Medium   | Low                  |
+| Permission denial tracking          | UI/Audit          | Medium   | Low                  |
+| Extended model usage                | Analytics         | Low      | Low                  |
+| Sandbox ignore violations           | Security          | Low      | Low                  |
+| Account info display                | UI                | Low      | Low                  |
+| Runtime configuration               | Infrastructure    | Low      | Low                  |
 
 **Total features**: 14 categories
 **Recommended for Phase 2**: Query methods, budget limits, additional hooks, permission tracking
@@ -529,6 +550,7 @@ const options: Options = {
 Enable remote access to local ADE instance via secure tunneling.
 
 ### Use Case
+
 Access your local development environment from another device (phone, tablet, another laptop) while ADE runs on your main machine.
 
 ### Implementation Options
@@ -538,8 +560,8 @@ Access your local development environment from another device (phone, tablet, an
 import { createTunnel } from "@/server/tunnel"
 
 const tunnel = await createTunnel({
-  provider: "cloudflare",  // or "ngrok", "tailscale"
-  port: Server.url().port
+  provider: "cloudflare", // or "ngrok", "tailscale"
+  port: Server.url().port,
 })
 console.log(`Remote access: ${tunnel.url}`)
 
@@ -549,6 +571,7 @@ console.log(`Remote access: ${tunnel.url}`)
 ```
 
 ### Architecture
+
 ```
 Remote Device → Tunnel Service → Local Hono Server → SDK + Files
      ↑                                    ↓
@@ -556,6 +579,7 @@ Remote Device → Tunnel Service → Local Hono Server → SDK + Files
 ```
 
 ### Security Considerations
+
 - Authentication required for remote access
 - API key management (don't expose in tunnel)
 - Session tokens for UI auth
@@ -563,4 +587,5 @@ Remote Device → Tunnel Service → Local Hono Server → SDK + Files
 - Audit logging for remote sessions
 
 ### Priority: Low
+
 This is a convenience feature. Users can already use external tunnel services manually.

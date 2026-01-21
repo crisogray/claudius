@@ -1,4 +1,9 @@
-import { autocompletion, type CompletionContext, type CompletionResult, type Completion } from "@codemirror/autocomplete"
+import {
+  autocompletion,
+  type CompletionContext,
+  type CompletionResult,
+  type Completion,
+} from "@codemirror/autocomplete"
 import { hoverTooltip, type Tooltip } from "@codemirror/view"
 import { EditorView, keymap, type ViewUpdate } from "@codemirror/view"
 import { linter, type Diagnostic as CMLintDiagnostic } from "@codemirror/lint"

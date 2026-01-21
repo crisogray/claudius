@@ -25,7 +25,6 @@ You can set permissions globally (with `*`), and override specific tools.
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "*": "ask",
     "bash": "allow",
@@ -38,7 +37,6 @@ You can also set all permissions at once:
 
 ```json title="opencode.json"
 {
-  
   "permission": "allow"
 }
 ```
@@ -51,7 +49,6 @@ For most permissions, you can use an object to apply different actions based on 
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "bash": {
       "*": "ask",
@@ -141,7 +138,6 @@ You can override permissions per agent. Agent permissions are merged with the gl
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "bash": {
       "*": "ask",

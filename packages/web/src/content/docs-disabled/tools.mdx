@@ -15,7 +15,6 @@ Use the `permission` field to control tool behavior. You can allow, deny, or req
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "edit": "deny",
     "bash": "ask",
@@ -28,7 +27,6 @@ You can also use wildcards to control multiple tools at once. For example, to re
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "mymcp_*": "ask"
   }
@@ -51,7 +49,6 @@ Execute shell commands in your project environment.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "bash": "allow"
   }
@@ -68,7 +65,6 @@ Modify existing files using exact string replacements.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "edit": "allow"
   }
@@ -85,7 +81,6 @@ Create new files or overwrite existing ones.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "edit": "allow"
   }
@@ -106,7 +101,6 @@ Read file contents from your codebase.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "read": "allow"
   }
@@ -123,7 +117,6 @@ Search file contents using regular expressions.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "grep": "allow"
   }
@@ -140,7 +133,6 @@ Find files by pattern matching.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "glob": "allow"
   }
@@ -157,7 +149,6 @@ List files and directories in a given path.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "list": "allow"
   }
@@ -178,7 +169,6 @@ This tool is only available when `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` (or `OPEN
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "lsp": "allow"
   }
@@ -197,7 +187,6 @@ Apply patches to files.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "edit": "allow"
   }
@@ -218,7 +207,6 @@ Load a [skill](/docs/skills) (a `SKILL.md` file) and return its content in the c
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "skill": "allow"
   }
@@ -233,7 +221,6 @@ Manage todo lists during coding sessions.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "todowrite": "allow"
   }
@@ -254,7 +241,6 @@ Read existing todo lists.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "todoread": "allow"
   }
@@ -275,7 +261,6 @@ Fetch web content.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "webfetch": "allow"
   }
@@ -292,7 +277,6 @@ Ask the user questions during execution.
 
 ```json title="opencode.json" {4}
 {
-  
   "permission": {
     "question": "allow"
   }

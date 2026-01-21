@@ -27,7 +27,7 @@ export function RightPanel() {
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
 
-  const todos = createMemo(() => (params.id ? sync.data.todo[params.id] ?? [] : []))
+  const todos = createMemo(() => (params.id ? (sync.data.todo[params.id] ?? []) : []))
   const hasTodos = createMemo(() => todos().length > 0)
   const completedCount = createMemo(() => todos().filter((t) => t.status === "completed").length)
 
@@ -59,7 +59,10 @@ export function RightPanel() {
           onResize={layout.rightPanel.resize}
           onCollapse={layout.rightPanel.close}
         />
-        <Tabs value={layout.rightPanel.activeTab()} onChange={(tab) => layout.rightPanel.setActiveTab(tab as RightPanelTab)}>
+        <Tabs
+          value={layout.rightPanel.activeTab()}
+          onChange={(tab) => layout.rightPanel.setActiveTab(tab as RightPanelTab)}
+        >
           <Tabs.List class="shrink-0">
             <Show when={hasTodos()}>
               <Tabs.Trigger value="todos" title="To-dos" classes={{ button: "gap-1.5" }}>

@@ -36,16 +36,19 @@ export default function Layout(props: ParentProps) {
               response: "once" | "always" | "reject"
             }) => sdk.client.permission.respond(input)
 
-            const respondToQuestion = (input: {
-              sessionID: string
-              requestID: string
-              answers: string[][]
-            }) => sdk.client.question.reply({ requestID: input.requestID, answers: input.answers })
+            const respondToQuestion = (input: { sessionID: string; requestID: string; answers: string[][] }) =>
+              sdk.client.question.reply({ requestID: input.requestID, answers: input.answers })
 
             const rejectQuestion = (input: { sessionID: string; requestID: string }) =>
               sdk.client.question.reject({ requestID: input.requestID })
 
-            const respondToPlan = (input: { sessionID: string; requestID: string; approved: boolean; message?: string; permissionMode?: "default" | "acceptEdits" | "bypassPermissions" }) => {
+            const respondToPlan = (input: {
+              sessionID: string
+              requestID: string
+              approved: boolean
+              message?: string
+              permissionMode?: "default" | "acceptEdits" | "bypassPermissions"
+            }) => {
               if (input.approved) {
                 sdk.client.plan.approve({ requestID: input.requestID, permissionMode: input.permissionMode })
               } else {

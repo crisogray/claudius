@@ -1,6 +1,16 @@
 import { createEffect, onCleanup, onMount } from "solid-js"
 import { EditorState, EditorSelection, Compartment, type Extension } from "@codemirror/state"
-import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from "@codemirror/view"
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLineGutter,
+  drawSelection,
+  dropCursor,
+  rectangularSelection,
+  crosshairCursor,
+  highlightActiveLine,
+} from "@codemirror/view"
 
 // Re-export for consumers
 export { EditorView, EditorSelection }

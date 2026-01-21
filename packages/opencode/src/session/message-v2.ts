@@ -485,8 +485,8 @@ export namespace MessageV2 {
           get({
             sessionID: input.sessionID,
             messageID: item[2],
-          })
-        )
+          }),
+        ),
       )
       return messages
     },
@@ -495,9 +495,7 @@ export namespace MessageV2 {
   export const parts = fn(Identifier.schema("message"), async (messageID) => {
     const items = await Storage.list(["part", messageID])
     // Read all parts in parallel instead of sequentially
-    const result = await Promise.all(
-      items.map((item) => Storage.read<MessageV2.Part>(item))
-    )
+    const result = await Promise.all(items.map((item) => Storage.read<MessageV2.Part>(item)))
     result.sort((a, b) => (a.id > b.id ? 1 : -1))
     return result
   })

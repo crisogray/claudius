@@ -84,10 +84,7 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
         // Staged changes: compare HEAD vs staged (index)
         // Before: committed version (HEAD)
         // After: staged version (index, accessed with ":" prefix)
-        const [headContent, stagedContent] = await Promise.all([
-          git.show(path, "HEAD"),
-          git.show(path, ":"),
-        ])
+        const [headContent, stagedContent] = await Promise.all([git.show(path, "HEAD"), git.show(path, ":")])
         newBefore = headContent
         newAfter = stagedContent
       } else {
@@ -155,8 +152,8 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
       () => {
         fetchDiff()
       },
-      { defer: true }
-    )
+      { defer: true },
+    ),
   )
 
   // Listen for file watcher events to update unstaged diffs
@@ -183,9 +180,7 @@ export function GitDiffViewer(props: GitDiffViewerProps) {
         <div class="flex items-center justify-center h-full text-text-weak">Loading diff...</div>
       </Show>
       <Show when={error()}>
-        {(err) => (
-          <div class="flex items-center justify-center h-full text-text-weak">{err()}</div>
-        )}
+        {(err) => <div class="flex items-center justify-center h-full text-text-weak">{err()}</div>}
       </Show>
       <Show when={!loading() && !error()}>
         <div class="flex-1 min-h-0 overflow-auto">

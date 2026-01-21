@@ -26,7 +26,7 @@ export const sdkRoutes = new Hono()
 
     const error =
       result.info.role === "assistant" && result.info.error
-        ? (result.info.error as any).data?.message ?? (result.info.error as any).name ?? "Unknown error"
+        ? ((result.info.error as any).data?.message ?? (result.info.error as any).name ?? "Unknown error")
         : undefined
 
     return c.json({

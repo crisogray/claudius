@@ -7,7 +7,7 @@ import { TextField } from "./text-field"
 
 export interface InlineQuestionProps {
   questions: QuestionInfo[]
-  selectedAnswers?: string[][]  // If present, component is readonly
+  selectedAnswers?: string[][] // If present, component is readonly
   onReply?: (answers: string[][]) => void
   onReject?: () => void
 }
@@ -47,7 +47,11 @@ export function InlineQuestion(props: InlineQuestionProps) {
       if (index === -1) {
         setStore("answers", store.tab, [...existing, label])
       } else {
-        setStore("answers", store.tab, existing.filter((x) => x !== label))
+        setStore(
+          "answers",
+          store.tab,
+          existing.filter((x) => x !== label),
+        )
       }
     } else {
       setStore("answers", store.tab, [label])
@@ -72,7 +76,11 @@ export function InlineQuestion(props: InlineQuestionProps) {
       // Cleared the input - remove old custom from answers
       if (oldText) {
         const existing = store.answers[store.tab] ?? []
-        setStore("answers", store.tab, existing.filter((x) => x !== oldText))
+        setStore(
+          "answers",
+          store.tab,
+          existing.filter((x) => x !== oldText),
+        )
       }
       return
     }
@@ -96,7 +104,11 @@ export function InlineQuestion(props: InlineQuestionProps) {
     if (isCustomSelected()) {
       // Deselect
       const existing = store.answers[store.tab] ?? []
-      setStore("answers", store.tab, existing.filter((x) => x !== text))
+      setStore(
+        "answers",
+        store.tab,
+        existing.filter((x) => x !== text),
+      )
     } else {
       // Select
       if (multi()) {
@@ -163,11 +175,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
 
         {/* Custom answer option - inline text field */}
         <Show when={!readonly()}>
-          <div
-            data-slot="question-option"
-            data-picked={isCustomSelected()}
-            data-custom
-          >
+          <div data-slot="question-option" data-picked={isCustomSelected()} data-custom>
             <Show when={multi()}>
               <div onClick={toggleCustom} style={{ cursor: "pointer" }}>
                 <Checkbox checked={isCustomSelected()} />
@@ -206,11 +214,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
         {/* Show custom answers in readonly mode */}
         <For each={readonlyCustomAnswers()}>
           {(customAnswer) => (
-            <div
-              data-slot="question-option"
-              data-picked="true"
-              data-readonly="true"
-            >
+            <div data-slot="question-option" data-picked="true" data-readonly="true">
               <Show when={multi()}>
                 <Checkbox checked />
               </Show>
@@ -237,12 +241,7 @@ export function InlineQuestion(props: InlineQuestionProps) {
             Back
           </Button>
           <div data-slot="question-actions-spacer" />
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => setStore("tab", store.tab + 1)}
-            disabled={isLast()}
-          >
+          <Button variant="ghost" size="small" onClick={() => setStore("tab", store.tab + 1)} disabled={isLast()}>
             Next
           </Button>
         </div>

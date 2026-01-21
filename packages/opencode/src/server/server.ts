@@ -2837,7 +2837,10 @@ export namespace Server {
               path: z.string().meta({ description: "File path" }),
               line: z.number().meta({ description: "Line number (0-indexed)" }),
               character: z.number().meta({ description: "Character offset (0-indexed)" }),
-              triggerKind: z.number().optional().meta({ description: "Trigger kind (1=Invoked, 2=TriggerCharacter, 3=Incomplete)" }),
+              triggerKind: z
+                .number()
+                .optional()
+                .meta({ description: "Trigger kind (1=Invoked, 2=TriggerCharacter, 3=Incomplete)" }),
               triggerCharacter: z.string().optional().meta({ description: "Trigger character" }),
             }),
           ),

@@ -3,7 +3,18 @@ import { useSDK } from "@/context/sdk"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
-import { For, Match, Show, Switch, onMount, createSignal, createEffect, onCleanup, type ComponentProps, type ParentProps } from "solid-js"
+import {
+  For,
+  Match,
+  Show,
+  Switch,
+  onMount,
+  createSignal,
+  createEffect,
+  onCleanup,
+  type ComponentProps,
+  type ParentProps,
+} from "solid-js"
 import { Dynamic } from "solid-js/web"
 import type { GitFileStatus } from "@/context/git"
 
@@ -18,11 +29,7 @@ function GitBadge(props: { status: GitFileStatus }) {
   }
   const config = () => statusConfig[props.status.status] ?? { letter: "?", class: "text-text-weak" }
 
-  return (
-    <span class={`ml-auto mr-1 text-[10px] font-mono font-medium ${config().class}`}>
-      {config().letter}
-    </span>
-  )
+  return <span class={`ml-auto mr-1 text-[10px] font-mono font-medium ${config().class}`}>{config().letter}</span>
 }
 
 export default function FileTree(props: {
@@ -82,7 +89,7 @@ export default function FileTree(props: {
       try {
         const res = await sdk.client.find.files(
           { query: filterText, dirs: "false" },
-          { signal: abortController.signal }
+          { signal: abortController.signal },
         )
 
         const visible = new Set<string>()
@@ -90,14 +97,28 @@ export default function FileTree(props: {
         for (const filePath of res.data ?? []) {
           visible.add(filePath)
           const fileName = filePath.split("/").pop() || filePath
-          local.file.update(filePath, { path: filePath, name: fileName, type: "file", ignored: false, absolute: "" } as LocalFile)
+          local.file.update(filePath, {
+            path: filePath,
+            name: fileName,
+            type: "file",
+            ignored: false,
+            absolute: "",
+          } as LocalFile)
 
           const parts = filePath.split("/")
           for (let i = 1; i < parts.length; i++) {
             const parentPath = parts.slice(0, i).join("/")
             const parentName = parts[i - 1]
             visible.add(parentPath)
-            local.file.update(parentPath, { path: parentPath, name: parentName, type: "directory", ignored: false, absolute: "", expanded: true, loaded: true } as LocalFile)
+            local.file.update(parentPath, {
+              path: parentPath,
+              name: parentName,
+              type: "directory",
+              ignored: false,
+              absolute: "",
+              expanded: true,
+              loaded: true,
+            } as LocalFile)
           }
         }
 
@@ -119,7 +140,7 @@ export default function FileTree(props: {
     const children = local.file.children(props.path)
     if (!props.filter?.trim()) return children
     const visible = filtering()
-    return visible ? children.filter(node => visible.has(node.path)) : []
+    return visible ? children.filter((node) => visible.has(node.path)) : []
   }
 
   const Node = (p: ParentProps & ComponentProps<"div"> & { node: LocalFile; as?: "div" | "button" }) => {
@@ -151,7 +172,8 @@ export default function FileTree(props: {
           evt.dataTransfer!.effectAllowed = "copy"
           evt.dataTransfer!.setData("text/plain", `file:${p.node.path}`)
           const dragImage = document.createElement("div")
-          dragImage.className = "flex items-center gap-x-2 px-2 py-1 bg-background-element rounded-md border border-border-1"
+          dragImage.className =
+            "flex items-center gap-x-2 px-2 py-1 bg-background-element rounded-md border border-border-1"
           dragImage.style.position = "absolute"
           dragImage.style.top = "-1000px"
           const icon = e.currentTarget.querySelector("svg")
@@ -176,9 +198,7 @@ export default function FileTree(props: {
         >
           {p.node.name}
         </span>
-        <Show when={props.gitStatuses?.get(p.node.path)}>
-          {(status) => <GitBadge status={status()} />}
-        </Show>
+        <Show when={props.gitStatuses?.get(p.node.path)}>{(status) => <GitBadge status={status()} />}</Show>
       </Dynamic>
     )
   }
@@ -195,7 +215,13 @@ export default function FileTree(props: {
                   class="w-full"
                   forceMount={false}
                   open={filtering() ? !collapsed().has(node.path) : undefined}
-                  onOpenChange={(open) => filtering() ? onCollapse(node.path, !open) : open ? local.file.expand(node.path) : local.file.collapse(node.path)}
+                  onOpenChange={(open) =>
+                    filtering()
+                      ? onCollapse(node.path, !open)
+                      : open
+                        ? local.file.expand(node.path)
+                        : local.file.collapse(node.path)
+                  }
                 >
                   <Collapsible.Trigger class="!h-auto">
                     <Node node={node}>
@@ -204,7 +230,18 @@ export default function FileTree(props: {
                     </Node>
                   </Collapsible.Trigger>
                   <Collapsible.Content>
-                    <FileTree path={node.path} level={level + 1} filter={props.filter} gitStatuses={props.gitStatuses} folderStatuses={props.folderStatuses} onFileClick={props.onFileClick} onContextMenu={props.onContextMenu} visiblePaths={filtering() ?? undefined} collapsedPaths={collapsed()} onCollapseChange={onCollapse} />
+                    <FileTree
+                      path={node.path}
+                      level={level + 1}
+                      filter={props.filter}
+                      gitStatuses={props.gitStatuses}
+                      folderStatuses={props.folderStatuses}
+                      onFileClick={props.onFileClick}
+                      onContextMenu={props.onContextMenu}
+                      visiblePaths={filtering() ?? undefined}
+                      collapsedPaths={collapsed()}
+                      onCollapseChange={onCollapse}
+                    />
                   </Collapsible.Content>
                 </Collapsible>
               </Match>

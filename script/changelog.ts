@@ -4,10 +4,7 @@ import { $ } from "bun"
 import { createOpencode } from "@opencode-ai/sdk"
 import { parseArgs } from "util"
 
-export const team = [
-  "actions-user",
-  "crisogray",
-]
+export const team = ["actions-user", "crisogray"]
 
 export async function getLatestRelease() {
   return fetch("https://api.github.com/repos/crisogray/claudius/releases/latest")

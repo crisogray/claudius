@@ -3,6 +3,7 @@
 ## Overview
 
 Two related improvements:
+
 1. **Sidebar grouping** - Group sessions by worktree within projects
 2. **New session page** - Clearer worktree/branch selection with two separate selectors
 
@@ -11,12 +12,15 @@ Two related improvements:
 ## Part 1: Sidebar Session Grouping (UI-Only)
 
 ### Current State
+
 - Sessions have `directory` field (the worktree path)
 - Projects have `worktree` (base) and `sandboxes` (linked worktrees)
 - Sessions currently displayed flat under project
 
 ### Goal
+
 Group sessions by their worktree:
+
 ```
 Project A
 ├── my-project (main) ← base worktree, collapsible
@@ -31,7 +35,9 @@ Project A
 ## Part 2: New Session Page - Two Selectors
 
 ### Current Problem
+
 The existing dropdown conflates worktrees and branches:
+
 - Shows "Main branch" but means main worktree
 - Uses branch icon but lists worktrees
 - "Create new worktree" doesn't show source branch selection
@@ -39,6 +45,7 @@ The existing dropdown conflates worktrees and branches:
 ### New Design: Two Explicit Selectors
 
 **1. Worktree Selector:**
+
 ```
 [Worktree: main-project (main) ▼]
   - main-project (main)           ← base worktree + its current branch
@@ -47,6 +54,7 @@ The existing dropdown conflates worktrees and branches:
 ```
 
 **2. When "Create new worktree" selected, show inline branch picker:**
+
 ```
 [Worktree: Create new worktree ▼]
 [From branch: main ▼]            ← inline selector appears
@@ -69,11 +77,16 @@ This gives explicit control: users clearly understand they're selecting a worktr
 **File: `packages/opencode/src/project/vcs.ts`**
 
 Add function to get branch for any worktree directory:
+
 ```ts
 export async function branchFor(directory: string) {
   return $`git rev-parse --abbrev-ref HEAD`
-    .quiet().nothrow().cwd(directory).text()
-    .then(x => x.trim()).catch(() => undefined)
+    .quiet()
+    .nothrow()
+    .cwd(directory)
+    .text()
+    .then((x) => x.trim())
+    .catch(() => undefined)
 }
 ```
 
@@ -86,6 +99,7 @@ Include branch info when returning sandbox/worktree data.
 **File: `packages/app/src/pages/layout.tsx`**
 
 In `SortableProject`, group sessions by worktree:
+
 ```tsx
 const sessionsByWorktree = createMemo(() => {
   const result: Array<{
@@ -99,26 +113,24 @@ const sessionsByWorktree = createMemo(() => {
   const baseStore = globalSync.child(props.project.worktree)[0]
   result.push({
     directory: props.project.worktree,
-    sessions: baseStore.session.filter(s =>
-      s.directory === props.project.worktree && !s.parentID
-    ).toSorted(sortSessions),
+    sessions: baseStore.session
+      .filter((s) => s.directory === props.project.worktree && !s.parentID)
+      .toSorted(sortSessions),
     isBase: true,
-    branch: baseStore.vcs?.branch
+    branch: baseStore.vcs?.branch,
   })
 
   // Add linked worktrees with sessions
   for (const sandbox of props.project.sandboxes ?? []) {
     if (sandbox === props.project.worktree) continue
     const store = globalSync.child(sandbox)[0]
-    const sessions = store.session.filter(s =>
-      s.directory === sandbox && !s.parentID
-    ).toSorted(sortSessions)
+    const sessions = store.session.filter((s) => s.directory === sandbox && !s.parentID).toSorted(sortSessions)
     if (sessions.length > 0) {
       result.push({
         directory: sandbox,
         sessions,
         isBase: false,
-        branch: store.vcs?.branch
+        branch: store.vcs?.branch,
       })
     }
   }
@@ -172,14 +184,15 @@ const WorktreeSection = (props: {
 
 ```ts
 export async function listBranches() {
-  const local = await $`git branch --format='%(refname:short)'`
-    .quiet().nothrow().cwd(Instance.worktree).text()
-  const remote = await $`git branch -r --format='%(refname:short)'`
-    .quiet().nothrow().cwd(Instance.worktree).text()
+  const local = await $`git branch --format='%(refname:short)'`.quiet().nothrow().cwd(Instance.worktree).text()
+  const remote = await $`git branch -r --format='%(refname:short)'`.quiet().nothrow().cwd(Instance.worktree).text()
 
   return {
-    local: local.split('\n').filter(Boolean),
-    remote: remote.split('\n').filter(Boolean).map(b => b.replace('origin/', ''))
+    local: local.split("\n").filter(Boolean),
+    remote: remote
+      .split("\n")
+      .filter(Boolean)
+      .map((b) => b.replace("origin/", "")),
   }
 }
 ```
@@ -195,12 +208,12 @@ Add endpoint: `GET /vcs/branches`
 ```ts
 export const CreateInput = z.object({
   name: z.string().optional(),
-  fromBranch: z.string().optional(),  // NEW: source branch
+  fromBranch: z.string().optional(), // NEW: source branch
   startCommand: z.string().optional(),
 })
 
 // In create():
-const created = await $`git worktree add -b ${info.branch} ${info.directory} ${input?.fromBranch ?? 'HEAD'}`
+const created = await $`git worktree add -b ${info.branch} ${info.directory} ${input?.fromBranch ?? "HEAD"}`
 ```
 
 #### Step 2.3: Redesign NewSessionView
@@ -216,12 +229,12 @@ export function NewSessionView(props: NewSessionViewProps) {
   // Worktree options with branch info
   const worktreeOptions = createMemo(() => [
     { value: "main", label: `${getFilename(sync.project?.worktree)} (${vcs.branch})`, branch: vcs.branch },
-    ...sandboxes().map(s => ({
+    ...sandboxes().map((s) => ({
       value: s.directory,
       label: `${getFilename(s.directory)} (${s.branch})`,
-      branch: s.branch
+      branch: s.branch,
     })),
-    { value: "create", label: "Create new worktree..." }
+    { value: "create", label: "Create new worktree..." },
   ])
 
   return (
@@ -245,7 +258,7 @@ export function NewSessionView(props: NewSessionViewProps) {
           <Icon name="git-branch" size="small" />
           <span>From branch:</span>
           <Select
-            options={branches()}  // from /vcs/branches endpoint
+            options={branches()} // from /vcs/branches endpoint
             current={fromBranch()}
             onSelect={setFromBranch}
           />
@@ -261,10 +274,12 @@ export function NewSessionView(props: NewSessionViewProps) {
 ## Files to Modify
 
 **Part 1 (Sidebar Grouping):**
+
 - `packages/app/src/pages/layout.tsx` - Add WorktreeSection, grouping logic
 - `packages/opencode/src/project/vcs.ts` - Add branchFor() helper (optional)
 
 **Part 2 (New Session Page):**
+
 - `packages/opencode/src/project/vcs.ts` - Add listBranches()
 - `packages/opencode/src/server/server.ts` - Add GET /vcs/branches endpoint
 - `packages/opencode/src/worktree/index.ts` - Add fromBranch to CreateInput
@@ -275,6 +290,7 @@ export function NewSessionView(props: NewSessionViewProps) {
 ## Verification
 
 **Part 1:**
+
 1. Open project with multiple worktrees
 2. Verify sessions grouped under worktree folders
 3. Verify labels show "folder (branch)"
@@ -282,6 +298,7 @@ export function NewSessionView(props: NewSessionViewProps) {
 5. Verify base worktree always visible
 
 **Part 2:**
+
 1. Navigate to new session page
 2. Verify worktree dropdown shows folder + branch
 3. Select "Create new worktree"

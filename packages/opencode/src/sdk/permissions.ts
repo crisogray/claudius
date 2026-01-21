@@ -241,7 +241,11 @@ export namespace SDKPermissions {
         plan,
       })
 
-      log.info("ExitPlanMode answered", { approved: result.approved, message: result.message, permissionMode: result.permissionMode })
+      log.info("ExitPlanMode answered", {
+        approved: result.approved,
+        message: result.message,
+        permissionMode: result.permissionMode,
+      })
 
       // If plan was approved, allow the tool to proceed
       if (result.approved) {

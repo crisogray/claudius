@@ -56,13 +56,14 @@ Migrate from Vercel AI SDK to Claude Agent SDK using an **SDK-primary architectu
 
 The SDK stores transcripts internally for Claude's context/resume, but **does not expose an API to read message history**. The SDK is designed for agents, not chat UIs.
 
-| Storage | Purpose | Owner |
-|---------|---------|-------|
-| SDK transcripts | Claude's context, resume, caching | SDK (internal) |
-| MessageV2/Parts | UI rendering, history display | Us (existing) |
+| Storage               | Purpose                                    | Owner          |
+| --------------------- | ------------------------------------------ | -------------- |
+| SDK transcripts       | Claude's context, resume, caching          | SDK (internal) |
+| MessageV2/Parts       | UI rendering, history display              | Us (existing)  |
 | Session.sdk.sessionId | Link our session to SDK session for resume | Us (new field) |
 
 This is not redundant - each serves a different purpose:
+
 - **SDK**: "What does Claude remember?" (for LLM context)
 - **Ours**: "What does the user see?" (for UI display)
 
@@ -77,43 +78,47 @@ This is not redundant - each serves a different purpose:
 ## Part 1: What We Keep
 
 ### 1.1 Keep Unchanged
-| System | Location | Reason |
-|--------|----------|--------|
-| **MessageV2/Parts** | `src/session/message-v2.ts` | UI renders these - keep! |
-| **UI Components** | `packages/app/src/components/` | Already render Parts |
-| **Snapshot/Diffs** | `src/snapshot/`, `src/session/summary.ts` | Git-based diff system - reuse for UI diffs |
-| ID Generation | `src/id/` | Perfect as-is |
-| Config Loading | `src/config/` | Feeds SDK options |
-| Project/Instance | `src/project/` | Directory scoping |
-| PTY | `src/pty/` | Terminal management |
-| LSP | `src/lsp/` | Language servers |
-| File Operations | `src/file/` | Local file access |
-| Bus Events | `src/bus/` | UI subscriptions work |
-| Storage | `src/storage/` | Session persistence |
+
+| System              | Location                                  | Reason                                     |
+| ------------------- | ----------------------------------------- | ------------------------------------------ |
+| **MessageV2/Parts** | `src/session/message-v2.ts`               | UI renders these - keep!                   |
+| **UI Components**   | `packages/app/src/components/`            | Already render Parts                       |
+| **Snapshot/Diffs**  | `src/snapshot/`, `src/session/summary.ts` | Git-based diff system - reuse for UI diffs |
+| ID Generation       | `src/id/`                                 | Perfect as-is                              |
+| Config Loading      | `src/config/`                             | Feeds SDK options                          |
+| Project/Instance    | `src/project/`                            | Directory scoping                          |
+| PTY                 | `src/pty/`                                | Terminal management                        |
+| LSP                 | `src/lsp/`                                | Language servers                           |
+| File Operations     | `src/file/`                               | Local file access                          |
+| Bus Events          | `src/bus/`                                | UI subscriptions work                      |
+| Storage             | `src/storage/`                            | Session persistence                        |
 
 **Note on File Checkpointing vs Snapshots**: SDK has built-in file checkpointing (`enableFileCheckpointing`, `rewindFiles()`) that tracks Write/Edit/NotebookEdit. However, it doesn't track bash-made changes. We keep our git-based snapshot system for comprehensive diff display in UI, and use SDK checkpointing for file revert.
 
 ### 1.2 Extend Minimally
-| Type | Extension | Purpose |
-|------|-----------|---------|
-| `ReasoningPart` | Add `signature?: string` | Claude thinking verification |
-| `ToolPart.metadata` | Add `sandboxed?: boolean` | Track sandboxed bash |
-| `MessageV2.Assistant` | Add `sdk?: { uuid, sessionId, duration }` | Link to SDK message |
-| `Session.Info` | Add `sdk?: { sessionId, model, cacheStats }` | **sessionId for resume** |
+
+| Type                  | Extension                                    | Purpose                      |
+| --------------------- | -------------------------------------------- | ---------------------------- |
+| `ReasoningPart`       | Add `signature?: string`                     | Claude thinking verification |
+| `ToolPart.metadata`   | Add `sandboxed?: boolean`                    | Track sandboxed bash         |
+| `MessageV2.Assistant` | Add `sdk?: { uuid, sessionId, duration }`    | Link to SDK message          |
+| `Session.Info`        | Add `sdk?: { sessionId, model, cacheStats }` | **sessionId for resume**     |
 
 ### 1.3 Add New (SDK-specific)
-| Type | Purpose |
-|------|---------|
+
+| Type                    | Purpose                    |
+| ----------------------- | -------------------------- |
 | `RedactedReasoningPart` | Claude's redacted thinking |
 
 ### 1.4 Remove
-| System | Location | Reason |
-|--------|----------|--------|
-| LLM Layer | `src/session/llm.ts` | SDK replaces |
-| Processor | `src/session/processor.ts` | SDK + conversion replaces |
-| Transforms | `src/provider/transform.ts` | SDK handles |
-| Provider SDKs | `src/provider/sdk/` | Not needed |
-| Compaction | `src/session/compaction.ts` | SDK handles context management internally |
+
+| System        | Location                    | Reason                                    |
+| ------------- | --------------------------- | ----------------------------------------- |
+| LLM Layer     | `src/session/llm.ts`        | SDK replaces                              |
+| Processor     | `src/session/processor.ts`  | SDK + conversion replaces                 |
+| Transforms    | `src/provider/transform.ts` | SDK handles                               |
+| Provider SDKs | `src/provider/sdk/`         | Not needed                                |
+| Compaction    | `src/session/compaction.ts` | SDK handles context management internally |
 
 **Note on Compaction**: SDK manages context window and compaction internally. We can use the `PreCompact` hook if we need to know when compaction occurs.
 
@@ -123,13 +128,13 @@ This is not redundant - each serves a different purpose:
 
 ### 2.1 Content Block Mapping
 
-| SDK Block | Existing Part | Mapping |
-|-----------|---------------|---------|
-| `text` | `TextPart` | Direct |
-| `thinking` | `ReasoningPart` | Direct + signature |
-| `redacted_thinking` | `RedactedReasoningPart` | New type |
-| `tool_use` | `ToolPart` (pending) | Direct |
-| `tool_result` | `ToolPart` (completed) | Update existing |
+| SDK Block           | Existing Part           | Mapping            |
+| ------------------- | ----------------------- | ------------------ |
+| `text`              | `TextPart`              | Direct             |
+| `thinking`          | `ReasoningPart`         | Direct + signature |
+| `redacted_thinking` | `RedactedReasoningPart` | New type           |
+| `tool_use`          | `ToolPart` (pending)    | Direct             |
+| `tool_result`       | `ToolPart` (completed)  | Update existing    |
 
 ### 2.2 Conversion Implementation
 
@@ -145,7 +150,7 @@ export function sdkBlockToPart(block: ContentBlock, timestamp: number): Part {
       return {
         type: "text",
         text: block.text,
-        time: { start: timestamp, end: Date.now() }
+        time: { start: timestamp, end: Date.now() },
       }
 
     case "thinking":
@@ -153,14 +158,14 @@ export function sdkBlockToPart(block: ContentBlock, timestamp: number): Part {
         type: "reasoning",
         text: block.thinking,
         signature: block.signature,
-        time: { start: timestamp, end: Date.now() }
+        time: { start: timestamp, end: Date.now() },
       }
 
     case "redacted_thinking":
       return {
         type: "redacted-reasoning",
         data: block.data,
-        time: { start: timestamp, end: Date.now() }
+        time: { start: timestamp, end: Date.now() },
       }
 
     case "tool_use":
@@ -171,9 +176,9 @@ export function sdkBlockToPart(block: ContentBlock, timestamp: number): Part {
         state: {
           status: "pending",
           input: normalizeToolInput(block.input),
-          raw: JSON.stringify(block.input)
+          raw: JSON.stringify(block.input),
         },
-        time: { start: timestamp }
+        time: { start: timestamp },
       }
 
     case "tool_result":
@@ -182,24 +187,19 @@ export function sdkBlockToPart(block: ContentBlock, timestamp: number): Part {
   }
 }
 
-export function sdkMessageToMessageV2(
-  sdk: SDKAssistantMessage,
-  sessionID: string
-): MessageV2.Assistant {
+export function sdkMessageToMessageV2(sdk: SDKAssistantMessage, sessionID: string): MessageV2.Assistant {
   const timestamp = Date.now()
 
   return {
     id: Identifier.ascending("message"),
     sessionID,
     role: "assistant",
-    parts: sdk.message.content
-      .map(block => sdkBlockToPart(block, timestamp))
-      .filter(Boolean),
+    parts: sdk.message.content.map((block) => sdkBlockToPart(block, timestamp)).filter(Boolean),
     sdk: {
       uuid: sdk.uuid,
       sessionId: sdk.session_id,
-      parentToolUseId: sdk.parent_tool_use_id
-    }
+      parentToolUseId: sdk.parent_tool_use_id,
+    },
   }
 }
 
@@ -207,11 +207,11 @@ export function sdkResultToTokens(result: SDKResultMessage): MessageV2.Tokens {
   return {
     input: result.usage.input_tokens,
     output: result.usage.output_tokens,
-    reasoning: 0,  // Calculated from thinking parts
+    reasoning: 0, // Calculated from thinking parts
     cache: {
       read: result.usage.cache_read_input_tokens ?? 0,
-      write: result.usage.cache_creation_input_tokens ?? 0
-    }
+      write: result.usage.cache_creation_input_tokens ?? 0,
+    },
   }
 }
 ```
@@ -221,10 +221,7 @@ export function sdkResultToTokens(result: SDKResultMessage): MessageV2.Tokens {
 ```typescript
 // packages/opencode/src/sdk/stream.ts
 
-export async function processSDKStream(
-  stream: AsyncGenerator<SDKMessage>,
-  sessionID: string
-): Promise<void> {
+export async function processSDKStream(stream: AsyncGenerator<SDKMessage>, sessionID: string): Promise<void> {
   let currentMessageID: string | null = null
   let currentParts: Map<number, Part> = new Map()
   let initialSnapshot: string | undefined
@@ -236,11 +233,11 @@ export async function processSDKStream(
           // Capture initial snapshot for diff computation
           initialSnapshot = await Snapshot.track()
 
-          await Session.update(sessionID, draft => {
+          await Session.update(sessionID, (draft) => {
             draft.sdk = {
               sessionId: message.session_id,
               model: message.model,
-              tools: message.tools
+              tools: message.tools,
             }
           })
         }
@@ -293,7 +290,7 @@ export async function processSDKStream(
       case "result": {
         if (currentMessageID) {
           // Finalize message
-          await MessageV2.update(currentMessageID, draft => {
+          await MessageV2.update(currentMessageID, (draft) => {
             draft.tokens = sdkResultToTokens(message)
             draft.cost = message.total_cost_usd
           })
@@ -326,7 +323,7 @@ async function handleTodoWrite(sessionID: string, block: ToolUseBlock) {
     id: `todo-${i}`,
     content: t.content,
     status: t.status,
-    priority: "medium",  // SDK doesn't have priority
+    priority: "medium", // SDK doesn't have priority
     activeForm: t.activeForm,
   }))
 
@@ -341,9 +338,7 @@ async function updateToolPartResult(sessionID: string, block: ToolResultBlock) {
   if (!part) return
 
   part.state.status = block.is_error ? "error" : "completed"
-  part.state.output = typeof block.content === "string"
-    ? block.content
-    : JSON.stringify(block.content)
+  part.state.output = typeof block.content === "string" ? block.content : JSON.stringify(block.content)
   part.time.end = Date.now()
 
   await Session.updatePart(part)
@@ -380,46 +375,47 @@ async function finalizeDiffs(sessionID: string, messageID: string, initialSnapsh
 ```
 
 async function handleStreamDelta(
-  event: RawMessageStreamEvent,
-  messageID: string | null,
-  parts: Map<number, Part>
+event: RawMessageStreamEvent,
+messageID: string | null,
+parts: Map<number, Part>
 ): Promise<void> {
-  if (!messageID) return
-  if (event.type !== "content_block_delta") return
+if (!messageID) return
+if (event.type !== "content_block_delta") return
 
-  const { index, delta } = event
+const { index, delta } = event
 
-  if (delta.type === "text_delta") {
-    // Update TextPart with delta
-    Bus.publish(Part.Event.Delta, {
-      messageID,
-      index,
-      delta: delta.text,
-      type: "text"
-    })
-  }
-
-  if (delta.type === "thinking_delta") {
-    // Update ReasoningPart with delta
-    Bus.publish(Part.Event.Delta, {
-      messageID,
-      index,
-      delta: delta.thinking,
-      type: "reasoning"
-    })
-  }
-
-  if (delta.type === "input_json_delta") {
-    // Update ToolPart.state.raw with delta
-    Bus.publish(Part.Event.Delta, {
-      messageID,
-      index,
-      delta: delta.partial_json,
-      type: "tool-input"
-    })
-  }
+if (delta.type === "text_delta") {
+// Update TextPart with delta
+Bus.publish(Part.Event.Delta, {
+messageID,
+index,
+delta: delta.text,
+type: "text"
+})
 }
-```
+
+if (delta.type === "thinking_delta") {
+// Update ReasoningPart with delta
+Bus.publish(Part.Event.Delta, {
+messageID,
+index,
+delta: delta.thinking,
+type: "reasoning"
+})
+}
+
+if (delta.type === "input_json_delta") {
+// Update ToolPart.state.raw with delta
+Bus.publish(Part.Event.Delta, {
+messageID,
+index,
+delta: delta.partial_json,
+type: "tool-input"
+})
+}
+}
+
+````
 
 ---
 
@@ -437,7 +433,7 @@ export const ReasoningPart = z.object({
   time: TimeRange,
   metadata: z.record(z.any()).optional(),
 })
-```
+````
 
 ### 3.2 Add RedactedReasoningPart
 
@@ -446,7 +442,7 @@ export const ReasoningPart = z.object({
 
 export const RedactedReasoningPart = z.object({
   type: z.literal("redacted-reasoning"),
-  data: z.string(),  // Encrypted thinking content
+  data: z.string(), // Encrypted thinking content
   time: TimeRange,
 })
 
@@ -454,7 +450,7 @@ export const RedactedReasoningPart = z.object({
 export const Part = z.discriminatedUnion("type", [
   TextPart,
   ReasoningPart,
-  RedactedReasoningPart,  // NEW
+  RedactedReasoningPart, // NEW
   ToolPart,
   FilePart,
   // ... rest unchanged
@@ -466,11 +462,13 @@ export const Part = z.discriminatedUnion("type", [
 ```typescript
 // packages/opencode/src/session/message-v2.ts
 
-export const ToolMetadata = z.object({
-  // ... existing fields
-  sandboxed: z.boolean().optional(),       // NEW: Was bash sandboxed?
-  sandboxViolations: z.array(z.string()).optional(),  // NEW
-}).passthrough()
+export const ToolMetadata = z
+  .object({
+    // ... existing fields
+    sandboxed: z.boolean().optional(), // NEW: Was bash sandboxed?
+    sandboxViolations: z.array(z.string()).optional(), // NEW
+  })
+  .passthrough()
 ```
 
 ### 3.4 Extend MessageV2.Assistant
@@ -480,15 +478,19 @@ export const ToolMetadata = z.object({
 
 export const Assistant = z.object({
   // ... existing fields
-  sdk: z.object({
-    uuid: z.string(),
-    sessionId: z.string(),
-    parentToolUseId: z.string().optional(),
-    duration: z.object({
-      total: z.number(),
-      api: z.number()
-    }).optional()
-  }).optional()  // NEW
+  sdk: z
+    .object({
+      uuid: z.string(),
+      sessionId: z.string(),
+      parentToolUseId: z.string().optional(),
+      duration: z
+        .object({
+          total: z.number(),
+          api: z.number(),
+        })
+        .optional(),
+    })
+    .optional(), // NEW
 })
 ```
 
@@ -502,7 +504,7 @@ export const Info = z.object({
   status: z.string(),
   priority: z.string(),
   id: z.string(),
-  activeForm: z.string().optional(),  // NEW: SDK's "in progress" display text
+  activeForm: z.string().optional(), // NEW: SDK's "in progress" display text
 })
 ```
 
@@ -515,15 +517,19 @@ SDK sends `activeForm` (e.g., "Running tests") shown when status is `in_progress
 
 export const Info = z.object({
   // ... existing fields
-  sdk: z.object({
-    sessionId: z.string(),        // CRITICAL: SDK session ID for resume
-    model: z.string(),            // Current model
-    tools: z.array(z.string()),   // Available tools
-    cacheStats: z.object({
-      read: z.number(),
-      write: z.number()
-    }).optional()
-  }).optional()  // NEW
+  sdk: z
+    .object({
+      sessionId: z.string(), // CRITICAL: SDK session ID for resume
+      model: z.string(), // Current model
+      tools: z.array(z.string()), // Available tools
+      cacheStats: z
+        .object({
+          read: z.number(),
+          write: z.number(),
+        })
+        .optional(),
+    })
+    .optional(), // NEW
 })
 ```
 
@@ -620,10 +626,7 @@ import { processSDKStream } from "./stream"
 export namespace SDK {
   let activeQuery: Query | null = null
 
-  export async function start(input: {
-    prompt: string
-    sessionID: string
-  }): Promise<void> {
+  export async function start(input: { prompt: string; sessionID: string }): Promise<void> {
     const config = await Config.get()
     const session = await Session.get(input.sessionID)
 
@@ -645,7 +648,7 @@ export namespace SDK {
         preset: "claude_code",
         append: await getCustomInstructions(input.sessionID),
       },
-      settingSources: ["project"],  // Load CLAUDE.md
+      settingSources: ["project"], // Load CLAUDE.md
     }
 
     activeQuery = query({ prompt, options })
@@ -695,7 +698,7 @@ export function createPermissionHandler(sessionID: string): CanUseTool {
     const result = await PermissionNext.check({
       sessionID,
       tool: toolName,
-      input
+      input,
     })
 
     if (result.allowed) {
@@ -711,12 +714,10 @@ export function createPermissionHandler(sessionID: string): CanUseTool {
       sessionID,
       tool: toolName,
       input,
-      signal
+      signal,
     })
 
-    return userResult.allowed
-      ? { behavior: "allow" }
-      : { behavior: "deny", message: "User denied" }
+    return userResult.allowed ? { behavior: "allow" } : { behavior: "deny", message: "User denied" }
   }
 }
 ```
@@ -771,7 +772,7 @@ export async function expandCommand(input: string): Promise<{
         } catch (e) {
           return `Error: ${e instanceof Error ? e.message : String(e)}`
         }
-      })
+      }),
     )
     let i = 0
     template = template.replace(/!`([^`]+)`/g, () => results[i++])
@@ -789,8 +790,8 @@ Integration in `SDK.start()`:
 export async function start(input: {
   prompt: string
   sessionID: string
-  messageID?: string  // Optimistic message ID from UI
-  variant?: string    // Thinking effort level
+  messageID?: string // Optimistic message ID from UI
+  variant?: string // Thinking effort level
 }) {
   const { isOurs, prompt, command } = await expandCommand(input.prompt)
 
@@ -824,19 +825,23 @@ export async function start(input: {
 // Map UI variant to SDK thinking budget
 function variantToThinkingBudget(variant?: string): number {
   switch (variant) {
-    case "low": return 5000
-    case "medium": return 10000
-    case "high": return 50000
-    default: return 10000
+    case "low":
+      return 5000
+    case "medium":
+      return 10000
+    case "high":
+      return 50000
+    default:
+      return 10000
   }
 }
 ```
 
-| Command Type | Handling |
-|--------------|----------|
+| Command Type                          | Handling                         |
+| ------------------------------------- | -------------------------------- |
 | Opencode (`/init`, `/review`, config) | Expand template → send as prompt |
-| SDK built-in (`/compact`, `/clear`) | Pass through to SDK |
-| `.claude/commands/` files | SDK handles natively |
+| SDK built-in (`/compact`, `/clear`)   | Pass through to SDK              |
+| `.claude/commands/` files             | SDK handles natively             |
 
 ### 5.4 Agent/Subagent Mapping
 
@@ -861,7 +866,7 @@ export async function getSDKAgents(): Promise<Record<string, AgentDefinition>> {
       description: agent.description ?? `${agent.name} agent`,
       prompt: agent.prompt ?? "",
       tools: extractAllowedTools(agent.permission),
-      model: mapModel(agent.model?.modelID)
+      model: mapModel(agent.model?.modelID),
     }
   }
 
@@ -901,18 +906,18 @@ Integration in SDK options:
 const options: Options = {
   // ...
   agents: await getSDKAgents(),
-  allowedTools: ["Read", "Edit", "Write", "Bash", "Glob", "Grep", "Task", /*...*/]
+  allowedTools: ["Read", "Edit", "Write", "Bash", "Glob", "Grep", "Task" /*...*/],
 }
 ```
 
-| Opencode Agent | SDK AgentDefinition |
-|----------------|---------------------|
-| `name` | Key in `agents` object |
-| `description` | `description` |
-| `prompt` | `prompt` |
-| `permission` (ruleset) | `tools` (array of allowed) |
-| `model` | `model` (`"sonnet"`, `"opus"`, `"haiku"`) |
-| `mode: "subagent"` | Included in agents |
+| Opencode Agent         | SDK AgentDefinition                       |
+| ---------------------- | ----------------------------------------- |
+| `name`                 | Key in `agents` object                    |
+| `description`          | `description`                             |
+| `prompt`               | `prompt`                                  |
+| `permission` (ruleset) | `tools` (array of allowed)                |
+| `model`                | `model` (`"sonnet"`, `"opus"`, `"haiku"`) |
+| `mode: "subagent"`     | Included in agents                        |
 
 ### 5.5 Permission Bridge
 
@@ -933,7 +938,7 @@ export function createPermissionHandler(sessionID: string) {
     const result = PermissionNext.evaluate(
       toolName.toLowerCase(),
       extractPattern(toolName, toolInput),
-      agent.permission
+      agent.permission,
     )
 
     if (result.action === "allow") return { allowed: true }
@@ -945,7 +950,7 @@ export function createPermissionHandler(sessionID: string) {
         sessionID,
         toolName,
         toolInput,
-        resolve: (allowed: boolean) => resolve({ allowed })
+        resolve: (allowed: boolean) => resolve({ allowed }),
       })
     })
   }
@@ -960,11 +965,11 @@ function extractPattern(toolName: string, input: unknown): string {
 }
 ```
 
-| Opencode Permission | SDK Equivalent |
-|--------------------|----------------|
-| `action: "allow"` | Tool in `tools` array / `{ allowed: true }` |
-| `action: "deny"` | Tool NOT in array / `{ allowed: false }` |
-| `action: "ask"` | `canUseTool` callback prompts user |
+| Opencode Permission       | SDK Equivalent                              |
+| ------------------------- | ------------------------------------------- |
+| `action: "allow"`         | Tool in `tools` array / `{ allowed: true }` |
+| `action: "deny"`          | Tool NOT in array / `{ allowed: false }`    |
+| `action: "ask"`           | `canUseTool` callback prompts user          |
 | Pattern rules (`"*.env"`) | Handle in `canUseTool` via `extractPattern` |
 
 ### 5.6 Session Revert (Option A: Keep Both Systems)
@@ -981,19 +986,19 @@ import { SDK } from "./index"
 export async function revert(input: {
   sessionID: string
   messageID: string
-  rewindFiles?: boolean  // Also revert file state
+  rewindFiles?: boolean // Also revert file state
 }) {
   // 1. Get SDK message UUID before removing
   const message = await MessageV2.get({
     sessionID: input.sessionID,
-    messageID: input.messageID
+    messageID: input.messageID,
   })
   const sdkUuid = message.info.sdk?.uuid
 
   // 2. Remove messages from OUR storage (hides from UI)
   await SessionRevert.revert({
     sessionID: input.sessionID,
-    messageID: input.messageID
+    messageID: input.messageID,
   })
 
   // 3. Optionally rewind files to that checkpoint
@@ -1012,17 +1017,18 @@ export async function unrevert(sessionID: string) {
 ```
 
 **Trade-off**: AI remembers reverted content, but UI hides it. This is acceptable because:
+
 - User sees clean message history
 - File state can be correctly reverted via SDK
 - AI memory can actually be helpful for context
 - Simpler than alternatives (new session, etc.)
 
-| Operation | What Happens |
-|-----------|--------------|
-| Revert message | Removed from our storage, hidden from UI, SDK still has it |
-| Revert files | SDK `rewindFiles()` restores file state to checkpoint |
-| Continue after revert | SDK has full context, UI shows truncated history |
-| Unrevert | Restores messages to our storage, visible in UI again |
+| Operation             | What Happens                                               |
+| --------------------- | ---------------------------------------------------------- |
+| Revert message        | Removed from our storage, hidden from UI, SDK still has it |
+| Revert files          | SDK `rewindFiles()` restores file state to checkpoint      |
+| Continue after revert | SDK has full context, UI shows truncated history           |
+| Unrevert              | Restores messages to our storage, visible in UI again      |
 
 ### 5.7 MCP Server Configuration
 
@@ -1050,7 +1056,7 @@ export async function getMcpServers(): Promise<Record<string, McpServerConfig>> 
       result[name] = {
         command: cmd,
         args,
-        env: mcp.environment
+        env: mcp.environment,
       }
     }
 
@@ -1061,7 +1067,7 @@ export async function getMcpServers(): Promise<Record<string, McpServerConfig>> 
       result[name] = {
         type: "sse",
         url: mcp.url,
-        headers: mcp.headers
+        headers: mcp.headers,
       }
     }
   }
@@ -1078,20 +1084,25 @@ export async function getMcpServers(): Promise<Record<string, McpServerConfig>> 
 import { tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk"
 
 // Only tools NOT built into SDK
-const lsp = tool("lsp", "Language server operations", {
-  operation: z.enum(["definition", "references", "hover", "symbols"]),
-  file: z.string(),
-  line: z.number(),
-  character: z.number()
-}, async (args) => {
-  const result = await LSP.execute(args)
-  return { content: [{ type: "text", text: JSON.stringify(result) }] }
-})
+const lsp = tool(
+  "lsp",
+  "Language server operations",
+  {
+    operation: z.enum(["definition", "references", "hover", "symbols"]),
+    file: z.string(),
+    line: z.number(),
+    character: z.number(),
+  },
+  async (args) => {
+    const result = await LSP.execute(args)
+    return { content: [{ type: "text", text: JSON.stringify(result) }] }
+  },
+)
 
 export const customTools = createSdkMcpServer({
   name: "ade-tools",
   version: "1.0.0",
-  tools: [lsp]
+  tools: [lsp],
 })
 ```
 
@@ -1110,8 +1121,7 @@ app.post("/sdk/start", async (c) => {
   const { prompt, sessionID, resume } = await c.req.json()
 
   // Start in background, stream via existing Bus/SSE
-  SDK.start({ prompt, sessionID, resume })
-    .catch(err => Bus.publish(Session.Event.Error, { sessionID, error: err }))
+  SDK.start({ prompt, sessionID, resume }).catch((err) => Bus.publish(Session.Event.Error, { sessionID, error: err }))
 
   return c.json({ ok: true })
 })
@@ -1158,26 +1168,26 @@ export const CLAUDE_MODELS = {
     name: "Claude Sonnet 4.5",
     cost: { input: 3.0, output: 15.0 },
     context: 200000,
-    features: ["thinking", "1m-context", "vision"]
+    features: ["thinking", "1m-context", "vision"],
   },
   "claude-sonnet-4-20250514": {
     name: "Claude Sonnet 4",
     cost: { input: 3.0, output: 15.0 },
     context: 200000,
-    features: ["thinking", "1m-context", "vision"]
+    features: ["thinking", "1m-context", "vision"],
   },
   "claude-opus-4-5-20251101": {
     name: "Claude Opus 4.5",
     cost: { input: 15.0, output: 75.0 },
     context: 200000,
-    features: ["thinking", "vision"]
+    features: ["thinking", "vision"],
   },
   "claude-haiku-4-5-20251001": {
     name: "Claude Haiku 4.5",
-    cost: { input: 0.80, output: 4.0 },
+    cost: { input: 0.8, output: 4.0 },
     context: 200000,
-    features: ["thinking", "vision"]
-  }
+    features: ["thinking", "vision"],
+  },
 } as const
 ```
 
@@ -1188,11 +1198,13 @@ export const CLAUDE_MODELS = {
 
 export namespace Provider {
   export function list() {
-    return [{
-      id: "anthropic",
-      name: "Anthropic",
-      models: CLAUDE_MODELS
-    }]
+    return [
+      {
+        id: "anthropic",
+        name: "Anthropic",
+        models: CLAUDE_MODELS,
+      },
+    ]
   }
 
   export function getModel(modelID: string) {
@@ -1206,6 +1218,7 @@ export namespace Provider {
 ## Part 8: Migration Steps
 
 ### Phase 1: Foundation
+
 - [x] Create `src/sdk/index.ts` - SDK wrapper + system prompt handling
 - [x] Create `src/sdk/convert.ts` - SDK → Parts conversion
 - [x] Create `src/sdk/stream.ts` - Stream processing + tool result + todo handling
@@ -1221,6 +1234,7 @@ export namespace Provider {
 - [x] Integrate real SDK `query()` call
 
 ### Phase 2: Type Extensions
+
 - [x] Add `signature` to ReasoningPart
 - [x] Add `RedactedReasoningPart` to Part union
 - [ ] Add `sandboxed` to ToolPart.metadata (optional)
@@ -1228,16 +1242,19 @@ export namespace Provider {
 - [x] Add `sdk` fields to Session.Info
 
 ### Phase 3: Server Updates
+
 - [x] Add SDK routes to Hono server
 - [x] Wire SDK events to existing Bus
 
 ### Phase 4: UI Updates (Minimal)
+
 - [x] Add RedactedReasoningPart renderer
 - [x] Add case to Part renderer switch
 - [ ] Optional: Add signature badge to ReasoningPart
 - [ ] Optional: Add cache stats display
 
 ### Phase 5: Cleanup - COMPLETED
+
 - [x] Remove `src/session/llm.ts` - DELETED
 - [x] Remove `src/session/processor.ts` - DELETED
 - [x] Remove `src/session/compaction.ts` - DELETED
@@ -1258,6 +1275,7 @@ export namespace Provider {
 ## Part 9: Files Summary
 
 ### New Files (11)
+
 ```
 packages/opencode/src/sdk/
 ├── index.ts          # SDK wrapper (~270 lines)
@@ -1276,28 +1294,31 @@ packages/opencode/src/sdk/
 **Total new: ~1600 lines** (actual implementation more comprehensive than initial estimate)
 
 ### Modified Files
-| File | Change |
-|------|--------|
-| `src/session/message-v2.ts` | Add RedactedReasoningPart + signature field |
-| `src/session/index.ts` | Add sdk field to Session.Info |
-| `src/server/server.ts` | Mount SDK routes |
-| `src/provider/provider.ts` | Removed sdk/ import |
-| `packages/ui/src/components/message-part.tsx` | Add RedactedReasoningPart renderer |
+
+| File                                          | Change                                      |
+| --------------------------------------------- | ------------------------------------------- |
+| `src/session/message-v2.ts`                   | Add RedactedReasoningPart + signature field |
+| `src/session/index.ts`                        | Add sdk field to Session.Info               |
+| `src/server/server.ts`                        | Mount SDK routes                            |
+| `src/provider/provider.ts`                    | Removed sdk/ import                         |
+| `packages/ui/src/components/message-part.tsx` | Add RedactedReasoningPart renderer          |
 
 ### Removed Files
-| File | Lines Removed |
-|------|---------------|
-| `src/session/llm.ts` | ~300 |
-| `src/session/processor.ts` | ~800 |
-| `src/session/compaction.ts` | ~225 |
-| `src/session/prompt.ts` | ~1500 |
-| `src/provider/transform.ts` | ~650 |
-| `src/provider/sdk/*` | ~2000+ (16 files) |
-| Test files for removed modules | ~200 |
+
+| File                           | Lines Removed     |
+| ------------------------------ | ----------------- |
+| `src/session/llm.ts`           | ~300              |
+| `src/session/processor.ts`     | ~800              |
+| `src/session/compaction.ts`    | ~225              |
+| `src/session/prompt.ts`        | ~1500             |
+| `src/provider/transform.ts`    | ~650              |
+| `src/provider/sdk/*`           | ~2000+ (16 files) |
+| Test files for removed modules | ~200              |
 
 **Total removed: ~5675 lines**
 
 ### Net Change
+
 **Add ~1600 lines, remove ~5675 lines = -4075 lines**
 
 ---
@@ -1305,25 +1326,27 @@ packages/opencode/src/sdk/
 ## Part 10: Benefits
 
 ### SDK Features Gained
-| Feature | Benefit |
-|---------|---------|
+
+| Feature               | Benefit                          |
+| --------------------- | -------------------------------- |
 | Native prompt caching | 90% cost reduction on cache hits |
-| 1-hour cache TTL | Longer session efficiency |
-| Extended thinking | Built-in, configurable budget |
-| Interleaved thinking | Think between tool calls |
-| Sandboxed bash | Security without complexity |
-| File checkpointing | Native undo via `rewindFiles()` |
-| 1M context beta | 5x context for Sonnet 4/4.5 |
+| 1-hour cache TTL      | Longer session efficiency        |
+| Extended thinking     | Built-in, configurable budget    |
+| Interleaved thinking  | Think between tool calls         |
+| Sandboxed bash        | Security without complexity      |
+| File checkpointing    | Native undo via `rewindFiles()`  |
+| 1M context beta       | 5x context for Sonnet 4/4.5      |
 
 ### Architecture Benefits
-| Benefit | How |
-|---------|-----|
-| UI unchanged | Existing Part renderers work |
-| Events unchanged | Bus publishes same events |
-| Storage unchanged | MessageV2 still persisted |
-| Swappable | Conversion layer is the boundary |
-| Single code path | All old LLM/processor code removed |
-| Much less code | -4075 lines net |
+
+| Benefit           | How                                |
+| ----------------- | ---------------------------------- |
+| UI unchanged      | Existing Part renderers work       |
+| Events unchanged  | Bus publishes same events          |
+| Storage unchanged | MessageV2 still persisted          |
+| Swappable         | Conversion layer is the boundary   |
+| Single code path  | All old LLM/processor code removed |
+| Much less code    | -4075 lines net                    |
 
 ---
 
@@ -1334,6 +1357,7 @@ packages/opencode/src/sdk/
 **Approach**: SDK → Conversion → Existing Parts/Storage → Existing UI
 
 **Key insight**: Most SDK outputs already map to existing Part types. We implemented:
+
 1. A conversion layer (~190 lines in convert.ts)
 2. A stream processor (~340 lines in stream.ts)
 3. One new Part type (RedactedReasoningPart)
@@ -1341,12 +1365,14 @@ packages/opencode/src/sdk/
 5. Store SDK session ID for resume
 
 **Storage model**:
+
 - SDK stores transcripts for Claude's context (internal, not accessible)
 - We store MessageV2/Parts for UI rendering (existing system)
 - We store `sdk.sessionId` to link sessions for resume
 - Not redundant: SDK storage is for LLM, ours is for UI
 
 **What stays the same**:
+
 - MessageV2/Parts type system
 - UI components that render Parts
 - Bus event subscriptions
@@ -1354,6 +1380,7 @@ packages/opencode/src/sdk/
 - Permission UI flow
 
 **What changed**:
+
 - All routes now use SDK.start() instead of SessionPrompt.prompt()
 - SDK replaces Vercel AI SDK as the LLM engine
 - Conversion layer maps SDK stream → Parts and saves to storage

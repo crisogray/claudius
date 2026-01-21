@@ -69,7 +69,7 @@ export namespace SDKStream {
     // Streaming state for partial message handling
     const streamingParts = new Map<number, MessageV2.Part>()
     let streamingMessageID: string | null = null
-    const streamedAnthropicMessageIDs = new Set<string>()  // Track by Anthropic API message ID
+    const streamedAnthropicMessageIDs = new Set<string>() // Track by Anthropic API message ID
 
     // Track child sessions for subagents
     // Maps parent_tool_use_id -> { sessionID, userMessageID }
@@ -85,7 +85,9 @@ export namespace SDKStream {
     const toolToParent = new Map<string, string>()
 
     // Get or create child session for a subagent
-    async function getOrCreateChildSession(parentToolUseId: string): Promise<{ sessionID: string; userMessageID: string }> {
+    async function getOrCreateChildSession(
+      parentToolUseId: string,
+    ): Promise<{ sessionID: string; userMessageID: string }> {
       const existing = childSessions.get(parentToolUseId)
       if (existing) return existing
 
@@ -122,10 +124,13 @@ export namespace SDKStream {
 
       // Create initial user message in child session with the task prompt
       // This is needed for the UI to display the conversation
-      const taskPrompt = (messages
-        .flatMap((m) => m.parts)
-        .find((p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId)
-        ?.state as MessageV2.ToolStatePending | MessageV2.ToolStateRunning)?.input?.prompt as string | undefined
+      const taskPrompt = (
+        messages
+          .flatMap((m) => m.parts)
+          .find((p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === parentToolUseId)?.state as
+          | MessageV2.ToolStatePending
+          | MessageV2.ToolStateRunning
+      )?.input?.prompt as string | undefined
 
       const userMessage: MessageV2.User = {
         id: Identifier.ascending("message"),
@@ -210,7 +215,7 @@ export namespace SDKStream {
             if (message.subtype === "init") {
               // Only capture snapshot if write tools are enabled (skip for read-only queries)
               if (hasWriteTools(message.tools)) {
-                initialSnapshot = context.initialSnapshot ?? await Snapshot.track()
+                initialSnapshot = context.initialSnapshot ?? (await Snapshot.track())
               } else {
                 log.info("skipping snapshot for read-only query", { tools: message.tools })
               }
@@ -218,7 +223,7 @@ export namespace SDKStream {
               // Update session with SDK session ID for resume
               if (message.session_id) {
                 await Session.update(sessionID, (draft) => {
-                  ; (draft as any).sdk = {
+                  ;(draft as any).sdk = {
                     sessionId: message.session_id,
                     model: message.model,
                     tools: message.tools,
@@ -278,12 +283,12 @@ export namespace SDKStream {
             currentMessageID = currentMessage.id
             onMessageID?.(currentMessageID)
 
-              // Store SDK metadata
-              ; (currentMessage as any).sdk = {
-                uuid: message.uuid,
-                sessionId: message.session_id,
-                parentToolUseId: message.parent_tool_use_id ?? undefined,
-              }
+            // Store SDK metadata
+            ;(currentMessage as any).sdk = {
+              uuid: message.uuid,
+              sessionId: message.session_id,
+              parentToolUseId: message.parent_tool_use_id ?? undefined,
+            }
 
             // Save message
             await Session.updateMessage(currentMessage)
@@ -402,7 +407,11 @@ export namespace SDKStream {
           }
 
           case "result": {
-            log.info("result message received", { hasCurrentMessage: !!currentMessage, currentMessageID, hasInitialSnapshot: !!initialSnapshot })
+            log.info("result message received", {
+              hasCurrentMessage: !!currentMessage,
+              currentMessageID,
+              hasInitialSnapshot: !!initialSnapshot,
+            })
             if (currentMessage && currentMessageID) {
               // Update message with final tokens and cost
               const tokens = SDKConvert.sdkResultToTokens(message)
@@ -416,7 +425,14 @@ export namespace SDKStream {
               // Compute diffs using existing snapshot system
               if (initialSnapshot) {
                 log.info("calling finalizeDiffs", { sessionID, currentMessageID, parentID: context.parentID })
-                await finalizeDiffs(sessionID, currentMessageID, context.parentID, initialSnapshot, tokens, currentMessage.cost)
+                await finalizeDiffs(
+                  sessionID,
+                  currentMessageID,
+                  context.parentID,
+                  initialSnapshot,
+                  tokens,
+                  currentMessage.cost,
+                )
               }
 
               Bus.publish(MessageV2.Event.Updated, { info: currentMessage })
@@ -461,9 +477,7 @@ export namespace SDKStream {
             const event = msg.event
 
             // Determine target session (subagent support)
-            const childInfo = msg.parent_tool_use_id
-              ? await getOrCreateChildSession(msg.parent_tool_use_id)
-              : null
+            const childInfo = msg.parent_tool_use_id ? await getOrCreateChildSession(msg.parent_tool_use_id) : null
             const targetSessionID = childInfo?.sessionID ?? sessionID
             const parentID = childInfo?.userMessageID ?? context.parentID
 
@@ -497,12 +511,12 @@ export namespace SDKStream {
                 const anthropicMessageId = (event as SDKConvert.MessageStartEvent).message.id
                 streamedAnthropicMessageIDs.add(anthropicMessageId)
 
-                  // Store SDK metadata
-                  ; (currentMessage as any).sdk = {
-                    uuid: msg.uuid,
-                    sessionId: msg.session_id,
-                    parentToolUseId: msg.parent_tool_use_id ?? undefined,
-                  }
+                // Store SDK metadata
+                ;(currentMessage as any).sdk = {
+                  uuid: msg.uuid,
+                  sessionId: msg.session_id,
+                  parentToolUseId: msg.parent_tool_use_id ?? undefined,
+                }
 
                 await Session.updateMessage(assistantMessage)
 
@@ -636,13 +650,15 @@ export namespace SDKStream {
   async function handleTodoWrite(sessionID: string, block: SDKConvert.ToolUseBlock) {
     if (block.name !== "TodoWrite") return
 
-    const sdkTodos = (block.input as {
-      todos?: Array<{
-        content: string
-        status: "pending" | "in_progress" | "completed"
-        activeForm?: string
-      }>
-    }).todos
+    const sdkTodos = (
+      block.input as {
+        todos?: Array<{
+          content: string
+          status: "pending" | "in_progress" | "completed"
+          activeForm?: string
+        }>
+      }
+    ).todos
 
     if (!sdkTodos) return
 
@@ -668,9 +684,7 @@ export namespace SDKStream {
     const messages = await Session.messages({ sessionID, limit: 5 })
 
     for (const msg of messages) {
-      const part = msg.parts.find(
-        (p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === block.tool_use_id,
-      )
+      const part = msg.parts.find((p): p is MessageV2.ToolPart => p.type === "tool" && p.callID === block.tool_use_id)
 
       if (part) {
         const currentState = part.state
@@ -693,26 +707,26 @@ export namespace SDKStream {
 
         const completedState: MessageV2.ToolStateCompleted | MessageV2.ToolStateError = block.is_error
           ? {
-            status: "error",
-            input,
-            error: output,
-            metadata,
-            time: {
-              start: Date.now() - 1000, // Approximate
-              end: Date.now(),
-            },
-          }
+              status: "error",
+              input,
+              error: output,
+              metadata,
+              time: {
+                start: Date.now() - 1000, // Approximate
+                end: Date.now(),
+              },
+            }
           : {
-            status: "completed",
-            input,
-            output,
-            title: part.tool,
-            metadata,
-            time: {
-              start: Date.now() - 1000, // Approximate
-              end: Date.now(),
-            },
-          }
+              status: "completed",
+              input,
+              output,
+              title: part.tool,
+              metadata,
+              time: {
+                start: Date.now() - 1000, // Approximate
+                end: Date.now(),
+              },
+            }
 
         part.state = completedState
         await Session.updatePart(part)
@@ -730,7 +744,7 @@ export namespace SDKStream {
           const now = Date.now()
 
           // Find the last assistant message to add the result to
-          const lastAssistant = childMessages.find(m => m.info.role === "assistant")
+          const lastAssistant = childMessages.find((m) => m.info.role === "assistant")
 
           // Add the subagent's result as parts in the child session
           // This shows the final output that gets returned to the parent
@@ -958,5 +972,4 @@ export namespace SDKStream {
     }
     return null
   }
-
 }

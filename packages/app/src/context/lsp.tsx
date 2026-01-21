@@ -137,11 +137,7 @@ export const { use: useLsp, provider: LspProvider } = createSimpleContext({
       }
     }
 
-    const definition = async (params: {
-      path: string
-      line: number
-      character: number
-    }): Promise<LspLocation[]> => {
+    const definition = async (params: { path: string; line: number; character: number }): Promise<LspLocation[]> => {
       try {
         const response = await sdk.client.lsp.definition(params)
         return (response.data as LspLocation[]) ?? []

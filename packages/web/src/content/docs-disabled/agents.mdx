@@ -116,7 +116,6 @@ Configure agents in your `opencode.json` config file:
 
 ```json title="opencode.json"
 {
-  
   "agent": {
     "build": {
       "mode": "primary",
@@ -341,7 +340,6 @@ Control which tools are available in this agent with the `tools` config. You can
 
 ```json title="opencode.json" {3-6,9-12}
 {
-  
   "tools": {
     "write": true,
     "bash": true
@@ -365,7 +363,6 @@ You can also use wildcards to control multiple tools at once. For example, to di
 
 ```json title="opencode.json"
 {
-  
   "agent": {
     "readonly": {
       "tools": {
@@ -392,7 +389,6 @@ You can configure permissions to manage what actions an agent can take. Currentl
 
 ```json title="opencode.json"
 {
-  
   "permission": {
     "edit": "deny"
   }
@@ -403,7 +399,6 @@ You can override these permissions per agent.
 
 ```json title="opencode.json" {3-5,8-10}
 {
-  
   "permission": {
     "edit": "deny"
   },
@@ -439,7 +434,6 @@ You can set permissions for specific bash commands.
 
 ```json title="opencode.json" {7}
 {
-  
   "agent": {
     "build": {
       "permission": {
@@ -456,7 +450,6 @@ This can take a glob pattern.
 
 ```json title="opencode.json" {7}
 {
-  
   "agent": {
     "build": {
       "permission": {
@@ -474,7 +467,6 @@ Since the last matching rule takes precedence, put the `*` wildcard first and sp
 
 ```json title="opencode.json" {8}
 {
-  
   "agent": {
     "build": {
       "permission": {

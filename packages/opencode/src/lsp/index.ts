@@ -452,7 +452,10 @@ export namespace LSP {
     return { isIncomplete, items }
   }
 
-  export async function completionResolve(input: { file: string; item: CompletionItem }): Promise<CompletionItem | null> {
+  export async function completionResolve(input: {
+    file: string
+    item: CompletionItem
+  }): Promise<CompletionItem | null> {
     const results = await run(input.file, (client) =>
       client.connection.sendRequest("completionItem/resolve", input.item).catch(() => null),
     )

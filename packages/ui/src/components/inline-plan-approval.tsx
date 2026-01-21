@@ -11,12 +11,7 @@ export function InlinePlanApproval(props: InlinePlanApprovalProps) {
   return (
     <div data-component="plan-approval">
       <div data-slot="plan-content">
-        <Markdown
-          text={props.plan}
-          fullscreen
-          onApprove={() => props.onApprove?.()}
-          onReject={props.onReject}
-        />
+        <Markdown text={props.plan} fullscreen onApprove={() => props.onApprove?.()} onReject={props.onReject} />
       </div>
 
       <PlanApprovalActions

@@ -1,4 +1,13 @@
-import type { Message, Session, Part, FileDiff, SessionStatus, PermissionRequest, QuestionRequest, PlanRequest } from "@opencode-ai/sdk/v2"
+import type {
+  Message,
+  Session,
+  Part,
+  FileDiff,
+  SessionStatus,
+  PermissionRequest,
+  QuestionRequest,
+  PlanRequest,
+} from "@opencode-ai/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 
@@ -36,16 +45,9 @@ export type PermissionRespondFn = (input: {
   response: "once" | "always" | "reject"
 }) => void
 
-export type QuestionRespondFn = (input: {
-  sessionID: string
-  requestID: string
-  answers: string[][]
-}) => void
+export type QuestionRespondFn = (input: { sessionID: string; requestID: string; answers: string[][] }) => void
 
-export type QuestionRejectFn = (input: {
-  sessionID: string
-  requestID: string
-}) => void
+export type QuestionRejectFn = (input: { sessionID: string; requestID: string }) => void
 
 export type PermissionMode = "default" | "acceptEdits" | "bypassPermissions"
 

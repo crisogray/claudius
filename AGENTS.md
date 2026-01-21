@@ -25,6 +25,7 @@ Tauri v2 app that wraps the frontend and manages the opencode CLI as a sidecar:
 - `src/index.tsx` - Entry point, renders app inside `ServerGate`
 
 **Sidecar flow:**
+
 ```
 Tauri app starts
   -> spawn_sidecar("opencode serve --port={port}")
@@ -53,11 +54,13 @@ PlatformProvider (web vs desktop abstraction)
 ```
 
 **Key files:**
+
 - `src/pages/layout.tsx` - Sidebar with projects/sessions, drag-drop reordering
 - `src/pages/session.tsx` - Main work surface: messages, prompt input, review tabs
 - `src/context/sync.tsx` - State management, SSE event handling
 
 **Current layout:**
+
 ```
 +---------------+---------------------------------------------+
 |   SIDEBAR     |              MAIN AREA                      |
@@ -80,12 +83,14 @@ PlatformProvider (web vs desktop abstraction)
 - **Patterns:** `data-component`, `data-variant`, `data-slot` attributes for CSS targeting
 
 **Diff rendering (`src/pierre/`):**
+
 - Uses `@pierre/diffs` for syntax-highlighted diffs
 - `FileDiff` class with worker pool for highlighting
 - Supports `DiffLineAnnotation<T>` for inline annotations (currently unused)
 - SSR support via `preloadMultiFileDiff` and hydration
 
 **Theme system:**
+
 - 12 built-in themes (dracula, nord, catppuccin, etc.)
 - OKLCH-based colors with CSS custom properties
 - Runtime switching via `ThemeProvider`
@@ -95,6 +100,7 @@ PlatformProvider (web vs desktop abstraction)
 Auto-generated from OpenAPI spec:
 
 **Client methods:**
+
 - `session.*` - CRUD, prompt, abort, revert, diff, messages
 - `provider.*` - List, auth, OAuth
 - `file.*` - List, read, status
@@ -102,6 +108,7 @@ Auto-generated from OpenAPI spec:
 - `mcp/lsp.*` - Server status
 
 **SSE events (36+ types):**
+
 - `session.created/updated/deleted/status/error`
 - `message.updated/removed`, `message.part.updated/removed`
 - `permission.asked/replied`
@@ -112,33 +119,38 @@ Auto-generated from OpenAPI spec:
 Hono server with agent system:
 
 **Server (`src/server/`):**
+
 - REST API with OpenAPI docs
 - SSE at `/global/event` and `/event` (directory-scoped)
 - WebSocket for PTY terminals
 
 **Agents (`src/agent/`):**
+
 - Built-in: `general`, `explore`, `plan`, `build`, `compaction`, `title`, `summary`
 - Permission system with allow/deny/ask rules
 - Custom agents via config
 
 **Tools (`src/tool/`):**
+
 - Core: `bash`, `read`, `write`, `edit`, `glob`, `grep`, `task`, `webfetch`
 - Edit uses fuzzy matching chain for robust replacements
 - Custom tools from `tool/*.ts` in config directories
 - MCP tools integrated via `MCP.tools()`
 
 **Snapshots (`src/snapshot/`):**
+
 - Shadow git repo at `~/.opencode/data/snapshot/{projectID}`
 - `track()` creates tree hash of worktree state
 - `patch(hash)` returns changed files since snapshot
 - `diffFull(from, to)` returns full diff with before/after content
 
 **Diff schema:**
+
 ```typescript
 interface FileDiff {
   file: string
-  before: string   // Full content before
-  after: string    // Full content after
+  before: string // Full content before
+  after: string // Full content after
   additions: number
   deletions: number
 }
@@ -147,11 +159,13 @@ interface FileDiff {
 ## Key Patterns
 
 ### State Management
+
 - Two-tier: Global (projects, providers) + Directory-scoped (sessions, messages, parts)
 - SSE events -> batch/coalesce -> `reconcile()` into stores -> reactive components
 - `createSimpleContext()` factory for typed providers
 
 ### Event Flow
+
 ```
 User action -> SDK API call -> Server
                                  |
@@ -163,6 +177,7 @@ User action -> SDK API call -> Server
 ```
 
 ### Diff Source
+
 ```typescript
 // Git projects: shadow repo snapshots
 Snapshot.track() -> tree hash at step start
@@ -177,35 +192,35 @@ SessionSummary.computeDiff() -> FileDiff[]
 
 ### Right Panel Tabs (in `pages/session.tsx`)
 
-| Tab | Trigger | Content |
-|-----|---------|---------|
-| **Review** | Auto (when files changed) | Diff viewer via `SessionReview`, unified/split toggle |
-| **Context** | Click context tab | Token stats, context breakdown bar, system prompt, raw messages |
-| **Files** | Open file (cmd+p) | Syntax-highlighted code, image preview, SVG preview, line selection |
+| Tab         | Trigger                   | Content                                                             |
+| ----------- | ------------------------- | ------------------------------------------------------------------- |
+| **Review**  | Auto (when files changed) | Diff viewer via `SessionReview`, unified/split toggle               |
+| **Context** | Click context tab         | Token stats, context breakdown bar, system prompt, raw messages     |
+| **Files**   | Open file (cmd+p)         | Syntax-highlighted code, image preview, SVG preview, line selection |
 
 ### Session Components (`components/session/`)
 
-| Component | File | Description |
-|-----------|------|-------------|
-| `SessionHeader` | `session-header.tsx` | Project/session selectors, LSP/MCP indicators, share button |
-| `SessionContextTab` | `session-context-tab.tsx` | Token usage, context breakdown visualization, raw message viewer |
-| `SessionNewView` | `session-new-view.tsx` | New session view with worktree selection |
-| `SortableTab` | `session-sortable-tab.tsx` | Draggable file tabs |
-| `SortableTerminalTab` | `session-sortable-terminal-tab.tsx` | Draggable terminal tabs |
+| Component             | File                                | Description                                                      |
+| --------------------- | ----------------------------------- | ---------------------------------------------------------------- |
+| `SessionHeader`       | `session-header.tsx`                | Project/session selectors, LSP/MCP indicators, share button      |
+| `SessionContextTab`   | `session-context-tab.tsx`           | Token usage, context breakdown visualization, raw message viewer |
+| `SessionNewView`      | `session-new-view.tsx`              | New session view with worktree selection                         |
+| `SortableTab`         | `session-sortable-tab.tsx`          | Draggable file tabs                                              |
+| `SortableTerminalTab` | `session-sortable-terminal-tab.tsx` | Draggable terminal tabs                                          |
 
 ### Dialogs (`components/dialog-*.tsx`)
 
-| Dialog | Keybind | Description |
-|--------|---------|-------------|
-| `DialogSelectFile` | `cmd+p` | File search and open |
-| `DialogSelectModel` | `cmd+'` | Model picker |
-| `DialogSelectMcp` | `cmd+;` | MCP server toggles |
-| `DialogSelectProvider` | — | Provider connection |
-| `DialogConnectProvider` | — | OAuth/API key entry |
-| `DialogSelectDirectory` | — | Project folder picker |
-| `DialogEditProject` | — | Project settings |
-| `DialogSelectServer` | — | Server connection |
-| `DialogManageModels` | — | Model management |
+| Dialog                  | Keybind | Description           |
+| ----------------------- | ------- | --------------------- |
+| `DialogSelectFile`      | `cmd+p` | File search and open  |
+| `DialogSelectModel`     | `cmd+'` | Model picker          |
+| `DialogSelectMcp`       | `cmd+;` | MCP server toggles    |
+| `DialogSelectProvider`  | —       | Provider connection   |
+| `DialogConnectProvider` | —       | OAuth/API key entry   |
+| `DialogSelectDirectory` | —       | Project folder picker |
+| `DialogEditProject`     | —       | Project settings      |
+| `DialogSelectServer`    | —       | Server connection     |
+| `DialogManageModels`    | —       | Model management      |
 
 ### Terminal (`components/terminal.tsx`, `context/terminal.tsx`)
 
@@ -234,11 +249,11 @@ SessionSummary.computeDiff() -> FileDiff[]
 
 ### Indicators
 
-| Component | Description |
-|-----------|-------------|
+| Component             | Description               |
+| --------------------- | ------------------------- |
 | `SessionContextUsage` | Token usage bar/indicator |
-| `SessionLspIndicator` | LSP server status |
-| `SessionMcpIndicator` | MCP server status |
+| `SessionLspIndicator` | LSP server status         |
+| `SessionMcpIndicator` | MCP server status         |
 
 ## Development
 
@@ -250,6 +265,7 @@ bun tauri build                # Package desktop app
 ```
 
 **Sidecar setup for dev:**
+
 ```bash
 # Build CLI and copy to sidecars
 bun run --cwd packages/opencode build

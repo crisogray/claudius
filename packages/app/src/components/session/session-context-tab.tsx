@@ -364,9 +364,7 @@ export function SessionContextTab(props: SessionContextTabProps) {
                         <td class="px-3 py-2 text-right tabular-nums text-text-weak">
                           {usage.cacheReadInputTokens.toLocaleString()}
                         </td>
-                        <td class="px-3 py-2 text-right tabular-nums text-text-strong">
-                          ${usage.costUSD.toFixed(4)}
-                        </td>
+                        <td class="px-3 py-2 text-right tabular-nums text-text-strong">${usage.costUSD.toFixed(4)}</td>
                       </tr>
                     )}
                   </For>
@@ -386,9 +384,7 @@ export function SessionContextTab(props: SessionContextTabProps) {
                     <span class="px-1.5 py-0.5 rounded bg-surface-base text-text-weak">
                       {event.trigger === "auto" ? "Auto" : "Manual"}
                     </span>
-                    <span>
-                      Compacted at {event.preTokens.toLocaleString()} tokens
-                    </span>
+                    <span>Compacted at {event.preTokens.toLocaleString()} tokens</span>
                     <span class="text-text-weaker">
                       {DateTime.fromMillis(event.timestamp).toLocaleString(DateTime.TIME_WITH_SHORT_OFFSET)}
                     </span>

@@ -42,8 +42,10 @@ export namespace SessionSummary {
 
     // Try incremental update: only compute diffs for messages with pre-computed diffs
     // and merge with existing session diffs
-    const existingDiffs = await Storage.read<Snapshot.FileDiff[]>(["session_diff", input.sessionID]).catch(() => [] as Snapshot.FileDiff[])
-    const existingDiffMap = new Map(existingDiffs.map(d => [d.file, d]))
+    const existingDiffs = await Storage.read<Snapshot.FileDiff[]>(["session_diff", input.sessionID]).catch(
+      () => [] as Snapshot.FileDiff[],
+    )
+    const existingDiffMap = new Map(existingDiffs.map((d) => [d.file, d]))
 
     // Find messages that have pre-computed diffs (new messages since last summary)
     let hasPrecomputedDiffs = false
@@ -73,10 +75,8 @@ export namespace SessionSummary {
     // If all messages have pre-computed diffs, use the merged result
     // Otherwise fall back to full computation for backwards compatibility
     const diffs = hasPrecomputedDiffs
-      ? Array.from(existingDiffMap.values()).filter(d => files.has(d.file))
-      : await computeDiff({ messages: input.messages }).then((x) =>
-          x.filter((x) => files.has(x.file))
-        )
+      ? Array.from(existingDiffMap.values()).filter((d) => files.has(d.file))
+      : await computeDiff({ messages: input.messages }).then((x) => x.filter((x) => files.has(x.file)))
 
     await Session.update(input.sessionID, (draft) => {
       draft.summary = {
@@ -236,7 +236,7 @@ export namespace SessionSummary {
 
       // Use pre-computed diff if available, otherwise compute now
       // Pre-computed diffs are generated at step-finish time for better performance
-      const turnDiffs = precomputedDiff ?? await Snapshot.diffFull(turnFrom, turnTo)
+      const turnDiffs = precomputedDiff ?? (await Snapshot.diffFull(turnFrom, turnTo))
 
       // Aggregate into map (sum additions/deletions per file)
       for (const diff of turnDiffs) {

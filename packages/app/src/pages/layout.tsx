@@ -299,7 +299,12 @@ export default function Layout(props: ParentProps) {
     const cooldownMs = 5000
 
     const unsub = globalSDK.event.listen((e) => {
-      if (e.details?.type !== "permission.asked" && e.details?.type !== "question.asked" && e.details?.type !== "plan.asked") return
+      if (
+        e.details?.type !== "permission.asked" &&
+        e.details?.type !== "question.asked" &&
+        e.details?.type !== "plan.asked"
+      )
+        return
       const config = alerts[e.details.type]
       const directory = e.name
       const props = e.details.properties
@@ -504,7 +509,7 @@ export default function Layout(props: ParentProps) {
     }
   })
 
-createEffect(() => {
+  createEffect(() => {
     if (!pageReady()) return
     if (!layoutReady()) return
     const projects = layout.projects.list()
@@ -1594,7 +1599,8 @@ createEffect(() => {
         classList={{
           "flex items-center justify-center size-10 p-1 rounded-lg overflow-hidden transition-colors cursor-default": true,
           "bg-transparent border-2 border-icon-strong-base hover:bg-surface-base-hover": isActive(),
-          "bg-transparent border border-transparent hover:bg-surface-base-hover hover:border-border-weak-base": !isActive(),
+          "bg-transparent border border-transparent hover:bg-surface-base-hover hover:border-border-weak-base":
+            !isActive(),
         }}
         onClick={() => navigateToProject(props.project.worktree)}
       >

@@ -22,10 +22,7 @@ export function useFileContextMenu() {
   return { state, open, close }
 }
 
-export function FileContextMenu(props: {
-  state: FileContextMenuState
-  onClose: () => void
-}) {
+export function FileContextMenu(props: { state: FileContextMenuState; onClose: () => void }) {
   let menuRef: HTMLDivElement | undefined
 
   // Close on click outside

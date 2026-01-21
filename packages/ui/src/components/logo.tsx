@@ -22,7 +22,7 @@ export const Logo = (props: { class?: string }) => {
         "font-weight": "400",
         "letter-spacing": "-0.02em",
         "line-height": "1",
-        "color": "var(--icon-base)",
+        color: "var(--icon-base)",
         "white-space": "nowrap",
         "font-size": "2.5rem",
         "text-align": "center",

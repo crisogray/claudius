@@ -380,7 +380,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   type AtOption = { type: "agent"; name: string; display: string } | { type: "file"; path: string; display: string }
 
-
   const handleAtSelect = (option: AtOption | undefined) => {
     if (!option) return
     if (option.type === "agent") {
@@ -1586,14 +1585,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         local.permissionMode.set(mode.id)
                         // If session is actively streaming, update the SDK and persist
                         if (params.id && working()) {
-                          ;(platform.fetch ?? fetch)(
-                            `${sdk.url}/session/${params.id}/sdk/permission-mode`,
-                            {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ permissionMode: mode.id }),
-                            })
-                            .catch(() => {})
+                          ;(platform.fetch ?? fetch)(`${sdk.url}/session/${params.id}/sdk/permission-mode`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ permissionMode: mode.id }),
+                          }).catch(() => {})
                         }
                       }
                     }}
@@ -1605,7 +1601,11 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   when={providers.connected().length > 0}
                   fallback={
                     <TooltipKeybind placement="top" title="Connect Anthropic" keybind={command.keybind("model.choose")}>
-                      <Button as="div" variant="ghost" onClick={() => dialog.show(() => <DialogConnectProvider provider="anthropic" />)}>
+                      <Button
+                        as="div"
+                        variant="ghost"
+                        onClick={() => dialog.show(() => <DialogConnectProvider provider="anthropic" />)}
+                      >
                         Connect Anthropic
                         <Icon name="chevron-down" size="small" />
                       </Button>

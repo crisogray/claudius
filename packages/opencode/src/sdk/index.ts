@@ -536,14 +536,14 @@ export namespace SDK {
       // System prompt with custom instructions
       systemPrompt: customInstructions
         ? {
-          type: "preset" as const,
-          preset: "claude_code" as const,
-          append: customInstructions,
-        }
+            type: "preset" as const,
+            preset: "claude_code" as const,
+            append: customInstructions,
+          }
         : {
-          type: "preset" as const,
-          preset: "claude_code" as const,
-        },
+            type: "preset" as const,
+            preset: "claude_code" as const,
+          },
       settingSources: ["project" as const],
     }
   }
@@ -656,7 +656,7 @@ export namespace SDK {
           tools: [], // Empty array disables all tools
           maxTurns: 1,
           systemPrompt: input.systemPrompt, // Can be a plain string
-          maxThinkingTokens: 0
+          maxThinkingTokens: 0,
         },
       })) {
         log.info("single query message", { type: message.type })

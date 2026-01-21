@@ -11,12 +11,12 @@ This version uses the Claude SDK and supports Anthropic's Claude models.
 
 The following Claude models are available:
 
-| Model | Description |
-|-------|-------------|
-| `claude-opus-4-5-20250929` | Most capable model, best for complex tasks |
-| `claude-sonnet-4-5-20250929` | Balanced performance and speed |
-| `claude-sonnet-4-20250514` | Previous generation Sonnet |
-| `claude-haiku-3-5-20241022` | Fast and efficient for simple tasks |
+| Model                        | Description                                |
+| ---------------------------- | ------------------------------------------ |
+| `claude-opus-4-5-20250929`   | Most capable model, best for complex tasks |
+| `claude-sonnet-4-5-20250929` | Balanced performance and speed             |
+| `claude-sonnet-4-20250514`   | Previous generation Sonnet                 |
+| `claude-haiku-3-5-20241022`  | Fast and efficient for simple tasks        |
 
 ---
 
@@ -57,13 +57,13 @@ You can configure model options in your config:
           "options": {
             "thinking": {
               "type": "enabled",
-              "budgetTokens": 16000
-            }
-          }
-        }
-      }
-    }
-  }
+              "budgetTokens": 16000,
+            },
+          },
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -98,19 +98,19 @@ You can define custom variants:
             "quick": {
               "thinking": {
                 "type": "enabled",
-                "budgetTokens": 4000
-              }
+                "budgetTokens": 4000,
+              },
             },
             "deep": {
               "thinking": {
                 "type": "enabled",
-                "budgetTokens": 32000
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+                "budgetTokens": 32000,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 }
 ```

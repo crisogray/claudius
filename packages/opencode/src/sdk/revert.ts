@@ -18,11 +18,7 @@ export namespace SDKRevert {
    * Note: SDK session still has full history internally.
    * AI "remembers" but UI doesn't show reverted messages.
    */
-  export async function revert(input: {
-    sessionID: string
-    messageID: string
-    rewindFiles?: boolean
-  }) {
+  export async function revert(input: { sessionID: string; messageID: string; rewindFiles?: boolean }) {
     log.info("reverting session", {
       sessionID: input.sessionID,
       messageID: input.messageID,
@@ -110,10 +106,7 @@ export namespace SDKRevert {
    * Get patches from messages after a specific point
    * Used to know what files changed for revert
    */
-  export async function getPatches(input: {
-    sessionID: string
-    afterMessageID: string
-  }): Promise<Snapshot.Patch[]> {
+  export async function getPatches(input: { sessionID: string; afterMessageID: string }): Promise<Snapshot.Patch[]> {
     const messages = await Session.messages({ sessionID: input.sessionID })
     const patches: Snapshot.Patch[] = []
 

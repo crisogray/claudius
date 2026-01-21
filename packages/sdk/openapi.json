@@ -36,7 +36,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.global.health({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.global.health({\n  ...\n})"
           }
         ]
       }
@@ -61,7 +61,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.global.event({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.global.event({\n  ...\n})"
           }
         ]
       }
@@ -86,7 +86,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.global.dispose({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.global.dispose({\n  ...\n})"
           }
         ]
       }
@@ -123,7 +123,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.project.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.project.list({\n  ...\n})"
           }
         ]
       }
@@ -157,7 +157,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.project.current({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.project.current({\n  ...\n})"
           }
         ]
       }
@@ -244,7 +244,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.project.update({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.project.update({\n  ...\n})"
           }
         ]
       }
@@ -281,7 +281,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.list({\n  ...\n})"
           }
         ]
       },
@@ -358,7 +358,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.create({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.create({\n  ...\n})"
           }
         ]
       }
@@ -410,7 +410,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.get({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.get({\n  ...\n})"
           }
         ]
       },
@@ -486,7 +486,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.update({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.update({\n  ...\n})"
           }
         ]
       },
@@ -536,7 +536,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.remove({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.remove({\n  ...\n})"
           }
         ]
       }
@@ -588,7 +588,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.connect({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.pty.connect({\n  ...\n})"
           }
         ]
       }
@@ -622,7 +622,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.config.get({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.config.get({\n  ...\n})"
           }
         ]
       },
@@ -673,111 +673,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.config.update({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/experimental/tool/ids": {
-      "get": {
-        "operationId": "tool.ids",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "List tool IDs",
-        "description": "Get a list of all available tool IDs, including both built-in tools and dynamically registered tools.",
-        "responses": {
-          "200": {
-            "description": "Tool IDs",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ToolIDs"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tool.ids({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/experimental/tool": {
-      "get": {
-        "operationId": "tool.list",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "provider",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "model",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "summary": "List tools",
-        "description": "Get a list of available tools with their JSON schema parameters for a specific provider and model combination.",
-        "responses": {
-          "200": {
-            "description": "Tools",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ToolList"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tool.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.config.update({\n  ...\n})"
           }
         ]
       }
@@ -811,7 +707,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.instance.dispose({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.instance.dispose({\n  ...\n})"
           }
         ]
       }
@@ -845,7 +741,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.path.get({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.path.get({\n  ...\n})"
           }
         ]
       }
@@ -898,7 +794,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.worktree.create({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.worktree.create({\n  ...\n})"
           }
         ]
       },
@@ -933,7 +829,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.worktree.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.worktree.list({\n  ...\n})"
           }
         ]
       }
@@ -967,7 +863,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.vcs.get({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.vcs.get({\n  ...\n})"
           }
         ]
       }
@@ -1028,7 +924,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.list({\n  ...\n})"
           }
         ]
       },
@@ -1091,7 +987,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.create({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.create({\n  ...\n})"
           }
         ]
       }
@@ -1141,7 +1037,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.status({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.status({\n  ...\n})"
           }
         ]
       }
@@ -1205,7 +1101,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.get({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.get({\n  ...\n})"
           }
         ]
       },
@@ -1266,7 +1162,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.delete({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.delete({\n  ...\n})"
           }
         ]
       },
@@ -1348,7 +1244,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.update({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.update({\n  ...\n})"
           }
         ]
       }
@@ -1415,7 +1311,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.children({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.children({\n  ...\n})"
           }
         ]
       }
@@ -1481,7 +1377,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.todo({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.todo({\n  ...\n})"
           }
         ]
       }
@@ -1566,7 +1462,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.init({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.init({\n  ...\n})"
           }
         ]
       }
@@ -1616,7 +1512,8 @@
                     "type": "string",
                     "pattern": "^msg.*"
                   }
-                }
+                },
+                "required": ["messageID"]
               }
             }
           }
@@ -1624,7 +1521,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.fork({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.fork({\n  ...\n})"
           }
         ]
       }
@@ -1686,7 +1583,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.abort({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.abort({\n  ...\n})"
           }
         ]
       }
@@ -1748,7 +1645,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.share({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.share({\n  ...\n})"
           }
         ]
       },
@@ -1809,7 +1706,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.unshare({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.unshare({\n  ...\n})"
           }
         ]
       }
@@ -1883,7 +1780,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.diff({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.diff({\n  ...\n})"
           }
         ]
       }
@@ -1968,7 +1865,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.summarize({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.summarize({\n  ...\n})"
           }
         ]
       }
@@ -2053,7 +1950,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.messages({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.messages({\n  ...\n})"
           }
         ]
       },
@@ -2130,8 +2027,7 @@
                 "type": "object",
                 "properties": {
                   "messageID": {
-                    "type": "string",
-                    "pattern": "^msg.*"
+                    "type": "string"
                   },
                   "model": {
                     "type": "object",
@@ -2149,22 +2045,6 @@
                     "type": "string",
                     "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
-                  "noReply": {
-                    "type": "boolean"
-                  },
-                  "tools": {
-                    "description": "@deprecated tools and permissions have been merged, you can set permissions on the session itself now",
-                    "type": "object",
-                    "propertyNames": {
-                      "type": "string"
-                    },
-                    "additionalProperties": {
-                      "type": "boolean"
-                    }
-                  },
-                  "system": {
-                    "type": "string"
-                  },
                   "variant": {
                     "type": "string"
                   },
@@ -2173,16 +2053,57 @@
                     "items": {
                       "anyOf": [
                         {
-                          "$ref": "#/components/schemas/TextPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "text"
+                            },
+                            "text": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "text"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/FilePartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "file"
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "mime": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "path"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/AgentPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "agent"
+                            }
+                          },
+                          "required": ["type"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/SubtaskPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "subtask"
+                            }
+                          },
+                          "required": ["type"],
+                          "additionalProperties": {}
                         }
                       ]
                     }
@@ -2196,7 +2117,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.prompt({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.prompt({\n  ...\n})"
           }
         ]
       }
@@ -2280,7 +2201,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.message({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.message({\n  ...\n})"
           }
         ]
       }
@@ -2360,7 +2281,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.part.delete({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.part.delete({\n  ...\n})"
           }
         ]
       },
@@ -2447,7 +2368,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.part.update({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.part.update({\n  ...\n})"
           }
         ]
       }
@@ -2507,8 +2428,7 @@
                 "type": "object",
                 "properties": {
                   "messageID": {
-                    "type": "string",
-                    "pattern": "^msg.*"
+                    "type": "string"
                   },
                   "model": {
                     "type": "object",
@@ -2526,22 +2446,6 @@
                     "type": "string",
                     "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
                   },
-                  "noReply": {
-                    "type": "boolean"
-                  },
-                  "tools": {
-                    "description": "@deprecated tools and permissions have been merged, you can set permissions on the session itself now",
-                    "type": "object",
-                    "propertyNames": {
-                      "type": "string"
-                    },
-                    "additionalProperties": {
-                      "type": "boolean"
-                    }
-                  },
-                  "system": {
-                    "type": "string"
-                  },
                   "variant": {
                     "type": "string"
                   },
@@ -2550,16 +2454,57 @@
                     "items": {
                       "anyOf": [
                         {
-                          "$ref": "#/components/schemas/TextPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "text"
+                            },
+                            "text": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "text"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/FilePartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "file"
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "mime": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["type", "path"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/AgentPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "agent"
+                            }
+                          },
+                          "required": ["type"],
+                          "additionalProperties": {}
                         },
                         {
-                          "$ref": "#/components/schemas/SubtaskPartInput"
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "subtask"
+                            }
+                          },
+                          "required": ["type"],
+                          "additionalProperties": {}
                         }
                       ]
                     }
@@ -2573,7 +2518,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.prompt_async({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.prompt_async({\n  ...\n})"
           }
         ]
       }
@@ -2652,8 +2597,7 @@
                 "type": "object",
                 "properties": {
                   "messageID": {
-                    "type": "string",
-                    "pattern": "^msg.*"
+                    "type": "string"
                   },
                   "permissionMode": {
                     "type": "string",
@@ -2670,38 +2614,6 @@
                   },
                   "variant": {
                     "type": "string"
-                  },
-                  "parts": {
-                    "type": "array",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "type": {
-                              "type": "string",
-                              "const": "file"
-                            },
-                            "mime": {
-                              "type": "string"
-                            },
-                            "filename": {
-                              "type": "string"
-                            },
-                            "url": {
-                              "type": "string"
-                            },
-                            "source": {
-                              "$ref": "#/components/schemas/FilePartSource"
-                            }
-                          },
-                          "required": ["type", "mime", "url"]
-                        }
-                      ]
-                    }
                   }
                 },
                 "required": ["arguments", "command"]
@@ -2712,7 +2624,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.command({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.command({\n  ...\n})"
           }
         ]
       }
@@ -2798,7 +2710,7 @@
                     "type": "string"
                   }
                 },
-                "required": ["permissionMode", "command"]
+                "required": ["command"]
               }
             }
           }
@@ -2806,7 +2718,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.shell({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.shell({\n  ...\n})"
           }
         ]
       }
@@ -2888,7 +2800,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.revert({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.revert({\n  ...\n})"
           }
         ]
       }
@@ -2950,7 +2862,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.session.unrevert({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.session.unrevert({\n  ...\n})"
           }
         ]
       }
@@ -3037,7 +2949,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.respond({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.respond({\n  ...\n})"
           }
         ]
       }
@@ -3118,7 +3030,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.reply({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.reply({\n  ...\n})"
           }
         ]
       }
@@ -3155,7 +3067,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.permission.list({\n  ...\n})"
           }
         ]
       }
@@ -3192,7 +3104,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.question.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.question.list({\n  ...\n})"
           }
         ]
       }
@@ -3273,7 +3185,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.question.reply({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.question.reply({\n  ...\n})"
           }
         ]
       }
@@ -3335,7 +3247,197 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.question.reject({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.question.reject({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/plan": {
+      "get": {
+        "operationId": "plan.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "List pending plan approvals",
+        "description": "Get all pending plan approval requests across all sessions.",
+        "responses": {
+          "200": {
+            "description": "List of pending plan approvals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanRequest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.plan.list({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/plan/{requestID}/approve": {
+      "post": {
+        "operationId": "plan.approve",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "requestID",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "summary": "Approve plan",
+        "description": "Approve a plan from the AI assistant.",
+        "responses": {
+          "200": {
+            "description": "Plan approved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "permissionMode": {
+                    "type": "string",
+                    "enum": ["default", "acceptEdits", "bypassPermissions"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.plan.approve({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/plan/{requestID}/reject": {
+      "post": {
+        "operationId": "plan.reject",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "requestID",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "summary": "Reject plan",
+        "description": "Reject a plan from the AI assistant.",
+        "responses": {
+          "200": {
+            "description": "Plan rejected successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.plan.reject({\n  ...\n})"
           }
         ]
       }
@@ -3372,7 +3474,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.command.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.command.list({\n  ...\n})"
           }
         ]
       }
@@ -3390,7 +3492,7 @@
           }
         ],
         "summary": "List config providers",
-        "description": "Get a list of all configured AI providers and their default models.",
+        "description": "Get a list of all configured AI providers and their models.",
         "responses": {
           "200": {
             "description": "List of providers",
@@ -3402,7 +3504,228 @@
                     "providers": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Provider"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": ["env", "config", "custom", "api"]
+                          },
+                          "env": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "options": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          },
+                          "models": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "providerID": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "family": {
+                                  "type": "string"
+                                },
+                                "capabilities": {
+                                  "type": "object",
+                                  "properties": {
+                                    "temperature": {
+                                      "type": "boolean"
+                                    },
+                                    "reasoning": {
+                                      "type": "boolean"
+                                    },
+                                    "attachment": {
+                                      "type": "boolean"
+                                    },
+                                    "toolcall": {
+                                      "type": "boolean"
+                                    },
+                                    "input": {
+                                      "type": "object",
+                                      "properties": {
+                                        "text": {
+                                          "type": "boolean"
+                                        },
+                                        "audio": {
+                                          "type": "boolean"
+                                        },
+                                        "image": {
+                                          "type": "boolean"
+                                        },
+                                        "video": {
+                                          "type": "boolean"
+                                        },
+                                        "pdf": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": ["text", "audio", "image", "video", "pdf"]
+                                    },
+                                    "output": {
+                                      "type": "object",
+                                      "properties": {
+                                        "text": {
+                                          "type": "boolean"
+                                        },
+                                        "audio": {
+                                          "type": "boolean"
+                                        },
+                                        "image": {
+                                          "type": "boolean"
+                                        },
+                                        "video": {
+                                          "type": "boolean"
+                                        },
+                                        "pdf": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": ["text", "audio", "image", "video", "pdf"]
+                                    },
+                                    "interleaved": {
+                                      "anyOf": [
+                                        {
+                                          "type": "boolean"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "field": {
+                                              "type": "string",
+                                              "enum": ["reasoning_content", "reasoning_details"]
+                                            }
+                                          },
+                                          "required": ["field"]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "temperature",
+                                    "reasoning",
+                                    "attachment",
+                                    "toolcall",
+                                    "input",
+                                    "output",
+                                    "interleaved"
+                                  ]
+                                },
+                                "cost": {
+                                  "type": "object",
+                                  "properties": {
+                                    "input": {
+                                      "type": "number"
+                                    },
+                                    "output": {
+                                      "type": "number"
+                                    },
+                                    "cache": {
+                                      "type": "object",
+                                      "properties": {
+                                        "read": {
+                                          "type": "number"
+                                        },
+                                        "write": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": ["read", "write"]
+                                    }
+                                  },
+                                  "required": ["input", "output", "cache"]
+                                },
+                                "limit": {
+                                  "type": "object",
+                                  "properties": {
+                                    "context": {
+                                      "type": "number"
+                                    },
+                                    "output": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": ["context", "output"]
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": ["alpha", "beta", "deprecated", "active"]
+                                },
+                                "options": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {}
+                                },
+                                "headers": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                "release_date": {
+                                  "type": "string"
+                                },
+                                "variants": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "object",
+                                    "propertyNames": {
+                                      "type": "string"
+                                    },
+                                    "additionalProperties": {}
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "providerID",
+                                "name",
+                                "capabilities",
+                                "cost",
+                                "limit",
+                                "status",
+                                "options",
+                                "headers",
+                                "release_date"
+                              ]
+                            }
+                          }
+                        },
+                        "required": ["id", "name", "source", "env", "options", "models"]
                       }
                     },
                     "default": {
@@ -3424,7 +3747,90 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.config.providers({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.config.providers({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/config/models": {
+      "get": {
+        "operationId": "config.models",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "List config models",
+        "description": "Get available models and the default model.",
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "models": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Model"
+                      }
+                    },
+                    "default": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["models", "default"]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.config.models({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/models": {
+      "get": {
+        "operationId": "models.list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "List models",
+        "description": "Get available Claude models",
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Model"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.models.list({\n  ...\n})"
           }
         ]
       }
@@ -3442,7 +3848,7 @@
           }
         ],
         "summary": "List providers",
-        "description": "Get a list of all available AI providers, including both available and connected ones.",
+        "description": "Get available AI providers (Anthropic only for Claude SDK)",
         "responses": {
           "200": {
             "description": "List of providers",
@@ -3456,7 +3862,7 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "api": {
+                          "id": {
                             "type": "string"
                           },
                           "name": {
@@ -3467,12 +3873,6 @@
                             "items": {
                               "type": "string"
                             }
-                          },
-                          "id": {
-                            "type": "string"
-                          },
-                          "npm": {
-                            "type": "string"
                           },
                           "models": {
                             "type": "object",
@@ -3491,39 +3891,12 @@
                                 "family": {
                                   "type": "string"
                                 },
+                                "status": {
+                                  "type": "string",
+                                  "enum": ["active", "deprecated"]
+                                },
                                 "release_date": {
                                   "type": "string"
-                                },
-                                "attachment": {
-                                  "type": "boolean"
-                                },
-                                "reasoning": {
-                                  "type": "boolean"
-                                },
-                                "temperature": {
-                                  "type": "boolean"
-                                },
-                                "tool_call": {
-                                  "type": "boolean"
-                                },
-                                "interleaved": {
-                                  "anyOf": [
-                                    {
-                                      "type": "boolean",
-                                      "const": true
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "field": {
-                                          "type": "string",
-                                          "enum": ["reasoning_content", "reasoning_details"]
-                                        }
-                                      },
-                                      "required": ["field"],
-                                      "additionalProperties": false
-                                    }
-                                  ]
                                 },
                                 "cost": {
                                   "type": "object",
@@ -3533,127 +3906,28 @@
                                     },
                                     "output": {
                                       "type": "number"
-                                    },
-                                    "cache_read": {
-                                      "type": "number"
-                                    },
-                                    "cache_write": {
-                                      "type": "number"
-                                    },
-                                    "context_over_200k": {
-                                      "type": "object",
-                                      "properties": {
-                                        "input": {
-                                          "type": "number"
-                                        },
-                                        "output": {
-                                          "type": "number"
-                                        },
-                                        "cache_read": {
-                                          "type": "number"
-                                        },
-                                        "cache_write": {
-                                          "type": "number"
-                                        }
-                                      },
-                                      "required": ["input", "output"]
                                     }
                                   },
-                                  "required": ["input", "output"]
+                                  "required": ["input", "output"],
+                                  "additionalProperties": {}
                                 },
                                 "limit": {
                                   "type": "object",
                                   "properties": {
                                     "context": {
                                       "type": "number"
-                                    },
-                                    "output": {
-                                      "type": "number"
                                     }
                                   },
-                                  "required": ["context", "output"]
-                                },
-                                "modalities": {
-                                  "type": "object",
-                                  "properties": {
-                                    "input": {
-                                      "type": "array",
-                                      "items": {
-                                        "type": "string",
-                                        "enum": ["text", "audio", "image", "video", "pdf"]
-                                      }
-                                    },
-                                    "output": {
-                                      "type": "array",
-                                      "items": {
-                                        "type": "string",
-                                        "enum": ["text", "audio", "image", "video", "pdf"]
-                                      }
-                                    }
-                                  },
-                                  "required": ["input", "output"]
-                                },
-                                "experimental": {
-                                  "type": "boolean"
-                                },
-                                "status": {
-                                  "type": "string",
-                                  "enum": ["alpha", "beta", "deprecated"]
-                                },
-                                "options": {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
+                                  "required": ["context"],
                                   "additionalProperties": {}
-                                },
-                                "headers": {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                "provider": {
-                                  "type": "object",
-                                  "properties": {
-                                    "npm": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "required": ["npm"]
-                                },
-                                "variants": {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "object",
-                                    "propertyNames": {
-                                      "type": "string"
-                                    },
-                                    "additionalProperties": {}
-                                  }
                                 }
                               },
-                              "required": [
-                                "id",
-                                "name",
-                                "release_date",
-                                "attachment",
-                                "reasoning",
-                                "temperature",
-                                "tool_call",
-                                "limit",
-                                "options"
-                              ]
+                              "required": ["id", "name", "status", "release_date", "cost", "limit"],
+                              "additionalProperties": {}
                             }
                           }
                         },
-                        "required": ["name", "env", "id", "models"]
+                        "required": ["id", "name", "env", "models"]
                       }
                     },
                     "default": {
@@ -3681,7 +3955,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.list({\n  ...\n})"
           }
         ]
       }
@@ -3699,10 +3973,10 @@
           }
         ],
         "summary": "Get provider auth methods",
-        "description": "Retrieve available authentication methods for all AI providers.",
+        "description": "Get available authentication methods for providers",
         "responses": {
           "200": {
-            "description": "Provider auth methods",
+            "description": "Auth methods by provider",
             "content": {
               "application/json": {
                 "schema": {
@@ -3713,7 +3987,17 @@
                   "additionalProperties": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/ProviderAuthMethod"
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["oauth", "api"]
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["type", "label"]
                     }
                   }
                 }
@@ -3724,149 +4008,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.auth({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/provider/{providerID}/oauth/authorize": {
-      "post": {
-        "operationId": "provider.oauth.authorize",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "providerID",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "Provider ID"
-          }
-        ],
-        "summary": "OAuth authorize",
-        "description": "Initiate OAuth authorization for a specific AI provider to get an authorization URL.",
-        "responses": {
-          "200": {
-            "description": "Authorization URL and method",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProviderAuthAuthorization"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "description": "Auth method index",
-                    "type": "number"
-                  }
-                },
-                "required": ["method"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.oauth.authorize({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/provider/{providerID}/oauth/callback": {
-      "post": {
-        "operationId": "provider.oauth.callback",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "providerID",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "Provider ID"
-          }
-        ],
-        "summary": "OAuth callback",
-        "description": "Handle the OAuth callback from a provider after user authorization.",
-        "responses": {
-          "200": {
-            "description": "OAuth callback processed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "method": {
-                    "description": "Auth method index",
-                    "type": "number"
-                  },
-                  "code": {
-                    "description": "OAuth authorization code",
-                    "type": "string"
-                  }
-                },
-                "required": ["method"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.oauth.callback({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.provider.auth({\n  ...\n})"
           }
         ]
       }
@@ -3962,7 +4104,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.find.text({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.find.text({\n  ...\n})"
           }
         ]
       }
@@ -4032,7 +4174,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.find.files({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.find.files({\n  ...\n})"
           }
         ]
       }
@@ -4077,7 +4219,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.find.symbols({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.find.symbols({\n  ...\n})"
           }
         ]
       }
@@ -4122,7 +4264,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.file.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.file.list({\n  ...\n})"
           }
         ]
       }
@@ -4164,7 +4306,67 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.file.read({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.file.read({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/file/write": {
+      "post": {
+        "operationId": "file.write",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Write file",
+        "description": "Write content to a specified file.",
+        "responses": {
+          "200": {
+            "description": "File written successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "Path to the file",
+                    "type": "string"
+                  },
+                  "content": {
+                    "description": "Content to write",
+                    "type": "string"
+                  }
+                },
+                "required": ["path", "content"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.file.write({\n  ...\n})"
           }
         ]
       }
@@ -4201,7 +4403,573 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.file.status({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.file.status({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/status": {
+      "get": {
+        "operationId": "git.status",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Get git status",
+        "description": "Get full git status including staged, unstaged, and untracked files.",
+        "responses": {
+          "200": {
+            "description": "Git status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitStatus"
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.status({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/log": {
+      "get": {
+        "operationId": "git.log",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            },
+            "description": "Maximum number of commits to return"
+          }
+        ],
+        "summary": "Get commit history",
+        "description": "Get recent commit history.",
+        "responses": {
+          "200": {
+            "description": "Commit history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GitCommit"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.log({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/stage": {
+      "post": {
+        "operationId": "git.stage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Stage files",
+        "description": "Add files to the git staging area.",
+        "responses": {
+          "200": {
+            "description": "Files staged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "description": "Array of file paths to stage",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["files"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.stage({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/unstage": {
+      "post": {
+        "operationId": "git.unstage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Unstage files",
+        "description": "Remove files from the git staging area.",
+        "responses": {
+          "200": {
+            "description": "Files unstaged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "description": "Array of file paths to unstage",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["files"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.unstage({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/stage-all": {
+      "post": {
+        "operationId": "git.stageAll",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Stage all changes",
+        "description": "Stage all modified, added, and deleted files.",
+        "responses": {
+          "200": {
+            "description": "All changes staged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.stageAll({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/unstage-all": {
+      "post": {
+        "operationId": "git.unstageAll",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Unstage all changes",
+        "description": "Remove all files from the staging area.",
+        "responses": {
+          "200": {
+            "description": "All changes unstaged successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.unstageAll({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/discard": {
+      "post": {
+        "operationId": "git.discard",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Discard file changes",
+        "description": "Discard changes to files and revert to HEAD.",
+        "responses": {
+          "200": {
+            "description": "Changes discarded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "description": "Array of file paths to discard",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["files"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.discard({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/delete-untracked": {
+      "post": {
+        "operationId": "git.deleteUntracked",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Delete untracked files",
+        "description": "Delete untracked files from the working directory.",
+        "responses": {
+          "200": {
+            "description": "Files deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "description": "Array of untracked file paths to delete",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["files"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.deleteUntracked({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/commit": {
+      "post": {
+        "operationId": "git.commit",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Create commit",
+        "description": "Create a new commit with staged changes.",
+        "responses": {
+          "200": {
+            "description": "Commit created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitCommitResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "description": "Commit message",
+                    "type": "string"
+                  },
+                  "amend": {
+                    "description": "Whether to amend the last commit",
+                    "type": "boolean"
+                  }
+                },
+                "required": ["message"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.commit({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/diff": {
+      "get": {
+        "operationId": "git.diff",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "file",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Path to the file"
+          },
+          {
+            "in": "query",
+            "name": "staged",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            },
+            "description": "Whether to show staged changes"
+          }
+        ],
+        "summary": "Get file diff",
+        "description": "Get the diff for a specific file.",
+        "responses": {
+          "200": {
+            "description": "File diff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "diff": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["diff"]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.diff({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/git/show": {
+      "get": {
+        "operationId": "git.show",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "file",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Path to the file"
+          },
+          {
+            "in": "query",
+            "name": "ref",
+            "schema": {
+              "default": "HEAD",
+              "type": "string"
+            },
+            "description": "Git ref: HEAD, : (for staged), or commit hash"
+          }
+        ],
+        "summary": "Get file content from git ref",
+        "description": "Get file content from a specific git ref (HEAD, index, or commit).",
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["content"]
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.git.show({\n  ...\n})"
           }
         ]
       }
@@ -4278,14 +5046,14 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.app.log({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.app.log({\n  ...\n})"
           }
         ]
       }
     },
-    "/agent": {
+    "/permission-modes": {
       "get": {
-        "operationId": "app.agents",
+        "operationId": "app.permissionModes",
         "parameters": [
           {
             "in": "query",
@@ -4295,17 +5063,29 @@
             }
           }
         ],
-        "summary": "List agents",
-        "description": "Get a list of all available AI agents in the OpenCode system.",
+        "summary": "List permission modes",
+        "description": "Get a list of available permission modes (build, plan, auto-accept, bypass).",
         "responses": {
           "200": {
-            "description": "List of agents",
+            "description": "List of permission modes",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Agent"
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "name", "description"]
                   }
                 }
               }
@@ -4315,7 +5095,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.app.agents({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.app.permissionModes({\n  ...\n})"
           }
         ]
       }
@@ -4355,7 +5135,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.status({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.status({\n  ...\n})"
           }
         ]
       },
@@ -4428,7 +5208,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.add({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.add({\n  ...\n})"
           }
         ]
       }
@@ -4497,7 +5277,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.start({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.start({\n  ...\n})"
           }
         ]
       },
@@ -4554,7 +5334,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.remove({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.remove({\n  ...\n})"
           }
         ]
       }
@@ -4632,7 +5412,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.callback({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.callback({\n  ...\n})"
           }
         ]
       }
@@ -4694,7 +5474,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.authenticate({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.auth.authenticate({\n  ...\n})"
           }
         ]
       }
@@ -4735,7 +5515,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.connect({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.connect({\n  ...\n})"
           }
         ]
       }
@@ -4776,7 +5556,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.disconnect({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.mcp.disconnect({\n  ...\n})"
           }
         ]
       }
@@ -4816,7 +5596,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.experimental.resource.list({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.experimental.resource.list({\n  ...\n})"
           }
         ]
       }
@@ -4853,7 +5633,545 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.status({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.status({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/completion": {
+      "post": {
+        "operationId": "lsp.completion",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Get completions",
+        "description": "Get code completion suggestions at a position",
+        "responses": {
+          "200": {
+            "description": "Completion items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CompletionList"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  },
+                  "line": {
+                    "description": "Line number (0-indexed)",
+                    "type": "number"
+                  },
+                  "character": {
+                    "description": "Character offset (0-indexed)",
+                    "type": "number"
+                  },
+                  "triggerKind": {
+                    "description": "Trigger kind (1=Invoked, 2=TriggerCharacter, 3=Incomplete)",
+                    "type": "number"
+                  },
+                  "triggerCharacter": {
+                    "description": "Trigger character",
+                    "type": "string"
+                  }
+                },
+                "required": ["path", "line", "character"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.completion({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/hover": {
+      "post": {
+        "operationId": "lsp.hover",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Get hover information",
+        "description": "Get hover information at a position",
+        "responses": {
+          "200": {
+            "description": "Hover information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {},
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  },
+                  "line": {
+                    "description": "Line number (0-indexed)",
+                    "type": "number"
+                  },
+                  "character": {
+                    "description": "Character offset (0-indexed)",
+                    "type": "number"
+                  }
+                },
+                "required": ["path", "line", "character"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.hover({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/definition": {
+      "post": {
+        "operationId": "lsp.definition",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Get definition",
+        "description": "Go to definition at a position",
+        "responses": {
+          "200": {
+            "description": "Definition locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  },
+                  "line": {
+                    "description": "Line number (0-indexed)",
+                    "type": "number"
+                  },
+                  "character": {
+                    "description": "Character offset (0-indexed)",
+                    "type": "number"
+                  }
+                },
+                "required": ["path", "line", "character"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.definition({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/document/open": {
+      "post": {
+        "operationId": "lsp.document.open",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Open document",
+        "description": "Notify LSP that a document was opened",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.document.open({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/document/change": {
+      "post": {
+        "operationId": "lsp.document.change",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Change document",
+        "description": "Notify LSP that a document changed",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  },
+                  "text": {
+                    "description": "New file content",
+                    "type": "string"
+                  }
+                },
+                "required": ["path", "text"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.document.change({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/document/save": {
+      "post": {
+        "operationId": "lsp.document.save",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Save document",
+        "description": "Notify LSP that a document was saved",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  },
+                  "text": {
+                    "description": "Saved content (optional)",
+                    "type": "string"
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.document.save({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/document/close": {
+      "post": {
+        "operationId": "lsp.document.close",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Close document",
+        "description": "Notify LSP that a document was closed",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "File path",
+                    "type": "string"
+                  }
+                },
+                "required": ["path"]
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.document.close({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/lsp/diagnostics": {
+      "get": {
+        "operationId": "lsp.diagnostics",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "Get diagnostics",
+        "description": "Get all diagnostics from LSP servers",
+        "responses": {
+          "200": {
+            "description": "Diagnostics by file path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.lsp.diagnostics({\n  ...\n})"
           }
         ]
       }
@@ -4890,609 +6208,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.formatter.status({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/append-prompt": {
-      "post": {
-        "operationId": "tui.appendPrompt",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Append TUI prompt",
-        "description": "Append prompt to the TUI",
-        "responses": {
-          "200": {
-            "description": "Prompt processed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "text": {
-                    "type": "string"
-                  }
-                },
-                "required": ["text"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.appendPrompt({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/open-help": {
-      "post": {
-        "operationId": "tui.openHelp",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Open help dialog",
-        "description": "Open the help dialog in the TUI to display user assistance information.",
-        "responses": {
-          "200": {
-            "description": "Help dialog opened successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.openHelp({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/open-sessions": {
-      "post": {
-        "operationId": "tui.openSessions",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Open sessions dialog",
-        "description": "Open the session dialog",
-        "responses": {
-          "200": {
-            "description": "Session dialog opened successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.openSessions({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/open-themes": {
-      "post": {
-        "operationId": "tui.openThemes",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Open themes dialog",
-        "description": "Open the theme dialog",
-        "responses": {
-          "200": {
-            "description": "Theme dialog opened successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.openThemes({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/open-models": {
-      "post": {
-        "operationId": "tui.openModels",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Open models dialog",
-        "description": "Open the model dialog",
-        "responses": {
-          "200": {
-            "description": "Model dialog opened successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.openModels({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/submit-prompt": {
-      "post": {
-        "operationId": "tui.submitPrompt",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Submit TUI prompt",
-        "description": "Submit the prompt",
-        "responses": {
-          "200": {
-            "description": "Prompt submitted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.submitPrompt({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/clear-prompt": {
-      "post": {
-        "operationId": "tui.clearPrompt",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Clear TUI prompt",
-        "description": "Clear the prompt",
-        "responses": {
-          "200": {
-            "description": "Prompt cleared successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.clearPrompt({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/execute-command": {
-      "post": {
-        "operationId": "tui.executeCommand",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Execute TUI command",
-        "description": "Execute a TUI command (e.g. agent_cycle)",
-        "responses": {
-          "200": {
-            "description": "Command executed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "command": {
-                    "type": "string"
-                  }
-                },
-                "required": ["command"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.executeCommand({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/show-toast": {
-      "post": {
-        "operationId": "tui.showToast",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Show TUI toast",
-        "description": "Show a toast notification in the TUI",
-        "responses": {
-          "200": {
-            "description": "Toast notification shown successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "message": {
-                    "type": "string"
-                  },
-                  "variant": {
-                    "type": "string",
-                    "enum": ["info", "success", "warning", "error"]
-                  },
-                  "duration": {
-                    "description": "Duration in milliseconds",
-                    "default": 5000,
-                    "type": "number"
-                  }
-                },
-                "required": ["message", "variant"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.showToast({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/publish": {
-      "post": {
-        "operationId": "tui.publish",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Publish TUI event",
-        "description": "Publish a TUI event",
-        "responses": {
-          "200": {
-            "description": "Event published successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/Event.tui.prompt.append"
-                  },
-                  {
-                    "$ref": "#/components/schemas/Event.tui.command.execute"
-                  },
-                  {
-                    "$ref": "#/components/schemas/Event.tui.toast.show"
-                  },
-                  {
-                    "$ref": "#/components/schemas/Event.tui.session.select"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.publish({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/select-session": {
-      "post": {
-        "operationId": "tui.selectSession",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Select session",
-        "description": "Navigate the TUI to display the specified session.",
-        "responses": {
-          "200": {
-            "description": "Session selected successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BadRequestError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "sessionID": {
-                    "description": "Session ID to navigate to",
-                    "type": "string",
-                    "pattern": "^ses"
-                  }
-                },
-                "required": ["sessionID"]
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.selectSession({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/control/next": {
-      "get": {
-        "operationId": "tui.control.next",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Get next TUI request",
-        "description": "Retrieve the next TUI (Terminal User Interface) request from the queue for processing.",
-        "responses": {
-          "200": {
-            "description": "Next TUI request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "path": {
-                      "type": "string"
-                    },
-                    "body": {}
-                  },
-                  "required": ["path", "body"]
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.control.next({\n  ...\n})"
-          }
-        ]
-      }
-    },
-    "/tui/control/response": {
-      "post": {
-        "operationId": "tui.control.response",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Submit TUI response",
-        "description": "Submit a response to the TUI request queue to complete a pending request.",
-        "responses": {
-          "200": {
-            "description": "Response submitted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {}
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.control.response({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.formatter.status({\n  ...\n})"
           }
         ]
       }
@@ -5553,7 +6269,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.auth.set({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.auth.set({\n  ...\n})"
           }
         ]
       }
@@ -5587,7 +6303,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createOpencodeClient } from \"@claudius.to/sdk\n\nconst client = createOpencodeClient()\nawait client.event.subscribe({\n  ...\n})"
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.event.subscribe({\n  ...\n})"
           }
         ]
       }
@@ -5731,9 +6447,13 @@
               },
               "path": {
                 "type": "string"
+              },
+              "diagnostics": {
+                "type": "array",
+                "items": {}
               }
             },
-            "required": ["serverID", "path"]
+            "required": ["serverID", "path", "diagnostics"]
           }
         },
         "required": ["type", "properties"]
@@ -5843,6 +6563,14 @@
           },
           "variant": {
             "type": "string"
+          },
+          "sdk": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string"
+              }
+            }
           }
         },
         "required": ["id", "sessionID", "role", "time", "permissionMode", "model"]
@@ -6074,6 +6802,20 @@
           },
           "finish": {
             "type": "string"
+          },
+          "sdk": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "sessionId": {
+                "type": "string"
+              },
+              "parentToolUseId": {
+                "type": "string"
+              }
+            }
           }
         },
         "required": [
@@ -6208,6 +6950,9 @@
           "text": {
             "type": "string"
           },
+          "signature": {
+            "type": "string"
+          },
           "metadata": {
             "type": "object",
             "propertyNames": {
@@ -6229,6 +6974,40 @@
           }
         },
         "required": ["id", "sessionID", "messageID", "type", "text", "time"]
+      },
+      "RedactedReasoningPart": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sessionID": {
+            "type": "string"
+          },
+          "messageID": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "const": "redacted-reasoning"
+          },
+          "data": {
+            "type": "string"
+          },
+          "time": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "number"
+              },
+              "end": {
+                "type": "number"
+              }
+            },
+            "required": ["start"]
+          }
+        },
+        "required": ["id", "sessionID", "messageID", "type", "data", "time"]
       },
       "FilePartSourceText": {
         "type": "object",
@@ -6655,6 +7434,12 @@
               }
             },
             "required": ["input", "output", "reasoning", "cache"]
+          },
+          "precomputedDiff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileDiff"
+            }
           }
         },
         "required": ["id", "sessionID", "messageID", "type", "reason", "cost", "tokens"]
@@ -6846,6 +7631,9 @@
             "$ref": "#/components/schemas/ReasoningPart"
           },
           {
+            "$ref": "#/components/schemas/RedactedReasoningPart"
+          },
+          {
             "$ref": "#/components/schemas/FilePart"
           },
           {
@@ -6917,6 +7705,170 @@
               }
             },
             "required": ["sessionID", "messageID", "partID"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "SessionStatus": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "idle"
+              }
+            },
+            "required": ["type"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "retry"
+              },
+              "attempt": {
+                "type": "number"
+              },
+              "message": {
+                "type": "string"
+              },
+              "next": {
+                "type": "number"
+              }
+            },
+            "required": ["type", "attempt", "message", "next"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "busy"
+              }
+            },
+            "required": ["type"]
+          }
+        ]
+      },
+      "Event.session.status": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "session.status"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "sessionID": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/SessionStatus"
+              }
+            },
+            "required": ["sessionID", "status"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.session.idle": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "session.idle"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "sessionID": {
+                "type": "string"
+              }
+            },
+            "required": ["sessionID"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.toast.show": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "toast.show"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "variant": {
+                "type": "string",
+                "enum": ["info", "success", "warning", "error"]
+              },
+              "duration": {
+                "description": "Duration in milliseconds",
+                "default": 5000,
+                "type": "number"
+              }
+            },
+            "required": ["message", "variant"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.mcp.tools.changed": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "mcp.tools.changed"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "server": {
+                "type": "string"
+              }
+            },
+            "required": ["server"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.command.executed": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "command.executed"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sessionID": {
+                "type": "string",
+                "pattern": "^ses.*"
+              },
+              "arguments": {
+                "type": "string"
+              },
+              "messageID": {
+                "type": "string",
+                "pattern": "^msg.*"
+              }
+            },
+            "required": ["name", "sessionID", "arguments", "messageID"]
           }
         },
         "required": ["type", "properties"]
@@ -7008,86 +7960,91 @@
         },
         "required": ["type", "properties"]
       },
-      "SessionStatus": {
-        "anyOf": [
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "idle"
-              }
-            },
-            "required": ["type"]
+      "PlanRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^pln.*"
           },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "retry"
-              },
-              "attempt": {
-                "type": "number"
-              },
-              "message": {
-                "type": "string"
-              },
-              "next": {
-                "type": "number"
-              }
-            },
-            "required": ["type", "attempt", "message", "next"]
+          "sessionID": {
+            "type": "string",
+            "pattern": "^ses.*"
           },
-          {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "const": "busy"
-              }
-            },
-            "required": ["type"]
+          "callID": {
+            "description": "The tool_use_id of the ExitPlanMode call",
+            "type": "string"
+          },
+          "plan": {
+            "description": "The plan content for approval",
+            "type": "string"
           }
-        ]
+        },
+        "required": ["id", "sessionID", "callID", "plan"]
       },
-      "Event.session.status": {
+      "Event.plan.asked": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "const": "session.status"
+            "const": "plan.asked"
           },
           "properties": {
-            "type": "object",
-            "properties": {
-              "sessionID": {
-                "type": "string"
-              },
-              "status": {
-                "$ref": "#/components/schemas/SessionStatus"
-              }
-            },
-            "required": ["sessionID", "status"]
+            "$ref": "#/components/schemas/PlanRequest"
           }
         },
         "required": ["type", "properties"]
       },
-      "Event.session.idle": {
+      "Event.plan.replied": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "const": "session.idle"
+            "const": "plan.replied"
           },
           "properties": {
             "type": "object",
             "properties": {
               "sessionID": {
                 "type": "string"
+              },
+              "requestID": {
+                "type": "string"
+              },
+              "approved": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
+              },
+              "permissionMode": {
+                "type": "string",
+                "enum": ["default", "acceptEdits", "bypassPermissions"]
               }
             },
-            "required": ["sessionID"]
+            "required": ["sessionID", "requestID", "approved"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.plan.rejected": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "plan.rejected"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "sessionID": {
+                "type": "string"
+              },
+              "requestID": {
+                "type": "string"
+              }
+            },
+            "required": ["sessionID", "requestID"]
           }
         },
         "required": ["type", "properties"]
@@ -7097,7 +8054,8 @@
         "properties": {
           "label": {
             "description": "Display text (1-5 words, concise)",
-            "type": "string"
+            "type": "string",
+            "maxLength": 30
           },
           "description": {
             "description": "Explanation of choice",
@@ -7114,9 +8072,9 @@
             "type": "string"
           },
           "header": {
-            "description": "Very short label (max 12 chars)",
+            "description": "Very short label (max 30 chars)",
             "type": "string",
-            "maxLength": 12
+            "maxLength": 30
           },
           "options": {
             "description": "Available choices",
@@ -7234,44 +8192,6 @@
         },
         "required": ["type", "properties"]
       },
-      "Event.session.compacted": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "session.compacted"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "sessionID": {
-                "type": "string"
-              }
-            },
-            "required": ["sessionID"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
-      "Event.file.edited": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "file.edited"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "file": {
-                "type": "string"
-              }
-            },
-            "required": ["file"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
       "Todo": {
         "type": "object",
         "properties": {
@@ -7289,6 +8209,10 @@
           },
           "id": {
             "description": "Unique identifier for the todo item",
+            "type": "string"
+          },
+          "activeForm": {
+            "description": "Present continuous form of the task (e.g., 'Running tests')",
             "type": "string"
           }
         },
@@ -7319,112 +8243,43 @@
         },
         "required": ["type", "properties"]
       },
-      "Event.tui.prompt.append": {
+      "Event.sdk.started": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "const": "tui.prompt.append"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "text": {
-                "type": "string"
-              }
-            },
-            "required": ["text"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
-      "Event.tui.command.execute": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "tui.command.execute"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "command": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "enum": [
-                      "session.list",
-                      "session.new",
-                      "session.share",
-                      "session.interrupt",
-                      "session.compact",
-                      "session.page.up",
-                      "session.page.down",
-                      "session.half.page.up",
-                      "session.half.page.down",
-                      "session.first",
-                      "session.last",
-                      "prompt.clear",
-                      "prompt.submit",
-                      "agent.cycle"
-                    ]
-                  },
-                  {
-                    "type": "string"
-                  }
-                ]
-              }
-            },
-            "required": ["command"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
-      "Event.tui.toast.show": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "tui.toast.show"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "title": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "variant": {
-                "type": "string",
-                "enum": ["info", "success", "warning", "error"]
-              },
-              "duration": {
-                "description": "Duration in milliseconds",
-                "default": 5000,
-                "type": "number"
-              }
-            },
-            "required": ["message", "variant"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
-      "Event.tui.session.select": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "tui.session.select"
+            "const": "sdk.started"
           },
           "properties": {
             "type": "object",
             "properties": {
               "sessionID": {
-                "description": "Session ID to navigate to",
-                "type": "string",
-                "pattern": "^ses"
+                "type": "string"
+              },
+              "prompt": {
+                "type": "string"
+              }
+            },
+            "required": ["sessionID", "prompt"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.sdk.completed": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "sdk.completed"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "sessionID": {
+                "type": "string"
+              },
+              "messageID": {
+                "type": "string"
               }
             },
             "required": ["sessionID"]
@@ -7432,51 +8287,24 @@
         },
         "required": ["type", "properties"]
       },
-      "Event.mcp.tools.changed": {
+      "Event.sdk.error": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "const": "mcp.tools.changed"
+            "const": "sdk.error"
           },
           "properties": {
             "type": "object",
             "properties": {
-              "server": {
-                "type": "string"
-              }
-            },
-            "required": ["server"]
-          }
-        },
-        "required": ["type", "properties"]
-      },
-      "Event.command.executed": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "command.executed"
-          },
-          "properties": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              },
               "sessionID": {
-                "type": "string",
-                "pattern": "^ses.*"
-              },
-              "arguments": {
                 "type": "string"
               },
-              "messageID": {
-                "type": "string",
-                "pattern": "^msg.*"
+              "error": {
+                "type": "string"
               }
             },
-            "required": ["name", "sessionID", "arguments", "messageID"]
+            "required": ["sessionID", "error"]
           }
         },
         "required": ["type", "properties"]
@@ -7580,6 +8408,10 @@
           "permission": {
             "$ref": "#/components/schemas/PermissionRuleset"
           },
+          "permissionMode": {
+            "type": "string",
+            "enum": ["default", "plan", "acceptEdits", "bypassPermissions"]
+          },
           "revert": {
             "type": "object",
             "properties": {
@@ -7594,9 +8426,137 @@
               },
               "diff": {
                 "type": "string"
+              },
+              "sdkUuid": {
+                "type": "string"
               }
             },
             "required": ["messageID"]
+          },
+          "sdk": {
+            "type": "object",
+            "properties": {
+              "sessionId": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "tools": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "modelUsage": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "inputTokens": {
+                      "type": "number"
+                    },
+                    "outputTokens": {
+                      "type": "number"
+                    },
+                    "cacheReadInputTokens": {
+                      "type": "number"
+                    },
+                    "cacheCreationInputTokens": {
+                      "type": "number"
+                    },
+                    "webSearchRequests": {
+                      "type": "number"
+                    },
+                    "costUSD": {
+                      "type": "number"
+                    },
+                    "contextWindow": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "inputTokens",
+                    "outputTokens",
+                    "cacheReadInputTokens",
+                    "cacheCreationInputTokens",
+                    "webSearchRequests",
+                    "costUSD",
+                    "contextWindow"
+                  ]
+                }
+              },
+              "totalCostUsd": {
+                "type": "number"
+              },
+              "durationMs": {
+                "type": "number"
+              },
+              "durationApiMs": {
+                "type": "number"
+              },
+              "numTurns": {
+                "type": "number"
+              },
+              "compactionEvents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "trigger": {
+                      "type": "string",
+                      "enum": ["manual", "auto"]
+                    },
+                    "preTokens": {
+                      "type": "number"
+                    },
+                    "timestamp": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["trigger", "preTokens", "timestamp"]
+                }
+              },
+              "permissionDenials": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "toolName": {
+                      "type": "string"
+                    },
+                    "toolUseId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["toolName", "toolUseId"]
+                }
+              }
+            }
+          },
+          "fork": {
+            "type": "object",
+            "properties": {
+              "fromSessionID": {
+                "type": "string"
+              },
+              "fromMessageID": {
+                "type": "string"
+              },
+              "sdkForkPoint": {
+                "type": "string"
+              },
+              "originalSdkSessionId": {
+                "type": "string"
+              },
+              "gitRef": {
+                "type": "string"
+              }
+            },
+            "required": ["fromSessionID", "fromMessageID"]
           }
         },
         "required": ["id", "projectID", "directory", "title", "version", "time"]
@@ -7716,6 +8676,105 @@
                 ]
               }
             }
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.file.edited": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "file.edited"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              }
+            },
+            "required": ["file"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "GitFileStatus": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["modified", "added", "deleted", "untracked", "renamed", "copied"]
+          },
+          "staged": {
+            "type": "boolean"
+          },
+          "added": {
+            "type": "number"
+          },
+          "removed": {
+            "type": "number"
+          },
+          "oldPath": {
+            "type": "string"
+          }
+        },
+        "required": ["path", "status", "staged", "added", "removed"]
+      },
+      "GitStatus": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string"
+          },
+          "upstream": {
+            "type": "string"
+          },
+          "ahead": {
+            "type": "number"
+          },
+          "behind": {
+            "type": "number"
+          },
+          "staged": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GitFileStatus"
+            }
+          },
+          "unstaged": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GitFileStatus"
+            }
+          },
+          "untracked": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GitFileStatus"
+            }
+          },
+          "conflicted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GitFileStatus"
+            }
+          }
+        },
+        "required": ["ahead", "behind", "staged", "unstaged", "untracked", "conflicted"]
+      },
+      "Event.git.status.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "git.status.updated"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/GitStatus"
           }
         },
         "required": ["type", "properties"]
@@ -7947,16 +9006,34 @@
             "$ref": "#/components/schemas/Event.message.part.removed"
           },
           {
+            "$ref": "#/components/schemas/Event.session.status"
+          },
+          {
+            "$ref": "#/components/schemas/Event.session.idle"
+          },
+          {
+            "$ref": "#/components/schemas/Event.toast.show"
+          },
+          {
+            "$ref": "#/components/schemas/Event.mcp.tools.changed"
+          },
+          {
+            "$ref": "#/components/schemas/Event.command.executed"
+          },
+          {
             "$ref": "#/components/schemas/Event.permission.asked"
           },
           {
             "$ref": "#/components/schemas/Event.permission.replied"
           },
           {
-            "$ref": "#/components/schemas/Event.session.status"
+            "$ref": "#/components/schemas/Event.plan.asked"
           },
           {
-            "$ref": "#/components/schemas/Event.session.idle"
+            "$ref": "#/components/schemas/Event.plan.replied"
+          },
+          {
+            "$ref": "#/components/schemas/Event.plan.rejected"
           },
           {
             "$ref": "#/components/schemas/Event.question.asked"
@@ -7968,31 +9045,16 @@
             "$ref": "#/components/schemas/Event.question.rejected"
           },
           {
-            "$ref": "#/components/schemas/Event.session.compacted"
-          },
-          {
-            "$ref": "#/components/schemas/Event.file.edited"
-          },
-          {
             "$ref": "#/components/schemas/Event.todo.updated"
           },
           {
-            "$ref": "#/components/schemas/Event.tui.prompt.append"
+            "$ref": "#/components/schemas/Event.sdk.started"
           },
           {
-            "$ref": "#/components/schemas/Event.tui.command.execute"
+            "$ref": "#/components/schemas/Event.sdk.completed"
           },
           {
-            "$ref": "#/components/schemas/Event.tui.toast.show"
-          },
-          {
-            "$ref": "#/components/schemas/Event.tui.session.select"
-          },
-          {
-            "$ref": "#/components/schemas/Event.mcp.tools.changed"
-          },
-          {
-            "$ref": "#/components/schemas/Event.command.executed"
+            "$ref": "#/components/schemas/Event.sdk.error"
           },
           {
             "$ref": "#/components/schemas/Event.session.created"
@@ -8008,6 +9070,12 @@
           },
           {
             "$ref": "#/components/schemas/Event.session.error"
+          },
+          {
+            "$ref": "#/components/schemas/Event.file.edited"
+          },
+          {
+            "$ref": "#/components/schemas/Event.git.status.updated"
           },
           {
             "$ref": "#/components/schemas/Event.file.watcher.updated"
@@ -8727,245 +9795,16 @@
       "ProviderConfig": {
         "type": "object",
         "properties": {
-          "api": {
+          "apiKey": {
+            "description": "API key for the provider",
             "type": "string"
           },
-          "name": {
+          "baseURL": {
+            "description": "Base URL for API requests",
             "type": "string"
-          },
-          "env": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "id": {
-            "type": "string"
-          },
-          "npm": {
-            "type": "string"
-          },
-          "models": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "family": {
-                  "type": "string"
-                },
-                "release_date": {
-                  "type": "string"
-                },
-                "attachment": {
-                  "type": "boolean"
-                },
-                "reasoning": {
-                  "type": "boolean"
-                },
-                "temperature": {
-                  "type": "boolean"
-                },
-                "tool_call": {
-                  "type": "boolean"
-                },
-                "interleaved": {
-                  "anyOf": [
-                    {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "field": {
-                          "type": "string",
-                          "enum": ["reasoning_content", "reasoning_details"]
-                        }
-                      },
-                      "required": ["field"],
-                      "additionalProperties": false
-                    }
-                  ]
-                },
-                "cost": {
-                  "type": "object",
-                  "properties": {
-                    "input": {
-                      "type": "number"
-                    },
-                    "output": {
-                      "type": "number"
-                    },
-                    "cache_read": {
-                      "type": "number"
-                    },
-                    "cache_write": {
-                      "type": "number"
-                    },
-                    "context_over_200k": {
-                      "type": "object",
-                      "properties": {
-                        "input": {
-                          "type": "number"
-                        },
-                        "output": {
-                          "type": "number"
-                        },
-                        "cache_read": {
-                          "type": "number"
-                        },
-                        "cache_write": {
-                          "type": "number"
-                        }
-                      },
-                      "required": ["input", "output"]
-                    }
-                  },
-                  "required": ["input", "output"]
-                },
-                "limit": {
-                  "type": "object",
-                  "properties": {
-                    "context": {
-                      "type": "number"
-                    },
-                    "output": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["context", "output"]
-                },
-                "modalities": {
-                  "type": "object",
-                  "properties": {
-                    "input": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": ["text", "audio", "image", "video", "pdf"]
-                      }
-                    },
-                    "output": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": ["text", "audio", "image", "video", "pdf"]
-                      }
-                    }
-                  },
-                  "required": ["input", "output"]
-                },
-                "experimental": {
-                  "type": "boolean"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": ["alpha", "beta", "deprecated"]
-                },
-                "options": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {}
-                },
-                "headers": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                },
-                "provider": {
-                  "type": "object",
-                  "properties": {
-                    "npm": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["npm"]
-                },
-                "variants": {
-                  "description": "Variant-specific configuration",
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {
-                    "type": "object",
-                    "properties": {
-                      "disabled": {
-                        "description": "Disable this variant for the model",
-                        "type": "boolean"
-                      }
-                    },
-                    "additionalProperties": {}
-                  }
-                }
-              }
-            }
-          },
-          "whitelist": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "blacklist": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "options": {
-            "type": "object",
-            "properties": {
-              "apiKey": {
-                "type": "string"
-              },
-              "baseURL": {
-                "type": "string"
-              },
-              "enterpriseUrl": {
-                "description": "GitHub Enterprise URL for copilot authentication",
-                "type": "string"
-              },
-              "setCacheKey": {
-                "description": "Enable promptCacheKey for this provider (default false)",
-                "type": "boolean"
-              },
-              "timeout": {
-                "description": "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
-                "anyOf": [
-                  {
-                    "description": "Timeout in milliseconds for requests to this provider. Default is 300000 (5 minutes). Set to false to disable timeout.",
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  },
-                  {
-                    "description": "Disable timeout for this provider entirely.",
-                    "type": "boolean",
-                    "const": false
-                  }
-                ]
-              }
-            },
-            "additionalProperties": {}
           }
         },
-        "additionalProperties": false
+        "additionalProperties": {}
       },
       "McpLocalConfig": {
         "type": "object",
@@ -8997,7 +9836,7 @@
             "type": "boolean"
           },
           "timeout": {
-            "description": "Timeout in ms for fetching tools from the MCP server. Defaults to 5000 (5 seconds) if not specified.",
+            "description": "Timeout in ms for MCP server requests. Defaults to 5000 (5 seconds) if not specified.",
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
@@ -9050,6 +9889,11 @@
               "type": "string"
             }
           },
+          "transport": {
+            "description": "Transport type for the remote server. Defaults to 'sse' if not specified.",
+            "type": "string",
+            "enum": ["http", "sse"]
+          },
           "oauth": {
             "description": "OAuth authentication configuration for the MCP server. Set to false to disable OAuth auto-detection.",
             "anyOf": [
@@ -9063,7 +9907,7 @@
             ]
           },
           "timeout": {
-            "description": "Timeout in ms for fetching tools from the MCP server. Defaults to 5000 (5 seconds) if not specified.",
+            "description": "Timeout in ms for MCP server requests. Defaults to 5000 (5 seconds) if not specified.",
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
@@ -9560,31 +10404,6 @@
         },
         "additionalProperties": false
       },
-      "ToolIDs": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "ToolListItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "parameters": {}
-        },
-        "required": ["id", "description", "parameters"]
-      },
-      "ToolList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ToolListItem"
-        }
-      },
       "Path": {
         "type": "object",
         "properties": {
@@ -9641,132 +10460,6 @@
         },
         "required": ["branch"]
       },
-      "TextPartInput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "const": "text"
-          },
-          "text": {
-            "type": "string"
-          },
-          "synthetic": {
-            "type": "boolean"
-          },
-          "ignored": {
-            "type": "boolean"
-          },
-          "time": {
-            "type": "object",
-            "properties": {
-              "start": {
-                "type": "number"
-              },
-              "end": {
-                "type": "number"
-              }
-            },
-            "required": ["start"]
-          },
-          "metadata": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {}
-          }
-        },
-        "required": ["type", "text"]
-      },
-      "FilePartInput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "const": "file"
-          },
-          "mime": {
-            "type": "string"
-          },
-          "filename": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          },
-          "source": {
-            "$ref": "#/components/schemas/FilePartSource"
-          }
-        },
-        "required": ["type", "mime", "url"]
-      },
-      "AgentPartInput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "const": "agent"
-          },
-          "name": {
-            "type": "string"
-          },
-          "source": {
-            "type": "object",
-            "properties": {
-              "value": {
-                "type": "string"
-              },
-              "start": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "end": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": ["value", "start", "end"]
-          }
-        },
-        "required": ["type", "name"]
-      },
-      "SubtaskPartInput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "const": "subtask"
-          },
-          "prompt": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "agent": {
-            "type": "string"
-          },
-          "command": {
-            "type": "string"
-          }
-        },
-        "required": ["type", "prompt", "description", "agent"]
-      },
       "Command": {
         "type": "object",
         "properties": {
@@ -9813,106 +10506,14 @@
           "id": {
             "type": "string"
           },
-          "providerID": {
-            "type": "string"
-          },
-          "api": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "url": {
-                "type": "string"
-              },
-              "npm": {
-                "type": "string"
-              }
-            },
-            "required": ["id", "url", "npm"]
-          },
           "name": {
             "type": "string"
           },
           "family": {
             "type": "string"
           },
-          "capabilities": {
-            "type": "object",
-            "properties": {
-              "temperature": {
-                "type": "boolean"
-              },
-              "reasoning": {
-                "type": "boolean"
-              },
-              "attachment": {
-                "type": "boolean"
-              },
-              "toolcall": {
-                "type": "boolean"
-              },
-              "input": {
-                "type": "object",
-                "properties": {
-                  "text": {
-                    "type": "boolean"
-                  },
-                  "audio": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "boolean"
-                  },
-                  "video": {
-                    "type": "boolean"
-                  },
-                  "pdf": {
-                    "type": "boolean"
-                  }
-                },
-                "required": ["text", "audio", "image", "video", "pdf"]
-              },
-              "output": {
-                "type": "object",
-                "properties": {
-                  "text": {
-                    "type": "boolean"
-                  },
-                  "audio": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "boolean"
-                  },
-                  "video": {
-                    "type": "boolean"
-                  },
-                  "pdf": {
-                    "type": "boolean"
-                  }
-                },
-                "required": ["text", "audio", "image", "video", "pdf"]
-              },
-              "interleaved": {
-                "anyOf": [
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "field": {
-                        "type": "string",
-                        "enum": ["reasoning_content", "reasoning_details"]
-                      }
-                    },
-                    "required": ["field"]
-                  }
-                ]
-              }
-            },
-            "required": ["temperature", "reasoning", "attachment", "toolcall", "input", "output", "interleaved"]
+          "reasoning": {
+            "type": "boolean"
           },
           "cost": {
             "type": "object",
@@ -9934,182 +10535,15 @@
                   }
                 },
                 "required": ["read", "write"]
-              },
-              "experimentalOver200K": {
-                "type": "object",
-                "properties": {
-                  "input": {
-                    "type": "number"
-                  },
-                  "output": {
-                    "type": "number"
-                  },
-                  "cache": {
-                    "type": "object",
-                    "properties": {
-                      "read": {
-                        "type": "number"
-                      },
-                      "write": {
-                        "type": "number"
-                      }
-                    },
-                    "required": ["read", "write"]
-                  }
-                },
-                "required": ["input", "output", "cache"]
               }
             },
             "required": ["input", "output", "cache"]
           },
-          "limit": {
-            "type": "object",
-            "properties": {
-              "context": {
-                "type": "number"
-              },
-              "output": {
-                "type": "number"
-              }
-            },
-            "required": ["context", "output"]
-          },
-          "status": {
-            "type": "string",
-            "enum": ["alpha", "beta", "deprecated", "active"]
-          },
-          "options": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {}
-          },
-          "headers": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "release_date": {
-            "type": "string"
-          },
-          "variants": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "object",
-              "propertyNames": {
-                "type": "string"
-              },
-              "additionalProperties": {}
-            }
+          "context": {
+            "type": "number"
           }
         },
-        "required": [
-          "id",
-          "providerID",
-          "api",
-          "name",
-          "capabilities",
-          "cost",
-          "limit",
-          "status",
-          "options",
-          "headers",
-          "release_date"
-        ]
-      },
-      "Provider": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "source": {
-            "type": "string",
-            "enum": ["env", "config", "custom", "api"]
-          },
-          "env": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "key": {
-            "type": "string"
-          },
-          "options": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {}
-          },
-          "models": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Model"
-            }
-          }
-        },
-        "required": ["id", "name", "source", "env", "options", "models"]
-      },
-      "ProviderAuthMethod": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "oauth"
-              },
-              {
-                "type": "string",
-                "const": "api"
-              }
-            ]
-          },
-          "label": {
-            "type": "string"
-          }
-        },
-        "required": ["type", "label"]
-      },
-      "ProviderAuthAuthorization": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string"
-          },
-          "method": {
-            "anyOf": [
-              {
-                "type": "string",
-                "const": "auto"
-              },
-              {
-                "type": "string",
-                "const": "code"
-              }
-            ]
-          },
-          "instructions": {
-            "type": "string"
-          }
-        },
-        "required": ["url", "method", "instructions"]
+        "required": ["id", "name", "reasoning", "cost", "context"]
       },
       "Symbol": {
         "type": "object",
@@ -10251,66 +10685,44 @@
         },
         "required": ["path", "added", "removed", "status"]
       },
-      "Agent": {
+      "GitCommit": {
         "type": "object",
         "properties": {
-          "name": {
+          "hash": {
             "type": "string"
           },
-          "description": {
+          "hashShort": {
             "type": "string"
           },
-          "mode": {
-            "type": "string",
-            "enum": ["subagent", "primary", "all"]
+          "author": {
+            "type": "string"
           },
-          "native": {
-            "type": "boolean"
+          "email": {
+            "type": "string"
           },
-          "hidden": {
-            "type": "boolean"
-          },
-          "topP": {
+          "date": {
             "type": "number"
           },
-          "temperature": {
-            "type": "number"
-          },
-          "color": {
+          "message": {
             "type": "string"
           },
-          "permission": {
-            "$ref": "#/components/schemas/PermissionRuleset"
-          },
-          "model": {
-            "type": "object",
-            "properties": {
-              "modelID": {
-                "type": "string"
-              },
-              "providerID": {
-                "type": "string"
-              }
-            },
-            "required": ["modelID", "providerID"]
-          },
-          "prompt": {
+          "messageShort": {
             "type": "string"
-          },
-          "options": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {}
-          },
-          "steps": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
           }
         },
-        "required": ["name", "mode", "permission", "options"]
+        "required": ["hash", "hashShort", "author", "email", "date", "message", "messageShort"]
+      },
+      "GitCommitResult": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["hash", "message"]
       },
       "MCPStatusConnected": {
         "type": "object",
@@ -10434,6 +10846,79 @@
           }
         },
         "required": ["id", "name", "root", "status"]
+      },
+      "CompletionItem": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "number"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "documentation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["kind", "value"]
+              }
+            ]
+          },
+          "insertText": {
+            "type": "string"
+          },
+          "insertTextFormat": {
+            "type": "number"
+          },
+          "textEdit": {
+            "type": "object",
+            "properties": {
+              "range": {
+                "$ref": "#/components/schemas/Range"
+              },
+              "newText": {
+                "type": "string"
+              }
+            },
+            "required": ["range", "newText"]
+          },
+          "sortText": {
+            "type": "string"
+          },
+          "filterText": {
+            "type": "string"
+          }
+        },
+        "required": ["label"]
+      },
+      "CompletionList": {
+        "type": "object",
+        "properties": {
+          "isIncomplete": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompletionItem"
+            }
+          }
+        },
+        "required": ["isIncomplete", "items"]
       },
       "FormatterStatus": {
         "type": "object",

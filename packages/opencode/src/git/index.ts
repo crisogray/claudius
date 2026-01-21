@@ -102,11 +102,7 @@ export namespace Git {
     // Get ahead/behind
     let ahead = 0,
       behind = 0
-    const abOutput = await $`git rev-list --left-right --count HEAD...@{upstream}`
-      .cwd(cwd)
-      .quiet()
-      .nothrow()
-      .text()
+    const abOutput = await $`git rev-list --left-right --count HEAD...@{upstream}`.cwd(cwd).quiet().nothrow().text()
     if (abOutput.trim()) {
       const [a, b] = abOutput.trim().split(/\s+/)
       ahead = parseInt(a) || 0

@@ -63,7 +63,15 @@ export function Markdown(
     onReject?: (message?: string) => void
   },
 ) {
-  const [local, others] = splitProps(props, ["text", "cacheKey", "class", "classList", "fullscreen", "onApprove", "onReject"])
+  const [local, others] = splitProps(props, [
+    "text",
+    "cacheKey",
+    "class",
+    "classList",
+    "fullscreen",
+    "onApprove",
+    "onReject",
+  ])
   const marked = useMarked()
   const dialog = useDialog()
   const [html] = createResource(

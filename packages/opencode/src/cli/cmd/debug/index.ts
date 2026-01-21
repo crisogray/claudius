@@ -5,11 +5,7 @@ import { ConfigCommand } from "./config"
 export const DebugCommand = cmd({
   command: "debug",
   describe: "debugging and troubleshooting tools",
-  builder: (yargs) =>
-    yargs
-      .command(ConfigCommand)
-      .command(PathsCommand)
-      .demandCommand(),
+  builder: (yargs) => yargs.command(ConfigCommand).command(PathsCommand).demandCommand(),
   async handler() {},
 })
 

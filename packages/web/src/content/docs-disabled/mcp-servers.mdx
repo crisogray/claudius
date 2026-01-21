@@ -28,7 +28,7 @@ You can define MCP servers in your [OpenCode Config](https://claudius.to/docs/co
 ```jsonc title="opencode.jsonc" {6}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "name-of-mcp-server": {
       // ...
@@ -54,7 +54,7 @@ To enable a specific server from your organization's remote config, add it to yo
 ```json title="opencode.json"
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "jira": {
       "type": "remote",
@@ -76,7 +76,7 @@ Add local MCP servers using `type` to `"local"` within the MCP object.
 ```jsonc title="opencode.jsonc" {15}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-local-mcp-server": {
       "type": "local",
@@ -98,7 +98,7 @@ For example, here's how you can add the test [`@modelcontextprotocol/server-ever
 ```jsonc title="opencode.jsonc"
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "mcp_everything": {
       "type": "local",
@@ -137,7 +137,7 @@ Add remote MCP servers by setting `type` to `"remote"`.
 ```json title="opencode.json"
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-remote-mcp": {
       "type": "remote",
@@ -185,7 +185,7 @@ For most OAuth-enabled MCP servers, no special configuration is needed. Just con
 ```json title="opencode.json"
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-oauth-server": {
       "type": "remote",
@@ -206,7 +206,7 @@ If you have client credentials from the MCP server provider, you can configure t
 ```json title="opencode.json" {7-11}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-oauth-server": {
       "type": "remote",
@@ -256,7 +256,7 @@ If you want to disable automatic OAuth for a server (e.g., for servers that use 
 ```json title="opencode.json" {7}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-api-key-server": {
       "type": "remote",
@@ -310,7 +310,7 @@ This means that you can enable or disable them globally.
 ```json title="opencode.json" {14}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-mcp-foo": {
       "type": "local",
@@ -332,7 +332,7 @@ We can also use a glob pattern to disable all matching MCPs.
 ```json title="opencode.json" {14}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-mcp-foo": {
       "type": "local",
@@ -363,7 +363,7 @@ If you have a large number of MCP servers you may want to only enable them per a
 ```json title="opencode.json" {11, 14-18}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "my-mcp": {
       "type": "local",
@@ -418,7 +418,7 @@ Add the [Sentry MCP server](https://mcp.sentry.dev) to interact with your Sentry
 ```json title="opencode.json" {4-8}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "sentry": {
       "type": "remote",
@@ -452,7 +452,7 @@ Add the [Context7 MCP server](https://github.com/upstash/context7) to search thr
 ```json title="opencode.json" {4-7}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "context7": {
       "type": "remote",
@@ -467,7 +467,7 @@ If you have signed up for a free account, you can use your API key and get highe
 ```json title="opencode.json" {7-9}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "context7": {
       "type": "remote",
@@ -503,7 +503,7 @@ Add the [Grep by Vercel](https://grep.app) MCP server to search through code sni
 ```json title="opencode.json" {4-7}
 {
   "$schema": "https://claudius.to/config.json",
-  
+
   "mcp": {
     "gh_grep": {
       "type": "remote",

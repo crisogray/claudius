@@ -159,7 +159,11 @@ export function SessionHeader() {
                   title="Toggle terminal"
                   keybind={command.keybind("terminal.toggle")}
                 >
-                  <Button variant="ghost" class="group/terminal-toggle size-6 p-0" onClick={() => view().terminal.toggle()}>
+                  <Button
+                    variant="ghost"
+                    class="group/terminal-toggle size-6 p-0"
+                    onClick={() => view().terminal.toggle()}
+                  >
                     <div class="relative flex items-center justify-center size-4 [&>*]:absolute [&>*]:inset-0">
                       <Icon
                         size="small"
@@ -184,7 +188,11 @@ export function SessionHeader() {
                   title="Toggle files panel"
                   keybind={command.keybind("rightPanel.toggle")}
                 >
-                  <Button variant="ghost" class="group/files-toggle size-6 p-0" onClick={() => layout.rightPanel.toggle()}>
+                  <Button
+                    variant="ghost"
+                    class="group/files-toggle size-6 p-0"
+                    onClick={() => layout.rightPanel.toggle()}
+                  >
                     <div class="relative flex items-center justify-center size-4 [&>*]:absolute [&>*]:inset-0">
                       <Icon
                         size="small"

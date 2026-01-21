@@ -231,7 +231,10 @@ function createGlobalSync() {
             setStore(
               key,
               sessionID,
-              reconcile(items.slice().sort((a, b) => a.id.localeCompare(b.id)), { key: "id" }) as any,
+              reconcile(
+                items.slice().sort((a, b) => a.id.localeCompare(b.id)),
+                { key: "id" },
+              ) as any,
             )
           }
         })

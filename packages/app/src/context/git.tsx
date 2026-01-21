@@ -116,10 +116,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         setStore("loading", true)
       }
       try {
-        const [status, log] = await Promise.all([
-          api<GitStatus>("/git/status"),
-          api<GitCommit[]>("/git/log?limit=20"),
-        ])
+        const [status, log] = await Promise.all([api<GitStatus>("/git/status"), api<GitCommit[]>("/git/log?limit=20")])
 
         // Only update store if status actually changed (prevents unnecessary re-renders)
         const statusChanged = !statusEqual(store.status, status)
@@ -202,7 +199,9 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
     }
 
     const show = async (file: string, ref = "HEAD"): Promise<string> => {
-      const result = await api<{ content: string }>(`/git/show?file=${encodeURIComponent(file)}&ref=${encodeURIComponent(ref)}`)
+      const result = await api<{ content: string }>(
+        `/git/show?file=${encodeURIComponent(file)}&ref=${encodeURIComponent(ref)}`,
+      )
       return result.content
     }
 
@@ -237,11 +236,7 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
       const folderMap = new Map<string, Set<string>>()
       if (!store.status) return folderMap
 
-      const allFiles = [
-        ...store.status.staged,
-        ...store.status.unstaged,
-        ...store.status.untracked,
-      ]
+      const allFiles = [...store.status.staged, ...store.status.unstaged, ...store.status.untracked]
 
       for (const file of allFiles) {
         const parts = file.path.split("/")

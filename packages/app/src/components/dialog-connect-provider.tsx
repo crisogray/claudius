@@ -155,8 +155,8 @@ export function DialogConnectProvider(props: { provider: string }) {
                 return (
                   <div class="flex flex-col gap-6">
                     <div class="text-14-regular text-text-base">
-                      Enter your {provider().name} API key to connect your account and use {provider().name} models
-                      in Claudius.
+                      Enter your {provider().name} API key to connect your account and use {provider().name} models in
+                      Claudius.
                     </div>
                     <form onSubmit={handleSubmit} class="flex flex-col items-start gap-4">
                       <TextField

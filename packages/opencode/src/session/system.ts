@@ -25,8 +25,7 @@ export namespace SystemPrompt {
 
   export function provider(model: Provider.Model) {
     if (model.id.includes("gpt-5")) return [PROMPT_CODEX]
-    if (model.id.includes("gpt-") || model.id.includes("o1") || model.id.includes("o3"))
-      return [PROMPT_BEAST]
+    if (model.id.includes("gpt-") || model.id.includes("o1") || model.id.includes("o3")) return [PROMPT_BEAST]
     if (model.id.includes("gemini-")) return [PROMPT_GEMINI]
     if (model.id.includes("claude")) return [PROMPT_ANTHROPIC]
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]

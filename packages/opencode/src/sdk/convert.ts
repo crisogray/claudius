@@ -173,7 +173,13 @@ export namespace SDKConvert {
     return parts
   }
 
-  export type ContentBlock = TextBlock | ThinkingBlock | RedactedThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock
+  export type ContentBlock =
+    | TextBlock
+    | ThinkingBlock
+    | RedactedThinkingBlock
+    | ToolUseBlock
+    | ToolResultBlock
+    | ImageBlock
 
   // SDK message types
   export interface SDKAssistantMessage {
@@ -182,7 +188,7 @@ export namespace SDKConvert {
     session_id: string
     parent_tool_use_id?: string
     message: {
-      id: string  // Anthropic API message ID
+      id: string // Anthropic API message ID
       content: ContentBlock[]
     }
   }
@@ -259,7 +265,13 @@ export namespace SDKConvert {
     }
   }
 
-  export type SDKMessage = SDKAssistantMessage | SDKUserMessage | SDKResultMessage | SDKSystemMessage | SDKCompactBoundaryMessage | SDKPartialAssistantMessage
+  export type SDKMessage =
+    | SDKAssistantMessage
+    | SDKUserMessage
+    | SDKResultMessage
+    | SDKSystemMessage
+    | SDKCompactBoundaryMessage
+    | SDKPartialAssistantMessage
 
   // Partial message streaming types (from @anthropic-ai/claude-agent-sdk with includePartialMessages: true)
   export interface SDKPartialAssistantMessage {
@@ -297,18 +309,18 @@ export namespace SDKConvert {
     type: "content_block_start"
     index: number
     content_block:
-    | { type: "text"; text: string }
-    | { type: "thinking"; thinking: string; signature?: string }
-    | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+      | { type: "text"; text: string }
+      | { type: "thinking"; thinking: string; signature?: string }
+      | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
   }
 
   export interface ContentBlockDeltaEvent {
     type: "content_block_delta"
     index: number
     delta:
-    | { type: "text_delta"; text: string }
-    | { type: "thinking_delta"; thinking: string }
-    | { type: "input_json_delta"; partial_json: string }
+      | { type: "text_delta"; text: string }
+      | { type: "thinking_delta"; thinking: string }
+      | { type: "input_json_delta"; partial_json: string }
   }
 
   export interface ContentBlockStopEvent {

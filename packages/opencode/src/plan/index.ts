@@ -22,7 +22,10 @@ export namespace PlanApproval {
 
   export const Reply = z.object({
     approved: z.boolean().describe("Whether the user approved the plan"),
-    permissionMode: z.enum(["default", "acceptEdits", "bypassPermissions"]).optional().describe("Permission mode to use after approval"),
+    permissionMode: z
+      .enum(["default", "acceptEdits", "bypassPermissions"])
+      .optional()
+      .describe("Permission mode to use after approval"),
   })
   export type Reply = z.infer<typeof Reply>
 
@@ -92,7 +95,12 @@ export namespace PlanApproval {
     })
   }
 
-  export async function reply(input: { requestID: string; approved: boolean; message?: string; permissionMode?: PermissionMode }): Promise<void> {
+  export async function reply(input: {
+    requestID: string
+    approved: boolean
+    message?: string
+    permissionMode?: PermissionMode
+  }): Promise<void> {
     const s = await state()
     const existing = s.pending[input.requestID]
     if (!existing) {
@@ -101,7 +109,12 @@ export namespace PlanApproval {
     }
     delete s.pending[input.requestID]
 
-    log.info("plan replied", { requestID: input.requestID, approved: input.approved, message: input.message, permissionMode: input.permissionMode })
+    log.info("plan replied", {
+      requestID: input.requestID,
+      approved: input.approved,
+      message: input.message,
+      permissionMode: input.permissionMode,
+    })
 
     Bus.publish(Event.Replied, {
       sessionID: existing.info.sessionID,
