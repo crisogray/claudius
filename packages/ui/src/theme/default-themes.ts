@@ -27,8 +27,8 @@ export const oneDarkProTheme = oneDarkProThemeJson as DesktopTheme
 export const shadesOfPurpleTheme = shadesOfPurpleThemeJson as DesktopTheme
 export const nightowlTheme = nightowlThemeJson as DesktopTheme
 export const vesperTheme = vesperThemeJson as DesktopTheme
-export const deltaruneTheme = deltaruneThemeJson as unknown as DesktopTheme
-export const undertaleTheme = undertaleThemeJson as unknown as DesktopTheme
+export const deltaruneTheme = deltaruneThemeJson as DesktopTheme
+export const undertaleTheme = undertaleThemeJson as DesktopTheme
 export const carbonfoxTheme = carbonfoxThemeJson as DesktopTheme
 
 export const DEFAULT_THEMES: Record<string, DesktopTheme> = {
