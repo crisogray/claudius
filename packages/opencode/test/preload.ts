@@ -30,6 +30,9 @@ await fs.writeFile(path.join(cacheDir, "version"), "14")
 // Clear provider env vars to ensure clean test state
 delete process.env["ANTHROPIC_API_KEY"]
 
+// Clear server password to disable auth in tests
+delete process.env["OPENCODE_SERVER_PASSWORD"]
+
 // Now safe to import from src/
 const { Log } = await import("../src/util/log")
 
