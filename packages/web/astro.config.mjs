@@ -25,16 +25,9 @@ export default defineConfig({
       title: "Claudius",
       disable404Route: true,
       favicon: "/favicon.ico",
-      social: [
-        { icon: "github", label: "GitHub", href: config.github },
-      ],
+      social: [{ icon: "github", label: "GitHub", href: config.github }],
       sidebar: [],
-      components: {},
-      plugins: [
-        theme({
-          headerLinks: config.headerLinks,
-        }),
-      ],
+      plugins: [theme({ headerLinks: config.headerLinks })],
     }),
   ],
 })
