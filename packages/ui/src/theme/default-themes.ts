@@ -11,8 +11,6 @@ import oneDarkProThemeJson from "./themes/onedarkpro.json"
 import shadesOfPurpleThemeJson from "./themes/shadesofpurple.json"
 import nightowlThemeJson from "./themes/nightowl.json"
 import vesperThemeJson from "./themes/vesper.json"
-import deltaruneThemeJson from "./themes/deltarune.json"
-import undertaleThemeJson from "./themes/undertale.json"
 import carbonfoxThemeJson from "./themes/carbonfox.json"
 
 export const oc1Theme = oc1ThemeJson as DesktopTheme
@@ -27,8 +25,6 @@ export const oneDarkProTheme = oneDarkProThemeJson as DesktopTheme
 export const shadesOfPurpleTheme = shadesOfPurpleThemeJson as DesktopTheme
 export const nightowlTheme = nightowlThemeJson as DesktopTheme
 export const vesperTheme = vesperThemeJson as DesktopTheme
-export const deltaruneTheme = deltaruneThemeJson as DesktopTheme
-export const undertaleTheme = undertaleThemeJson as DesktopTheme
 export const carbonfoxTheme = carbonfoxThemeJson as DesktopTheme
 
 export const DEFAULT_THEMES: Record<string, DesktopTheme> = {
@@ -44,7 +40,5 @@ export const DEFAULT_THEMES: Record<string, DesktopTheme> = {
   shadesofpurple: shadesOfPurpleTheme,
   nightowl: nightowlTheme,
   vesper: vesperTheme,
-  deltarune: deltaruneTheme,
-  undertale: undertaleTheme,
   carbonfox: carbonfoxTheme,
 }
