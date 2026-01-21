@@ -229,8 +229,11 @@ export function SessionTurn(
       for (const m of assistantMessages()) {
         const msgParts = data.store.part[m.id]
         if (!msgParts) continue
+        let textCount = 0
         for (const p of msgParts) {
           if (p?.type === "tool") return true
+          if (p?.type === "text") textCount++
+          if (textCount > 1) return true // Multiple text parts = interleaved content
         }
       }
       return false
