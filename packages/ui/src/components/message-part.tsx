@@ -25,6 +25,7 @@ import {
   Todo,
   QuestionRequest,
   PlanRequest,
+  PermissionRequest,
 } from "@opencode-ai/sdk/v2"
 import { useData } from "../context"
 import { useDiffComponent } from "../context/diff"
@@ -499,10 +500,20 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const part = props.part as ToolPart
 
   const permission = createMemo(() => {
-    const next = data.store.permission?.[props.message.sessionID]?.[0]
-    if (!next || !next.tool) return undefined
-    if (next.tool!.callID !== part.callID) return undefined
-    return next
+    // First try current session's permissions matching this tool's callID
+    const sessionPerms = data.store.permission?.[props.message.sessionID] ?? []
+    const direct = sessionPerms.find((p) => p.tool?.callID === part.callID)
+    if (direct) return direct
+
+    // For child sessions, permission might be under parent session (SDK behavior)
+    // Search all sessions for permission matching this tool's callID
+    for (const [sid, permissions] of Object.entries(data.store.permission ?? {})) {
+      if (sid === props.message.sessionID) continue // Already checked
+      const match = (permissions as PermissionRequest[]).find((p) => p.tool?.callID === part.callID)
+      if (match) return match
+    }
+
+    return undefined
   })
 
   // Find matching question request for this tool call
@@ -882,8 +893,30 @@ ToolRegistry.register({
     const childPermission = createMemo(() => {
       const sessionId = childSessionId()
       if (!sessionId) return undefined
-      const permissions = data.store.permission?.[sessionId] ?? []
-      return permissions[0]
+
+      // Get all tool callIDs from child session
+      const childMessages = data.store.message[sessionId] ?? []
+      const childToolCallIds = new Set<string>()
+      for (const msg of childMessages) {
+        const parts = data.store.part[msg.id] ?? []
+        for (const part of parts) {
+          if (part.type === "tool") {
+            childToolCallIds.add((part as ToolPart).callID)
+          }
+        }
+      }
+
+      if (childToolCallIds.size === 0) return undefined
+
+      // Search ALL sessions for permissions matching child tool callIDs
+      // (permissions may be stored under parent session due to SDK behavior)
+      for (const [sid, permissions] of Object.entries(data.store.permission ?? {})) {
+        const perms = permissions as PermissionRequest[]
+        const match = perms.find((p) => p.tool?.callID && childToolCallIds.has(p.tool.callID))
+        if (match) return match
+      }
+
+      return undefined
     })
 
     const childToolPart = createMemo(() => {
