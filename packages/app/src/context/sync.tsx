@@ -12,8 +12,13 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   init: () => {
     const globalSync = useGlobalSync()
     const sdk = useSDK()
-    const [store, setStore] = globalSync.child(sdk.directory)
-    const absolute = (path: string) => (store.path.directory + "/" + path).replace("//", "/")
+
+    // Reactive store accessor - switches stores when sdk.directory changes
+    const storeAccessor = createMemo(() => globalSync.child(sdk.directory))
+    const getStore = () => storeAccessor()[0]
+    const getSetStore = () => storeAccessor()[1]
+
+    const absolute = (path: string) => (getStore().path.directory + "/" + path).replace("//", "/")
     const chunk = 50
     const inflight = new Map<string, Promise<void>>()
     const inflightDiff = new Map<string, Promise<void>>()
@@ -25,8 +30,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     })
 
     const getSession = (sessionID: string) => {
-      const match = Binary.search(store.session, sessionID, (s) => s.id)
-      if (match.found) return store.session[match.index]
+      const match = Binary.search(getStore().session, sessionID, (s) => s.id)
+      if (match.found) return getStore().session[match.index]
       return undefined
     }
 
@@ -38,7 +43,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     const hydrateMessages = (sessionID: string) => {
       if (meta.limit[sessionID] !== undefined) return
 
-      const messages = store.message[sessionID]
+      const messages = getStore().message[sessionID]
       if (!messages) return
 
       const limit = limitFor(messages.length)
@@ -61,10 +66,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             .sort((a, b) => a.id.localeCompare(b.id))
 
           batch(() => {
-            setStore("message", sessionID, reconcile(next, { key: "id" }))
+            getSetStore()("message", sessionID, reconcile(next, { key: "id" }))
 
             for (const message of items) {
-              setStore(
+              getSetStore()(
                 "part",
                 message.info.id,
                 reconcile(
@@ -87,16 +92,20 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     }
 
     return {
-      data: store,
-      set: setStore,
+      get data() {
+        return getStore()
+      },
+      get set() {
+        return getSetStore()
+      },
       get status() {
-        return store.status
+        return getStore().status
       },
       get ready() {
-        return store.status !== "loading"
+        return getStore().status !== "loading"
       },
       get project() {
-        const match = Binary.search(globalSync.data.project, store.project, (p) => p.id)
+        const match = Binary.search(globalSync.data.project, getStore().project, (p) => p.id)
         if (match.found) return globalSync.data.project[match.index]
         return undefined
       },
@@ -117,7 +126,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             permissionMode: input.permissionMode,
             model: input.model,
           }
-          setStore(
+          getSetStore()(
             produce((draft) => {
               const messages = draft.message[input.sessionID]
               if (!messages) {
@@ -137,7 +146,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           const hasSession = getSession(sessionID) !== undefined
           hydrateMessages(sessionID)
 
-          const hasMessages = store.message[sessionID] !== undefined
+          const hasMessages = getStore().message[sessionID] !== undefined
           if (hasSession && hasMessages) return
 
           const pending = inflight.get(sessionID)
@@ -150,7 +159,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             : retry(() => sdk.client.session.get({ sessionID })).then((session) => {
                 const data = session.data
                 if (!data) return
-                setStore(
+                getSetStore()(
                   "session",
                   produce((draft) => {
                     const match = Binary.search(draft, sessionID, (s) => s.id)
@@ -175,14 +184,14 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           return promise
         },
         async diff(sessionID: string) {
-          if (store.session_diff[sessionID] !== undefined) return
+          if (getStore().session_diff[sessionID] !== undefined) return
 
           const pending = inflightDiff.get(sessionID)
           if (pending) return pending
 
           const promise = retry(() => sdk.client.session.diff({ sessionID }))
             .then((diff) => {
-              setStore("session_diff", sessionID, reconcile(diff.data ?? [], { key: "file" }))
+              getSetStore()("session_diff", sessionID, reconcile(diff.data ?? [], { key: "file" }))
             })
             .finally(() => {
               inflightDiff.delete(sessionID)
@@ -192,14 +201,14 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           return promise
         },
         async todo(sessionID: string) {
-          if (store.todo[sessionID] !== undefined) return
+          if (getStore().todo[sessionID] !== undefined) return
 
           const pending = inflightTodo.get(sessionID)
           if (pending) return pending
 
           const promise = retry(() => sdk.client.session.todo({ sessionID }))
             .then((todo) => {
-              setStore("todo", sessionID, reconcile(todo.data ?? [], { key: "id" }))
+              getSetStore()("todo", sessionID, reconcile(todo.data ?? [], { key: "id" }))
             })
             .finally(() => {
               inflightTodo.delete(sessionID)
@@ -210,7 +219,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         },
         history: {
           more(sessionID: string) {
-            if (store.message[sessionID] === undefined) return false
+            if (getStore().message[sessionID] === undefined) return false
             if (meta.limit[sessionID] === undefined) return false
             if (meta.complete[sessionID]) return false
             return true
@@ -227,20 +236,20 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           },
         },
         fetch: async (count = 10) => {
-          setStore("limit", (x) => x + count)
+          getSetStore()("limit", (x) => x + count)
           await sdk.client.session.list().then((x) => {
             const sessions = (x.data ?? [])
               .filter((s) => !!s?.id)
               .slice()
               .sort((a, b) => a.id.localeCompare(b.id))
-              .slice(0, store.limit)
-            setStore("session", reconcile(sessions, { key: "id" }))
+              .slice(0, getStore().limit)
+            getSetStore()("session", reconcile(sessions, { key: "id" }))
           })
         },
-        more: createMemo(() => store.session.length >= store.limit),
+        more: createMemo(() => getStore().session.length >= getStore().limit),
         archive: async (sessionID: string) => {
           await sdk.client.session.update({ sessionID, time: { archived: Date.now() } })
-          setStore(
+          getSetStore()(
             produce((draft) => {
               const match = Binary.search(draft.session, sessionID, (s) => s.id)
               if (match.found) draft.session.splice(match.index, 1)
@@ -250,7 +259,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       },
       absolute,
       get directory() {
-        return store.path.directory
+        return getStore().path.directory
       },
     }
   },

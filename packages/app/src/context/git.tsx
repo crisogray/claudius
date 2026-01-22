@@ -1,4 +1,4 @@
-import { createMemo, onCleanup, onMount } from "solid-js"
+import { createEffect, createMemo, on, onCleanup, onMount } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useSDK } from "./sdk"
@@ -209,6 +209,20 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
     onMount(() => {
       refresh({ showLoading: true })
     })
+
+    // Refresh when directory changes (for reactive project switching)
+    createEffect(
+      on(
+        () => sdk.directory,
+        () => {
+          // Clear stale data immediately, then fetch new data
+          setStore("status", null)
+          setStore("log", [])
+          refresh({ showLoading: true })
+        },
+        { defer: true }, // Skip initial run (onMount handles it)
+      ),
+    )
 
     // Refresh periodically (every 5 seconds)
     const interval = setInterval(refresh, 5000)

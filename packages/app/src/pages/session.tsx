@@ -831,8 +831,8 @@ export default function Page() {
     autoScroll.scrollRef(el)
   }
 
-  const turnInit = 20
-  const turnBatch = 20
+  const turnInit = 10
+  const turnBatch = 10
   let turnHandle: number | undefined
   let turnIdle = false
 
@@ -1198,6 +1198,7 @@ export default function Page() {
                                         sessionID={params.id!}
                                         messageID={message.id}
                                         lastUserMessageID={lastUserMessage()?.id}
+                                        messages={messages()}
                                         stepsExpanded={store.expanded[message.id] ?? false}
                                         onStepsExpandedToggle={() =>
                                           setStore("expanded", message.id, (open: boolean | undefined) => !open)
@@ -1457,6 +1458,7 @@ export default function Page() {
                                         sessionID={params.id!}
                                         messageID={message.id}
                                         lastUserMessageID={lastUserMessage()?.id}
+                                        messages={messages()}
                                         stepsExpanded={store.expanded[message.id] ?? false}
                                         onStepsExpandedToggle={() =>
                                           setStore("expanded", message.id, (open: boolean | undefined) => !open)

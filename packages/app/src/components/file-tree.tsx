@@ -8,9 +8,9 @@ import {
   Match,
   Show,
   Switch,
-  onMount,
   createSignal,
   createEffect,
+  on,
   onCleanup,
   type ComponentProps,
   type ParentProps,
@@ -50,9 +50,15 @@ export default function FileTree(props: {
   const sdk = useSDK()
   const level = props.level ?? 0
 
-  onMount(() => {
-    if (level === 0) local.file.expand(props.path)
-  })
+  // Expand root on mount and when directory changes (for reactive project switching)
+  createEffect(
+    on(
+      () => sdk.directory,
+      () => {
+        if (level === 0) local.file.expand(props.path)
+      },
+    ),
+  )
 
   const [visiblePaths, setVisiblePaths] = createSignal<Set<string> | null>(null)
   const [collapsedPaths, setCollapsedPaths] = createSignal<Set<string>>(new Set())

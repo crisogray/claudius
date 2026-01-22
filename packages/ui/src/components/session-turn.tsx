@@ -123,6 +123,8 @@ export function SessionTurn(
     stepsExpanded?: boolean
     onStepsExpandedToggle?: () => void
     onUserInteracted?: () => void
+    /** Pre-computed messages array to avoid redundant store lookups */
+    messages?: MessageType[]
     classes?: {
       root?: string
       content?: string
@@ -140,7 +142,8 @@ export function SessionTurn(
   const emptyPermissionParts: { part: ToolPart; message: AssistantMessage }[] = []
   const idle = { type: "idle" as const }
 
-  const allMessages = createMemo(() => data.store.message[props.sessionID] ?? emptyMessages)
+  // Use provided messages or fall back to store lookup
+  const allMessages = createMemo(() => props.messages ?? data.store.message[props.sessionID] ?? emptyMessages)
 
   const messageIndex = createMemo(() => {
     const messages = allMessages()

@@ -240,9 +240,10 @@ function createGlobalSync() {
       })
     }
 
-    const blockingRequests = {
-      project: () => sdk.project.current().then((x) => setStore("project", x.data!.id)),
-      provider: () =>
+    // Critical requests - needed for UI to be usable
+    const criticalRequests = [
+      retry(() => sdk.project.current().then((x) => setStore("project", x.data!.id))),
+      retry(() =>
         sdk.provider.list().then((x) => {
           const data = x.data!
           setStore("provider", {
@@ -255,31 +256,41 @@ function createGlobalSync() {
             })),
           })
         }),
-      config: () => sdk.config.get().then((x) => setStore("config", x.data!)),
-    }
-    await Promise.all(Object.values(blockingRequests).map((p) => retry(p).catch((e) => setGlobalStore("error", e))))
+      ),
+      retry(() => sdk.config.get().then((x) => setStore("config", x.data!))),
+    ]
+
+    // Non-critical requests - UI can render without these
+    const nonCriticalRequests = [
+      sdk.path.get().then((x) => setStore("path", x.data!)),
+      sdk.command.list().then((x) => setStore("command", x.data ?? [])),
+      sdk.session.status().then((x) => setStore("session_status", x.data!)),
+      loadSessions(directory),
+      sdk.mcp.status().then((x) => setStore("mcp", x.data!)),
+      sdk.lsp.status().then((x) => setStore("lsp", x.data!)),
+      sdk.vcs.get().then((x) => {
+        const next = x.data ?? store.vcs
+        setStore("vcs", next)
+        if (next?.branch) cache.setStore("value", next)
+      }),
+      loadSessionGrouped(sdk.permission.list(), "permission"),
+      loadSessionGrouped(sdk.question.list(), "question"),
+      loadSessionGrouped(sdk.plan.list(), "plan"),
+    ]
+
+    // Start ALL requests in parallel - don't block non-critical on critical
+    const allRequests = [...criticalRequests, ...nonCriticalRequests]
+
+    // Set partial status as soon as critical requests complete
+    Promise.all(criticalRequests)
       .then(() => {
         if (store.status !== "complete") setStore("status", "partial")
-        // non-blocking
-        Promise.all([
-          sdk.path.get().then((x) => setStore("path", x.data!)),
-          sdk.command.list().then((x) => setStore("command", x.data ?? [])),
-          sdk.session.status().then((x) => setStore("session_status", x.data!)),
-          loadSessions(directory),
-          sdk.mcp.status().then((x) => setStore("mcp", x.data!)),
-          sdk.lsp.status().then((x) => setStore("lsp", x.data!)),
-          sdk.vcs.get().then((x) => {
-            const next = x.data ?? store.vcs
-            setStore("vcs", next)
-            if (next?.branch) cache.setStore("value", next)
-          }),
-          loadSessionGrouped(sdk.permission.list(), "permission"),
-          loadSessionGrouped(sdk.question.list(), "question"),
-          loadSessionGrouped(sdk.plan.list(), "plan"),
-        ]).then(() => {
-          setStore("status", "complete")
-        })
       })
+      .catch((e) => setGlobalStore("error", e))
+
+    // Set complete status when all requests finish
+    Promise.all(allRequests)
+      .then(() => setStore("status", "complete"))
       .catch((e) => setGlobalStore("error", e))
   }
 

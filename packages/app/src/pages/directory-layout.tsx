@@ -1,4 +1,4 @@
-import { createMemo, onMount, Show, type ParentProps } from "solid-js"
+import { createEffect, createMemo, on, Show, type ParentProps } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider, useSDK } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
@@ -19,12 +19,15 @@ export default function Layout(props: ParentProps) {
   const directory = createMemo(() => base64Decode(params.dir!))
 
   // Prefetch workspace storage to avoid 2s delay on first session switch
-  onMount(() => {
-    prefetchWorkspaceStorage(directory(), platform)
-  })
+  // Use createEffect to re-run when directory changes (since keyed was removed)
+  createEffect(
+    on(directory, (dir) => {
+      prefetchWorkspaceStorage(dir, platform)
+    }),
+  )
 
   return (
-    <Show when={params.dir} keyed>
+    <Show when={params.dir}>
       <SDKProvider directory={directory()}>
         <SyncProvider>
           {iife(() => {

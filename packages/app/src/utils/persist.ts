@@ -123,9 +123,24 @@ function localStorageDirect(): SyncStorage {
 export function prefetchWorkspaceStorage(dir: string, platform: { storage?: (name?: string) => unknown }) {
   if (!platform.storage) return
   const storageName = workspaceStorage(dir)
-  // Trigger store load by accessing it - getItem on a dummy key forces Store.load()
-  const storage = platform.storage(storageName) as { getItem?: (key: string) => Promise<unknown> }
-  storage?.getItem?.("__prefetch__")?.catch?.(() => undefined)
+  const storage = platform.storage(storageName) as { getItem?: (key: string) => Promise<string | null> }
+  if (!storage?.getItem) return
+
+  // Pre-read workspace keys in parallel to warm the memory cache
+  // These keys will be requested when providers mount
+  const workspaceKeys = ["workspace:vcs", "workspace:terminal", "workspace:prompt", "workspace:file-view"]
+
+  // Fire all reads in parallel - results go into memory cache for instant access later
+  Promise.all(
+    workspaceKeys.map((key) =>
+      storage.getItem!(key).then((value) => {
+        if (value !== null) {
+          const cacheKey = `${storageName}:${key}`
+          memoryCache.set(cacheKey, { value })
+        }
+      }),
+    ),
+  ).catch(() => undefined)
 }
 
 export const Persist = {
