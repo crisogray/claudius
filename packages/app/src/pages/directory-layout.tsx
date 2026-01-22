@@ -1,4 +1,4 @@
-import { createEffect, createMemo, on, Show, type ParentProps } from "solid-js"
+import { createEffect, createMemo, For, on, Show, type ParentProps } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider, useSDK } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
@@ -75,7 +75,7 @@ export default function Layout(props: ParentProps) {
               >
                 <LspProvider>
                   <GitProvider>
-                    <LocalProvider>{props.children}</LocalProvider>
+                    <For each={[directory()]}>{() => <LocalProvider>{props.children}</LocalProvider>}</For>
                   </GitProvider>
                 </LspProvider>
               </DataProvider>

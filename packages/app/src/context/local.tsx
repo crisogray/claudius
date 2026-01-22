@@ -1,5 +1,5 @@
 import { createStore, produce, reconcile } from "solid-js/store"
-import { batch, createEffect, createMemo, on, onCleanup } from "solid-js"
+import { batch, createMemo, onCleanup } from "solid-js"
 import { filter, firstBy, flat, groupBy, mapValues, pipe, uniqueBy, values } from "remeda"
 import type { FileContent, FileNode, Model, ProviderListResponse, File as FileStatus } from "@opencode-ai/sdk/v2"
 
@@ -322,16 +322,6 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         node: {},
       })
 
-      createEffect(
-        on(
-          () => sdk.directory,
-          () => {
-            setStore("node", {})
-          },
-          { defer: true },
-        ),
-      )
-
       // const changeset = createMemo(() => new Set(sync.data.changes.map((f) => f.path)))
       // const changes = createMemo(() => Array.from(changeset()).sort((a, b) => a.localeCompare(b)))
 
@@ -492,6 +482,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         open,
         load,
         init,
+        clear: () => setStore("node", {}),
         expand(path: string) {
           // Create node if it doesn't exist
           if (!store.node[path]) {
