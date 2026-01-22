@@ -1254,11 +1254,24 @@ export default function Layout(props: ParentProps) {
     const notifications = createMemo(() => notification.project.unseen(props.project.worktree))
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const name = createMemo(() => props.project.name || getFilename(props.project.worktree))
-    const mask = "radial-gradient(circle 5px at calc(100% - 4px) 4px, transparent 5px, black 5.5px)"
-    const { hasUserRequest } = useProjectUserRequests(() => props.project)
+    const { hasUserRequest, hasWorkingSession } = useProjectUserRequests(() => props.project)
     const showIndicator = createMemo(() => {
       if (!props.notify) return false
       return hasError() || hasUserRequest() || notifications().length > 0
+    })
+    const showProgress = createMemo(() => props.notify && hasWorkingSession())
+
+    const mask = createMemo(() => {
+      const rightMask = "radial-gradient(circle 5px at calc(100% - 4px) 4px, transparent 5px, black 5.5px)"
+      const leftMask = "radial-gradient(circle 5px at 4px 4px, transparent 5px, black 5.5px)"
+
+      if (showIndicator() && showProgress()) {
+        return `${rightMask}, ${leftMask}`
+      }
+      if (showIndicator() || showProgress()) {
+        return rightMask
+      }
+      return undefined
     })
 
     return (
@@ -1269,9 +1282,18 @@ export default function Layout(props: ParentProps) {
             src={props.project.icon?.url}
             {...getAvatarColors(props.project.icon?.color)}
             class="size-full rounded"
-            style={showIndicator() ? { "-webkit-mask-image": mask, "mask-image": mask } : undefined}
+            style={mask() ? { "-webkit-mask-image": mask(), "mask-image": mask() } : undefined}
           />
         </div>
+        <Show when={showProgress()}>
+          <Spinner
+            class="absolute z-10 size-1.5"
+            classList={{
+              "top-px left-px": showIndicator(),
+              "top-px right-px": !showIndicator(),
+            }}
+          />
+        </Show>
         <Show when={showIndicator()}>
           <div
             classList={{

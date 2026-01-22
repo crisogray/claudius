@@ -33,5 +33,22 @@ export function useProjectUserRequests(project: Accessor<LocalProject | undefine
     return false
   })
 
-  return { hasUserRequest }
+  const hasWorkingSession = createMemo(() => {
+    const p = project()
+    if (!p) return false
+
+    const directories = [p.worktree, ...(p.sandboxes ?? [])]
+
+    for (const directory of directories) {
+      const [store] = globalSync.child(directory)
+
+      for (const session of store.session) {
+        const status = store.session_status?.[session.id]
+        if (status?.type === "busy" || status?.type === "retry") return true
+      }
+    }
+    return false
+  })
+
+  return { hasUserRequest, hasWorkingSession }
 }
