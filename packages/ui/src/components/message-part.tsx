@@ -499,22 +499,8 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const data = useData()
   const part = props.part as ToolPart
 
-  const permission = createMemo(() => {
-    // First try current session's permissions matching this tool's callID
-    const sessionPerms = data.store.permission?.[props.message.sessionID] ?? []
-    const direct = sessionPerms.find((p) => p.tool?.callID === part.callID)
-    if (direct) return direct
-
-    // For child sessions, permission might be under parent session (SDK behavior)
-    // Search all sessions for permission matching this tool's callID
-    for (const [sid, permissions] of Object.entries(data.store.permission ?? {})) {
-      if (sid === props.message.sessionID) continue // Already checked
-      const match = (permissions as PermissionRequest[]).find((p) => p.tool?.callID === part.callID)
-      if (match) return match
-    }
-
-    return undefined
-  })
+  // O(1) permission lookup using precomputed index
+  const permission = createMemo(() => data.permissionByCallID().get(part.callID))
 
   // Find matching question request for this tool call
   // Match by: tool is askuserquestion, tool is pending (no output), and there's a question for this session
@@ -896,24 +882,17 @@ ToolRegistry.register({
 
       // Get all tool callIDs from child session
       const childMessages = data.store.message[sessionId] ?? []
-      const childToolCallIds = new Set<string>()
+      const permIndex = data.permissionByCallID()
+
+      // O(1) lookup for each tool callID using precomputed index
       for (const msg of childMessages) {
         const parts = data.store.part[msg.id] ?? []
         for (const part of parts) {
           if (part.type === "tool") {
-            childToolCallIds.add((part as ToolPart).callID)
+            const perm = permIndex.get((part as ToolPart).callID)
+            if (perm) return perm
           }
         }
-      }
-
-      if (childToolCallIds.size === 0) return undefined
-
-      // Search ALL sessions for permissions matching child tool callIDs
-      // (permissions may be stored under parent session due to SDK behavior)
-      for (const [sid, permissions] of Object.entries(data.store.permission ?? {})) {
-        const perms = permissions as PermissionRequest[]
-        const match = perms.find((p) => p.tool?.callID && childToolCallIds.has(p.tool.callID))
-        if (match) return match
       }
 
       return undefined

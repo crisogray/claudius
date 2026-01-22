@@ -41,6 +41,11 @@ export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleCo
       if (payload.type === "session.diff") return `session.diff:${directory}:${payload.properties.sessionID}`
       if (payload.type === "todo.updated") return `todo.updated:${directory}:${payload.properties.sessionID}`
       if (payload.type === "session.updated") return `session.updated:${directory}:${payload.properties.info.id}`
+      // Permission events
+      if (payload.type === "permission.asked")
+        return `permission.asked:${directory}:${payload.properties.sessionID}`
+      if (payload.type === "permission.replied")
+        return `permission.replied:${directory}:${payload.properties.sessionID}:${payload.properties.requestID}`
     }
 
     const flush = () => {

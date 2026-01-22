@@ -8,6 +8,7 @@ import type {
   QuestionRequest,
   PlanRequest,
 } from "@opencode-ai/sdk/v2"
+import { createMemo } from "solid-js"
 import { createSimpleContext } from "./helper"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 
@@ -72,6 +73,17 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
     onPlanRespond?: PlanRespondFn
     onNavigateToSession?: NavigateToSessionFn
   }) => {
+    // O(1) permission lookup by tool callID - indexed once, shared across all tool parts
+    const permissionByCallID = createMemo(() => {
+      const index = new Map<string, PermissionRequest>()
+      for (const perms of Object.values(props.data.permission ?? {})) {
+        for (const p of perms) {
+          if (p.tool?.callID) index.set(p.tool.callID, p)
+        }
+      }
+      return index
+    })
+
     return {
       get store() {
         return props.data
@@ -79,6 +91,7 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
       get directory() {
         return props.directory
       },
+      permissionByCallID,
       respondToPermission: props.onPermissionRespond,
       respondToQuestion: props.onQuestionRespond,
       rejectQuestion: props.onQuestionReject,

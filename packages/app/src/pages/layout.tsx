@@ -1308,14 +1308,24 @@ export default function Layout(props: ParentProps) {
     )
   }
 
-  const SessionItem = (props: { session: Session; slug: string; mobile?: boolean; dense?: boolean }): JSX.Element => {
+  const SessionItem = (props: {
+    session: Session
+    slug: string
+    mobile?: boolean
+    dense?: boolean
+    sessionsWithRequests?: Set<string>
+  }): JSX.Element => {
     const notification = useNotification()
     const updated = createMemo(() => DateTime.fromMillis(props.session.time.updated))
     const notifications = createMemo(() => notification.session.unseen(props.session.id))
     const hasError = createMemo(() => notifications().some((n) => n.type === "error"))
     const [sessionStore] = globalSync.child(props.session.directory)
 
+    // O(1) lookup when parent provides precomputed set, fallback to O(n) scan otherwise
     const hasUserRequest = createMemo(() => {
+      if (props.sessionsWithRequests) {
+        return props.sessionsWithRequests.has(props.session.id)
+      }
       const sessionID = props.session.id
       if ((sessionStore.question?.[sessionID] ?? []).length > 0) return true
       if ((sessionStore.plan?.[sessionID] ?? []).length > 0) return true
@@ -1470,6 +1480,24 @@ export default function Layout(props: ParentProps) {
         .filter((session) => !session.parentID)
         .toSorted(sortSessions),
     )
+    // Precompute sessions with user requests - ONE subscription, O(1) lookups for SessionItems
+    const sessionsWithRequests = createMemo(() => {
+      const set = new Set<string>()
+      for (const [sid, arr] of Object.entries(workspaceStore.permission ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      for (const [sid, arr] of Object.entries(workspaceStore.question ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      for (const [sid, arr] of Object.entries(workspaceStore.plan ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      // Add parent IDs for child sessions with requests
+      for (const s of workspaceStore.session) {
+        if (set.has(s.id) && s.parentID) set.add(s.parentID)
+      }
+      return set
+    })
     const local = createMemo(() => props.directory === props.project.worktree)
     const title = createMemo(() => {
       const folder = getFilename(props.directory)
@@ -1566,7 +1594,14 @@ export default function Layout(props: ParentProps) {
                 New session
               </Button>
               <For each={sessions()}>
-                {(session) => <SessionItem session={session} slug={slug()} mobile={props.mobile} />}
+                {(session) => (
+                  <SessionItem
+                    session={session}
+                    slug={slug()}
+                    mobile={props.mobile}
+                    sessionsWithRequests={sessionsWithRequests()}
+                  />
+                )}
               </For>
               <Show when={hasMore()}>
                 <div class="relative w-full py-1">
@@ -1599,6 +1634,25 @@ export default function Layout(props: ParentProps) {
     const stores = createMemo(() =>
       [props.project.worktree, ...(props.project.sandboxes ?? [])].map((dir) => globalSync.child(dir)[0]),
     )
+    // Precompute sessions with user requests across all project stores
+    const sessionsWithRequests = createMemo(() => {
+      const set = new Set<string>()
+      for (const s of stores()) {
+        for (const [sid, arr] of Object.entries(s.permission ?? {})) {
+          if (arr.length > 0) set.add(sid)
+        }
+        for (const [sid, arr] of Object.entries(s.question ?? {})) {
+          if (arr.length > 0) set.add(sid)
+        }
+        for (const [sid, arr] of Object.entries(s.plan ?? {})) {
+          if (arr.length > 0) set.add(sid)
+        }
+        for (const sess of s.session) {
+          if (set.has(sess.id) && sess.parentID) set.add(sess.parentID)
+        }
+      }
+      return set
+    })
     const sessions = createMemo(() =>
       stores()
         .flatMap((store) => store.session.filter((session) => session.directory === store.path.directory))
@@ -1686,6 +1740,7 @@ export default function Layout(props: ParentProps) {
                         slug={base64Encode(props.project.worktree)}
                         dense
                         mobile={props.mobile}
+                        sessionsWithRequests={sessionsWithRequests()}
                       />
                     )}
                   </For>
@@ -1702,7 +1757,13 @@ export default function Layout(props: ParentProps) {
                       </div>
                       <For each={getWorkspaceSessions(directory)}>
                         {(session) => (
-                          <SessionItem session={session} slug={base64Encode(directory)} dense mobile={props.mobile} />
+                          <SessionItem
+                            session={session}
+                            slug={base64Encode(directory)}
+                            dense
+                            mobile={props.mobile}
+                            sessionsWithRequests={sessionsWithRequests()}
+                          />
                         )}
                       </For>
                     </div>
@@ -1739,6 +1800,23 @@ export default function Layout(props: ParentProps) {
         .filter((session) => !session.parentID)
         .toSorted(sortSessions),
     )
+    // Precompute sessions with user requests for O(1) lookups
+    const sessionsWithRequests = createMemo(() => {
+      const set = new Set<string>()
+      for (const [sid, arr] of Object.entries(workspaceStore.permission ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      for (const [sid, arr] of Object.entries(workspaceStore.question ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      for (const [sid, arr] of Object.entries(workspaceStore.plan ?? {})) {
+        if (arr.length > 0) set.add(sid)
+      }
+      for (const s of workspaceStore.session) {
+        if (set.has(s.id) && s.parentID) set.add(s.parentID)
+      }
+      return set
+    })
     const hasMore = createMemo(() => workspaceStore.session.length < workspaceStore.totalSessions)
     const loadMore = async () => {
       setWorkspaceStore("limit", (limit) => limit + 5)
@@ -1755,7 +1833,14 @@ export default function Layout(props: ParentProps) {
       >
         <nav class="flex flex-col gap-1 px-2">
           <For each={sessions()}>
-            {(session) => <SessionItem session={session} slug={slug()} mobile={props.mobile} />}
+            {(session) => (
+              <SessionItem
+                session={session}
+                slug={slug()}
+                mobile={props.mobile}
+                sessionsWithRequests={sessionsWithRequests()}
+              />
+            )}
           </For>
           <Show when={hasMore()}>
             <div class="relative w-full py-1">
