@@ -7,6 +7,7 @@ import { useGlobalSDK } from "@/context/global-sdk"
 import { useGlobalSync } from "./global-sync"
 import { useParams } from "@solidjs/router"
 import { base64Decode, base64Encode } from "@opencode-ai/util/encode"
+import { handleErrorWithCleanup, handleError } from "@/utils/error-handler"
 
 type PermissionRespondFn = (input: {
   sessionID: string
@@ -69,9 +70,13 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
     const responded = new Set<string>()
 
     const respond: PermissionRespondFn = (input) => {
-      globalSDK.client.permission.respond(input).catch(() => {
-        responded.delete(input.permissionID)
-      })
+      globalSDK.client.permission
+        .respond(input)
+        .catch(
+          handleErrorWithCleanup("Permission.respond", () => {
+            responded.delete(input.permissionID)
+          }),
+        )
     }
 
     function respondOnce(permission: PermissionRequest, directory?: string) {
@@ -126,7 +131,7 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
             respondOnce(perm, directory)
           }
         })
-        .catch(() => undefined)
+        .catch(handleError("Permission.list"))
     }
 
     function disable(sessionID: string, directory?: string) {

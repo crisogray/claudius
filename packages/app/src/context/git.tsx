@@ -242,10 +242,12 @@ export const { use: useGit, provider: GitProvider } = createSimpleContext({
         const parts = file.path.split("/")
         for (let i = 0; i < parts.length - 1; i++) {
           const dirPath = parts.slice(0, i + 1).join("/")
-          if (!folderMap.has(dirPath)) {
-            folderMap.set(dirPath, new Set())
+          let statusSet = folderMap.get(dirPath)
+          if (!statusSet) {
+            statusSet = new Set()
+            folderMap.set(dirPath, statusSet)
           }
-          folderMap.get(dirPath)!.add(file.status)
+          statusSet.add(file.status)
         }
       }
 

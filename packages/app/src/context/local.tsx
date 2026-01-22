@@ -440,13 +440,15 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         return sdk.client.file
           .list({ path: path + "/" })
           .then((x) => {
+            const nodes = x.data
+            if (!nodes) return
             setStore(
               "node",
               produce((draft) => {
-                x.data!.forEach((node) => {
-                  if (node.path in draft) return
+                for (const node of nodes) {
+                  if (node.path in draft) continue
                   draft[node.path] = node
-                })
+                }
               }),
             )
           })

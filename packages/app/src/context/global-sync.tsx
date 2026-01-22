@@ -231,14 +231,10 @@ function createGlobalSync() {
             if (!grouped[sessionID]) setStore(key, sessionID, [])
           }
           for (const [sessionID, items] of Object.entries(grouped)) {
-            setStore(
-              key,
-              sessionID,
-              reconcile(
-                items.slice().sort((a, b) => a.id.localeCompare(b.id)),
-                { key: "id" },
-              ) as any,
-            )
+            const sorted = items.slice().sort((a, b) => a.id.localeCompare(b.id))
+            // Type assertion needed: reconcile returns a setter function that doesn't match the store's union type
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setStore(key, sessionID, reconcile(sorted, { key: "id" }) as any)
           }
         })
       })

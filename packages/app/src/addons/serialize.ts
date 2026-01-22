@@ -56,6 +56,15 @@ interface IBufferCell {
   isDim(): boolean
 }
 
+// Extended terminal interface that includes buffer access (not exposed in public ITerminalCore)
+interface ITerminalWithBuffer extends ITerminalCore {
+  buffer?: {
+    normal?: IBuffer
+    alternate?: IBuffer
+    active?: IBuffer
+  }
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -486,7 +495,7 @@ export class SerializeAddon implements ITerminalAddon {
       throw new Error("Cannot use addon until it has been loaded")
     }
 
-    const terminal = this._terminal as any
+    const terminal = this._terminal as ITerminalWithBuffer
     const buffer = terminal.buffer
 
     if (!buffer) {
@@ -521,7 +530,7 @@ export class SerializeAddon implements ITerminalAddon {
       throw new Error("Cannot use addon until it has been loaded")
     }
 
-    const terminal = this._terminal as any
+    const terminal = this._terminal as ITerminalWithBuffer
     const buffer = terminal.buffer
 
     if (!buffer) {

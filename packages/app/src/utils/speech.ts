@@ -23,6 +23,21 @@ interface Recognition {
   onstart: (() => void) | null
 }
 
+// Type for SpeechRecognition constructor on window
+type SpeechRecognitionConstructor = new () => Recognition
+
+// Extend Window to include SpeechRecognition APIs
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: SpeechRecognitionConstructor
+  webkitSpeechRecognition?: SpeechRecognitionConstructor
+}
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | undefined {
+  if (typeof window === "undefined") return undefined
+  const win = window as SpeechRecognitionWindow
+  return win.webkitSpeechRecognition ?? win.SpeechRecognition
+}
+
 const COMMIT_DELAY = 250
 
 const appendSegment = (base: string, addition: string) => {
@@ -55,9 +70,8 @@ export function createSpeechRecognition(opts?: {
   onFinal?: (text: string) => void
   onInterim?: (text: string) => void
 }) {
-  const hasSupport =
-    typeof window !== "undefined" &&
-    Boolean((window as any).webkitSpeechRecognition || (window as any).SpeechRecognition)
+  const SpeechRecognitionCtor = getSpeechRecognitionConstructor()
+  const hasSupport = !!SpeechRecognitionCtor
 
   const [isRecording, setIsRecording] = createSignal(false)
   const [committed, setCommitted] = createSignal("")
@@ -127,10 +141,8 @@ export function createSpeechRecognition(opts?: {
     }, COMMIT_DELAY)
   }
 
-  if (hasSupport) {
-    const Ctor: new () => Recognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
-
-    recognition = new Ctor()
+  if (SpeechRecognitionCtor) {
+    recognition = new SpeechRecognitionCtor()
     recognition.continuous = false
     recognition.interimResults = true
     recognition.lang = opts?.lang || (typeof navigator !== "undefined" ? navigator.language : "en-US")
