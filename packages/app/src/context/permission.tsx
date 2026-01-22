@@ -70,13 +70,11 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
     const responded = new Set<string>()
 
     const respond: PermissionRespondFn = (input) => {
-      globalSDK.client.permission
-        .respond(input)
-        .catch(
-          handleErrorWithCleanup("Permission.respond", () => {
-            responded.delete(input.permissionID)
-          }),
-        )
+      globalSDK.client.permission.respond(input).catch(
+        handleErrorWithCleanup("Permission.respond", () => {
+          responded.delete(input.permissionID)
+        }),
+      )
     }
 
     function respondOnce(permission: PermissionRequest, directory?: string) {
