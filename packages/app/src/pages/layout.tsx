@@ -1641,7 +1641,17 @@ export default function Layout(props: ParentProps) {
       <div use:sortable classList={{ "opacity-30": sortable.isActiveDraggable }}>
         <HoverCard openDelay={0} closeDelay={0} placement="right-start" gutter={6} trigger={trigger}>
           <div class="-m-3 flex flex-col w-72">
-            <div class="px-3 pt-2 pb-1 text-14-medium text-text-strong truncate">{displayName(props.project)}</div>
+            <div class="px-3 pt-2 pb-1 flex items-center gap-2">
+              <div class="text-14-medium text-text-strong truncate flex-1 min-w-0">{displayName(props.project)}</div>
+              <TooltipKeybind placement="right" title="New session" keybind={command.keybind("session.new")}>
+                <IconButton
+                  icon="plus"
+                  variant="ghost"
+                  class="size-8 rounded-md shrink-0"
+                  onClick={() => navigate(`/${base64Encode(props.project.worktree)}/session`)}
+                />
+              </TooltipKeybind>
+            </div>
             <div class="px-3 pb-2 text-12-medium text-text-weak">Recent sessions</div>
             <div class="px-2 pb-2 flex flex-col gap-2">
               <Show
