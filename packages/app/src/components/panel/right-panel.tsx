@@ -1,59 +1,30 @@
-import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js"
+import { createMemo, Show } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useLayout, type RightPanelTab } from "@/context/layout"
-import { useFile } from "@/context/file"
 import { useGit } from "@/context/git"
-import { useSync } from "@/context/sync"
 import { Tabs } from "@opencode-ai/ui/tabs"
 import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
-import FileTree from "@/components/file-tree"
 import { GitTab } from "@/components/panel/git-tab"
 import { SearchTab } from "@/components/panel/search-tab"
-import { FileContextMenu, useFileContextMenu } from "@/components/panel/file-context-menu"
-import type { LocalFile } from "@/context/local"
-import type { Todo } from "@opencode-ai/sdk/v2/client"
+import { FilesTab } from "@/components/panel/files-tab"
+import { TodosTab, useTodosState } from "@/components/panel/todos-tab"
 
 export function RightPanel() {
   const params = useParams<{ dir: string; id?: string }>()
   const layout = useLayout()
-  const file = useFile()
   const git = useGit()
-  const sync = useSync()
-  const [filter, setFilter] = createSignal("")
-  const contextMenu = useFileContextMenu()
 
-  // Clear filter on directory change
-  createEffect(
-    on(
-      () => params.dir,
-      () => {
-        setFilter("")
-      },
-      { defer: true },
-    ),
-  )
+  // Todos badge state
+  const todosState = useTodosState(params.id)
 
-  const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
-
-  const todos = createMemo(() => (params.id ? (sync.data.todo[params.id] ?? []) : []))
-  const hasTodos = createMemo(() => todos().length > 0)
-  const completedCount = createMemo(() => todos().filter((t) => t.status === "completed").length)
-
+  // Git badge state
   const hasGitChanges = createMemo(() => {
     const staged = git.status?.staged ?? []
     const unstaged = git.status?.unstaged ?? []
     const untracked = git.status?.untracked ?? []
     return staged.length > 0 || unstaged.length > 0 || untracked.length > 0
   })
-
-  const handleFileClick = (node: LocalFile) => {
-    file.load(node.path)
-    const tab = file.tab(node.path)
-    layout.tabs(sessionKey()).open(tab)
-  }
 
   return (
     <Show when={layout.rightPanel.opened()}>
@@ -76,11 +47,11 @@ export function RightPanel() {
           onChange={(tab) => layout.rightPanel.setActiveTab(tab as RightPanelTab)}
         >
           <Tabs.List class="shrink-0">
-            <Show when={hasTodos()}>
+            <Show when={todosState.hasTodos()}>
               <Tabs.Trigger value="todos" title="To-dos" classes={{ button: "gap-1.5" }}>
                 <Icon name="checklist" size="small" />
                 <span class="text-xs text-secondary">
-                  {completedCount()}/{todos().length}
+                  {todosState.completedCount()}/{todosState.totalCount()}
                 </span>
               </Tabs.Trigger>
             </Show>
@@ -99,44 +70,11 @@ export function RightPanel() {
           </Tabs.List>
 
           <Tabs.Content value="todos" class="flex-1 min-h-0 overflow-auto py-2 px-3">
-            <div data-component="todos" data-panel>
-              <For each={todos()}>
-                {(todo: Todo) => (
-                  <Checkbox readOnly checked={todo.status === "completed"}>
-                    <div data-slot="message-part-todo-content" data-completed={todo.status === "completed"}>
-                      {todo.content}
-                    </div>
-                  </Checkbox>
-                )}
-              </For>
-            </div>
+            <TodosTab sessionID={params.id} />
           </Tabs.Content>
 
           <Tabs.Content value="files" class="flex-1 min-h-0 flex flex-col">
-            <div class="p-2 border-b border-border-weak-base">
-              <div class="flex items-center gap-2 px-2 h-8 bg-background-element rounded-md border border-border-base focus-within:border-primary">
-                <input
-                  type="text"
-                  placeholder="Filter files..."
-                  class="flex-1 text-sm bg-transparent outline-none"
-                  value={filter()}
-                  onInput={(e) => setFilter(e.currentTarget.value)}
-                />
-                <Show when={filter()}>
-                  <IconButton icon="circle-x" variant="ghost" class="-mr-1" onClick={() => setFilter("")} />
-                </Show>
-              </div>
-            </div>
-            <div class="flex-1 overflow-auto no-scrollbar py-2">
-              <FileTree
-                path="."
-                filter={filter()}
-                gitStatuses={git.fileStatuses()}
-                folderStatuses={git.folderStatuses()}
-                onFileClick={handleFileClick}
-                onContextMenu={contextMenu.open}
-              />
-            </div>
+            <FilesTab />
           </Tabs.Content>
 
           <Tabs.Content value="git" class="flex-1 min-h-0">
@@ -147,8 +85,6 @@ export function RightPanel() {
             <SearchTab />
           </Tabs.Content>
         </Tabs>
-
-        <FileContextMenu state={contextMenu.state()} onClose={contextMenu.close} />
       </div>
     </Show>
   )
