@@ -431,6 +431,7 @@
     background-color: var(--surface-raised-base);
     overflow: visible;
     overflow-anchor: none;
+    margin-bottom: 2px; /* Space for ::before border which extends -1.5px outside */
 
     & > *:first-child {
       border-top-left-radius: 6px;
