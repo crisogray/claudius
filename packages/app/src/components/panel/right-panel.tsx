@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, on, Show } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useLayout, type RightPanelTab } from "@/context/layout"
 import { useFile } from "@/context/file"
@@ -24,6 +24,17 @@ export function RightPanel() {
   const sync = useSync()
   const [filter, setFilter] = createSignal("")
   const contextMenu = useFileContextMenu()
+
+  // Clear filter on directory change
+  createEffect(
+    on(
+      () => params.dir,
+      () => {
+        setFilter("")
+      },
+      { defer: true },
+    ),
+  )
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
 

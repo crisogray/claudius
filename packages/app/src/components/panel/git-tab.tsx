@@ -1,6 +1,7 @@
-import { createMemo, createSignal, For, Show, type JSX } from "solid-js"
+import { createEffect, createMemo, createSignal, For, on, Show, type JSX } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useGit, type GitFileStatus } from "@/context/git"
+import { useSDK } from "@/context/sdk"
 import { useFile } from "@/context/file"
 import { useLayout } from "@/context/layout"
 import { Icon } from "@opencode-ai/ui/icon"
@@ -121,12 +122,25 @@ function formatRelative(timestamp: number): string {
 
 export function GitTab() {
   const params = useParams<{ dir: string; id?: string }>()
+  const sdk = useSDK()
   const git = useGit()
   const file = useFile()
   const layout = useLayout()
   const [commitMessage, setCommitMessage] = createSignal("")
   const [amend, setAmend] = createSignal(false)
   const [committing, setCommitting] = createSignal(false)
+
+  // Clear commit form state on directory change
+  createEffect(
+    on(
+      () => sdk.directory,
+      () => {
+        setCommitMessage("")
+        setAmend(false)
+      },
+      { defer: true },
+    ),
+  )
 
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
 

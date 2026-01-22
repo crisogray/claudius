@@ -1,4 +1,4 @@
-import { createSignal, createMemo, For, Show, onCleanup, type JSX } from "solid-js"
+import { createEffect, createSignal, createMemo, For, on, Show, onCleanup, type JSX } from "solid-js"
 import { useParams } from "@solidjs/router"
 import { useSDK } from "@/context/sdk"
 import { useFile } from "@/context/file"
@@ -58,6 +58,21 @@ export function SearchTab() {
     clearTimeout(timer)
     abortController?.abort()
   })
+
+  // Clear search state on directory change
+  createEffect(
+    on(
+      () => sdk.directory,
+      () => {
+        setQuery("")
+        setResults([])
+        setLoading(false)
+        clearTimeout(timer)
+        abortController?.abort()
+      },
+      { defer: true },
+    ),
+  )
 
   const search = (q: string) => {
     clearTimeout(timer)
