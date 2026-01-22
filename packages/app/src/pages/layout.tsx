@@ -460,7 +460,9 @@ export default function Layout(props: ParentProps) {
         // Get the child store status for the target project
         const last = server.projects.last()
         const targetProject = list.find((project) => project.worktree === last) ?? list[0]
-        const [childStore] = targetProject ? globalSync.child(targetProject.worktree) : [{ status: "loading" as const, session: [] }]
+        const [childStore] = targetProject
+          ? globalSync.child(targetProject.worktree)
+          : [{ status: "loading" as const, session: [] }]
 
         return { ready, layoutReady: lReady, dir, list, childStore, targetProject }
       },
