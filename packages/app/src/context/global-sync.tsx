@@ -39,8 +39,11 @@ import {
   Match,
 } from "solid-js"
 import { showToast } from "@opencode-ai/ui/toast"
+import { Spinner } from "@opencode-ai/ui/spinner"
+import { Logo } from "@opencode-ai/ui/logo"
 import { getFilename } from "@opencode-ai/util/path"
 import { usePlatform } from "./platform"
+import { useServer } from "./server"
 import { Persist, persisted } from "@/utils/persist"
 
 type State = {
@@ -663,10 +666,36 @@ function createGlobalSync() {
 
 const GlobalSyncContext = createContext<ReturnType<typeof createGlobalSync>>()
 
-export function GlobalSyncProvider(props: ParentProps) {
-  const value = createGlobalSync()
+function ConnectingIndicator() {
   return (
-    <Switch>
+    <div class="relative flex-1 h-screen w-screen min-h-0 flex flex-col items-center justify-center bg-background-base font-sans gap-8">
+      <Logo class="w-58.5 opacity-40 shrink-0" />
+      <div class="flex items-center gap-3 text-text-weak">
+        <Spinner class="size-4" />
+        <span class="text-sm">Connecting to server...</span>
+      </div>
+    </div>
+  )
+}
+
+export function GlobalSyncProvider(props: ParentProps) {
+  const server = useServer()
+  const value = createGlobalSync()
+
+  // Re-bootstrap when server health recovers
+  let wasUnhealthy = false
+  createEffect(() => {
+    const healthy = server.healthy()
+    if (healthy === false) {
+      wasUnhealthy = true
+    } else if (healthy === true && wasUnhealthy && !value.ready) {
+      wasUnhealthy = false
+      value.bootstrap()
+    }
+  })
+
+  return (
+    <Switch fallback={<ConnectingIndicator />}>
       <Match when={value.error}>
         <ErrorPage error={value.error} />
       </Match>

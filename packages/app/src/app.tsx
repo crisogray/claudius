@@ -21,6 +21,7 @@ import { NotificationProvider } from "@/context/notification"
 import { DialogProvider } from "@opencode-ai/ui/context/dialog"
 import { CommandProvider } from "@/context/command"
 import { Logo } from "@opencode-ai/ui/logo"
+import { Spinner } from "@opencode-ai/ui/spinner"
 import Layout from "@/pages/layout"
 import DirectoryLayout from "@/pages/directory-layout"
 import { ErrorPage } from "./pages/error"
@@ -29,7 +30,11 @@ import { Suspense } from "solid-js"
 
 const Home = lazy(() => import("@/pages/home"))
 const Session = lazy(() => import("@/pages/session"))
-const Loading = () => <div class="size-full" />
+const Loading = () => (
+  <div class="size-full flex items-center justify-center">
+    <Spinner class="size-6 text-text-weak" />
+  </div>
+)
 
 declare global {
   interface Window {

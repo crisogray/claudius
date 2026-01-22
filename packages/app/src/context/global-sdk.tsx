@@ -1,9 +1,11 @@
 import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2/client"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
-import { batch, onCleanup } from "solid-js"
+import { batch, createSignal, onCleanup, type Accessor } from "solid-js"
 import { usePlatform } from "./platform"
 import { useServer } from "./server"
+
+export type ConnectionStatus = "connected" | "connecting" | "disconnected"
 
 export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleContext({
   name: "GlobalSDK",
@@ -65,30 +67,57 @@ export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleCo
       flush()
     }
 
-    void (async () => {
-      const events = await eventSdk.global.event()
-      let yielded = Date.now()
-      for await (const event of events.stream) {
-        const directory = event.directory ?? "global"
-        const payload = event.payload
-        const k = key(directory, payload)
-        if (k) {
-          const i = coalesced.get(k)
-          if (i !== undefined) {
-            queue[i] = undefined
-          }
-          coalesced.set(k, queue.length)
-        }
-        queue.push({ directory, payload })
-        schedule()
+    const [connectionStatus, setConnectionStatus] = createSignal<ConnectionStatus>("connecting")
 
-        if (Date.now() - yielded < 8) continue
-        yielded = Date.now()
-        await new Promise<void>((resolve) => setTimeout(resolve, 0))
+    const connectEventStream = async () => {
+      let backoff = 1000
+      const maxBackoff = 30000
+
+      while (!abort.signal.aborted) {
+        try {
+          setConnectionStatus("connecting")
+          const events = await eventSdk.global.event()
+          setConnectionStatus("connected")
+          backoff = 1000 // Reset backoff on successful connection
+
+          let yielded = Date.now()
+          for await (const event of events.stream) {
+            const directory = event.directory ?? "global"
+            const payload = event.payload
+            const k = key(directory, payload)
+            if (k) {
+              const i = coalesced.get(k)
+              if (i !== undefined) {
+                queue[i] = undefined
+              }
+              coalesced.set(k, queue.length)
+            }
+            queue.push({ directory, payload })
+            schedule()
+
+            if (Date.now() - yielded < 8) continue
+            yielded = Date.now()
+            await new Promise<void>((resolve) => setTimeout(resolve, 0))
+          }
+          // Stream ended normally, try to reconnect
+          if (!abort.signal.aborted) {
+            setConnectionStatus("disconnected")
+          }
+        } catch {
+          if (abort.signal.aborted) break
+          setConnectionStatus("disconnected")
+        }
+
+        // Wait before reconnecting with exponential backoff
+        if (!abort.signal.aborted) {
+          await new Promise<void>((resolve) => setTimeout(resolve, backoff))
+          backoff = Math.min(backoff * 2, maxBackoff)
+        }
       }
-    })()
-      .finally(stop)
-      .catch(() => undefined)
+      stop()
+    }
+
+    void connectEventStream()
 
     onCleanup(() => {
       abort.abort()
@@ -101,6 +130,11 @@ export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleCo
       throwOnError: true,
     })
 
-    return { url: server.url, client: sdk, event: emitter }
+    return {
+      url: server.url,
+      client: sdk,
+      event: emitter,
+      connectionStatus: connectionStatus as Accessor<ConnectionStatus>,
+    }
   },
 })

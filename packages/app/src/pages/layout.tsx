@@ -451,7 +451,19 @@ export default function Layout(props: ParentProps) {
 
   createEffect(
     on(
-      () => ({ ready: pageReady(), layoutReady: layoutReady(), dir: params.dir, list: layout.projects.list() }),
+      () => {
+        const ready = pageReady()
+        const lReady = layoutReady()
+        const list = layout.projects.list()
+        const dir = params.dir
+
+        // Get the child store status for the target project
+        const last = server.projects.last()
+        const targetProject = list.find((project) => project.worktree === last) ?? list[0]
+        const [childStore] = targetProject ? globalSync.child(targetProject.worktree) : [{ status: "loading" as const, session: [] }]
+
+        return { ready, layoutReady: lReady, dir, list, childStore, targetProject }
+      },
       (value) => {
         if (!value.ready) return
         if (!value.layoutReady) return
@@ -459,13 +471,24 @@ export default function Layout(props: ParentProps) {
         if (initialDir) return
         if (value.dir) return
         if (value.list.length === 0) return
+        if (!value.targetProject) return
 
-        const last = server.projects.last()
-        const next = value.list.find((project) => project.worktree === last) ?? value.list[0]
-        if (!next) return
+        // Wait for sessions to load before navigating
+        if (value.childStore.status === "loading") return
+
         setAutoselect(false)
-        openProject(next.worktree, false)
-        navigateToProject(next.worktree)
+        openProject(value.targetProject.worktree, false)
+
+        // Verify the last session exists before navigating to it
+        const lastSession = store.lastSession[value.targetProject.worktree]
+        const sessionExists = lastSession && value.childStore.session.some((s) => s.id === lastSession)
+
+        if (sessionExists) {
+          navigate(`/${base64Encode(value.targetProject.worktree)}/session/${lastSession}`)
+        } else {
+          navigate(`/${base64Encode(value.targetProject.worktree)}`)
+        }
+        layout.mobileSidebar.hide()
       },
       { defer: true },
     ),
