@@ -32,9 +32,10 @@ export function RightPanel() {
   const completedCount = createMemo(() => todos().filter((t) => t.status === "completed").length)
 
   const hasGitChanges = createMemo(() => {
-    const status = git.status
-    if (!status) return false
-    return status.staged.length > 0 || status.unstaged.length > 0 || status.untracked.length > 0
+    const staged = git.status?.staged ?? []
+    const unstaged = git.status?.unstaged ?? []
+    const untracked = git.status?.untracked ?? []
+    return staged.length > 0 || unstaged.length > 0 || untracked.length > 0
   })
 
   const handleFileClick = (node: LocalFile) => {

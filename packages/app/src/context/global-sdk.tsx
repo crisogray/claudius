@@ -37,6 +37,10 @@ export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleCo
         const part = payload.properties.part
         return `message.part.updated:${directory}:${part.messageID}:${part.id}`
       }
+      // Coalesce high-frequency events to reduce re-renders
+      if (payload.type === "session.diff") return `session.diff:${directory}:${payload.properties.sessionID}`
+      if (payload.type === "todo.updated") return `todo.updated:${directory}:${payload.properties.sessionID}`
+      if (payload.type === "session.updated") return `session.updated:${directory}:${payload.properties.info.id}`
     }
 
     const flush = () => {

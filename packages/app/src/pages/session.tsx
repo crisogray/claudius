@@ -1191,7 +1191,7 @@ export default function Page() {
                                       id={anchor(message.id)}
                                       data-message-id={message.id}
                                       classList={{
-                                        "min-w-0 w-full max-w-full": true,
+                                        "min-w-0 w-full max-w-full contain-content": true,
                                       }}
                                     >
                                       <SessionTurn
@@ -1451,7 +1451,7 @@ export default function Page() {
                                       id={anchor(message.id)}
                                       data-message-id={message.id}
                                       classList={{
-                                        "min-w-0 w-full max-w-full": true,
+                                        "min-w-0 w-full max-w-full contain-content": true,
                                       }}
                                     >
                                       <SessionTurn

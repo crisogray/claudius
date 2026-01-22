@@ -106,12 +106,14 @@ function createGlobalSync() {
     project: Project[]
     provider: ProviderListResponse
     provider_auth: ProviderAuthResponse
+    command: Command[]
   }>({
     ready: false,
     path: { state: "", config: "", worktree: "", directory: "", home: "" },
     project: [],
     provider: { all: [], connected: [], default: {} },
     provider_auth: {},
+    command: [],
   })
 
   const children: Record<string, [Store<State>, SetStoreFunction<State>]> = {}
@@ -226,44 +228,46 @@ function createGlobalSync() {
           if (!item?.id || !item.sessionID) continue
           ;(grouped[item.sessionID] ??= []).push(item)
         }
-        batch(() => {
-          for (const sessionID of Object.keys(store[key])) {
-            if (!grouped[sessionID]) setStore(key, sessionID, [])
-          }
-          for (const [sessionID, items] of Object.entries(grouped)) {
-            const sorted = items.slice().sort((a, b) => a.id.localeCompare(b.id))
-            // Type assertion needed: reconcile returns a setter function that doesn't match the store's union type
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setStore(key, sessionID, reconcile(sorted, { key: "id" }) as any)
-          }
-        })
+        // Sort items once before updating store
+        for (const sessionID of Object.keys(grouped)) {
+          grouped[sessionID].sort((a, b) => a.id.localeCompare(b.id))
+        }
+        // Single atomic update using reconcile
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setStore(key, reconcile(grouped as any, { key: null }))
       })
     }
 
     // Critical requests - needed for UI to be usable
     const criticalRequests = [
       retry(() => sdk.project.current().then((x) => setStore("project", x.data!.id))),
-      retry(() =>
-        sdk.provider.list().then((x) => {
-          const data = x.data!
-          setStore("provider", {
-            ...data,
-            all: data.all.map((provider) => ({
-              ...provider,
-              models: Object.fromEntries(
-                Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
-              ),
-            })),
-          })
-        }),
-      ),
+      // Use cached global provider if available, otherwise fetch
+      globalStore.provider.all.length > 0
+        ? Promise.resolve().then(() => setStore("provider", globalStore.provider))
+        : retry(() =>
+            sdk.provider.list().then((x) => {
+              const data = x.data!
+              setStore("provider", {
+                ...data,
+                all: data.all.map((provider) => ({
+                  ...provider,
+                  models: Object.fromEntries(
+                    Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
+                  ),
+                })),
+              })
+            }),
+          ),
       retry(() => sdk.config.get().then((x) => setStore("config", x.data!))),
     ]
 
     // Non-critical requests - UI can render without these
     const nonCriticalRequests = [
       sdk.path.get().then((x) => setStore("path", x.data!)),
-      sdk.command.list().then((x) => setStore("command", x.data ?? [])),
+      // Use cached global commands if available
+      globalStore.command.length > 0
+        ? Promise.resolve().then(() => setStore("command", globalStore.command))
+        : sdk.command.list().then((x) => setStore("command", x.data ?? [])),
       sdk.session.status().then((x) => setStore("session_status", x.data!)),
       loadSessions(directory),
       sdk.mcp.status().then((x) => setStore("mcp", x.data!)),
@@ -642,6 +646,12 @@ function createGlobalSync() {
       retry(() =>
         globalSDK.client.provider.auth().then((x) => {
           setGlobalStore("provider_auth", x.data ?? {})
+        }),
+      ),
+      // Commands are static, fetch once globally
+      retry(() =>
+        globalSDK.client.command.list().then((x) => {
+          setGlobalStore("command", x.data ?? [])
         }),
       ),
     ])
