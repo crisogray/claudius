@@ -1992,8 +1992,17 @@ export default function Layout(props: ParentProps) {
                           stopPropagation
                         />
 
-                        <Tooltip placement="right" value={project()?.worktree} class="shrink-0">
-                          <span class="text-12-regular text-text-base truncate">
+                        <Tooltip
+                          placement="bottom"
+                          gutter={2}
+                          value={project()?.worktree}
+                          class="shrink-0"
+                          contentStyle={{
+                            "max-width": "640px",
+                            transform: "translate3d(52px, 0, 0)",
+                          }}
+                        >
+                          <span class="text-12-regular text-text-base truncate select-text">
                             {project()?.worktree.replace(homedir(), "~")}
                           </span>
                         </Tooltip>
