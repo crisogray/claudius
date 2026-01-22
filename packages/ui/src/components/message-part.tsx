@@ -270,6 +270,22 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
   }
 }
 
+function formatPermissionDescription(toolPart: ToolPart | undefined, agentType?: string): string {
+  const agent = agentType ? `The ${agentType} agent` : "The subagent"
+
+  if (!toolPart) {
+    return `${agent} is requesting permission`
+  }
+
+  const input = toolPart.state?.input ?? {}
+  const info = getToolInfo(toolPart.tool, input)
+
+  const action = info.title.toLowerCase()
+  const target = info.subtitle
+
+  return target ? `${agent} is requesting permission to ${action}: ${target}` : `${agent} is requesting permission to ${action}`
+}
+
 export function registerPartComponent(type: string, component: PartComponent) {
   PART_MAPPING[type] = component
 }
@@ -979,6 +995,9 @@ ToolRegistry.register({
                 {renderChildToolPart()}
               </Show>
               <div data-component="permission-prompt">
+                <div data-slot="permission-description">
+                  {formatPermissionDescription(childToolPart()?.part, props.input.subagent_type)}
+                </div>
                 <div data-slot="permission-actions">
                   <Button variant="ghost" size="small" onClick={() => respond("reject")}>
                     Deny

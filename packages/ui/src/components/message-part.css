@@ -522,9 +522,15 @@
 [data-component="permission-prompt"] {
   display: flex;
   flex-direction: column;
+  gap: 8px;
   padding: 8px 12px;
   background-color: var(--surface-raised-strong);
   border-radius: 0 0 6px 6px;
+
+  [data-slot="permission-description"] {
+    font: var(--text-13-regular);
+    color: var(--text-weak);
+  }
 
   [data-slot="permission-actions"] {
     display: flex;
