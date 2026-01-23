@@ -129,14 +129,15 @@ export async function downloadRipgrep(rustTarget: string) {
 
   // Extract
   if (extension === "tar.gz") {
-    // Extract tar.gz
+    // Extract tar.gz - use platform-specific tar syntax
     const args = ["tar", "-xzf", archivePath, "--strip-components=1"]
 
-    if (platformKey.endsWith("-darwin")) {
+    if (process.platform === "darwin") {
       args.push("--include=*/rg")
-    } else if (platformKey.endsWith("-linux")) {
+    } else if (process.platform === "linux") {
       args.push("--wildcards", "*/rg")
     }
+    // Windows: no filtering flags, extract everything
 
     const proc = Bun.spawn(args, {
       cwd: destDir,
