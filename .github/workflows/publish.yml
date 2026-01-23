@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'crisogray/claudius'
     outputs:
-      release_id: ${{ steps.create.outputs.id }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
@@ -24,14 +23,11 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Create draft release
-        id: create
         run: |
           gh release create ${{ github.ref_name }} \
             --draft \
             --generate-notes \
             --title "${{ github.ref_name }}"
-          RELEASE_ID=$(gh release view ${{ github.ref_name }} --json id -q .id)
-          echo "id=$RELEASE_ID" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -95,58 +91,126 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_RUN_ID: ${{ github.run_id }}
 
-      - name: Build and upload
+      - name: Build
         uses: tauri-apps/tauri-action@v0
         with:
           projectPath: packages/desktop
           args: --target ${{ matrix.target }} --config ./src-tauri/tauri.prod.conf.json
-          tagName: ${{ github.ref_name }}
-          releaseDraft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-  upload-latest:
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.target }}
+          path: |
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.rpm
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.tar.gz
+            packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.sig
+          if-no-files-found: ignore
+
+  upload-release:
     needs: [create-release, build-desktop]
     runs-on: ubuntu-latest
     steps:
-      - name: Download and rename artifacts
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: desktop-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: find artifacts -type f | head -50
+
+      - name: Upload to release
         run: |
-          gh release download ${{ github.ref_name }} -D artifacts -R ${{ github.repository }} || true
+          # Find all release files
+          FILES=$(find artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.tar.gz" -o -name "*.sig" \) | head -100)
 
-          mkdir -p artifacts
-
-          # macOS ARM
-          mv artifacts/Claudius_*_aarch64.dmg artifacts/Claudius-latest-macos-arm64.dmg 2>/dev/null || true
-
-          # macOS Intel
-          mv artifacts/Claudius_*_x64.dmg artifacts/Claudius-latest-macos-x64.dmg 2>/dev/null || true
-
-          # Windows
-          mv artifacts/Claudius_*_x64-setup.exe artifacts/Claudius-latest-windows-x64.exe 2>/dev/null || true
-
-          # Linux
-          mv artifacts/Claudius_*_amd64.AppImage artifacts/Claudius-latest-linux-x64.AppImage 2>/dev/null || true
+          if [ -n "$FILES" ]; then
+            echo "Uploading files:"
+            echo "$FILES"
+            gh release upload ${{ github.ref_name }} $FILES --clobber -R ${{ github.repository }}
+          else
+            echo "No artifacts found"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload fixed-name artifacts
+      - name: Create latest.json for updater
         run: |
-          FILES=""
-          for f in artifacts/Claudius-latest-*; do
-            [ -f "$f" ] && FILES="$FILES $f"
-          done
-          if [ -n "$FILES" ]; then
-            gh release upload ${{ github.ref_name }} $FILES --clobber -R ${{ github.repository }}
-          else
-            echo "No artifacts to upload"
+          VERSION="${{ needs.create-release.outputs.version }}"
+
+          # Find signature files
+          DARWIN_ARM_SIG=$(find artifacts -name "*aarch64*.app.tar.gz.sig" -exec cat {} \; 2>/dev/null | head -1 || echo "")
+          DARWIN_X64_SIG=$(find artifacts -name "*x64*.app.tar.gz.sig" -o -name "*x86_64*.app.tar.gz.sig" -exec cat {} \; 2>/dev/null | head -1 || echo "")
+          LINUX_SIG=$(find artifacts -name "*amd64.AppImage.tar.gz.sig" -exec cat {} \; 2>/dev/null | head -1 || echo "")
+          WINDOWS_SIG=$(find artifacts -name "*x64-setup.exe.sig" -exec cat {} \; 2>/dev/null | head -1 || echo "")
+
+          cat > latest.json << EOF
+          {
+            "version": "$VERSION",
+            "notes": "Release $VERSION",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "darwin-aarch64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Claudius_aarch64.app.tar.gz",
+                "signature": "$DARWIN_ARM_SIG"
+              },
+              "darwin-x86_64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Claudius_x64.app.tar.gz",
+                "signature": "$DARWIN_X64_SIG"
+              },
+              "linux-x86_64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Claudius-latest-linux-x64.AppImage",
+                "signature": "$LINUX_SIG"
+              },
+              "windows-x86_64": {
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Claudius_${VERSION}_x64-setup.exe",
+                "signature": "$WINDOWS_SIG"
+              }
+            }
+          }
+          EOF
+
+          gh release upload ${{ github.ref_name }} latest.json --clobber -R ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create fixed-name downloads
+        run: |
+          mkdir -p latest
+
+          # macOS ARM
+          find artifacts -name "Claudius_*_aarch64.dmg" -exec cp {} latest/Claudius-latest-macos-arm64.dmg \; 2>/dev/null || true
+
+          # macOS Intel
+          find artifacts -name "Claudius_*_x64.dmg" -exec cp {} latest/Claudius-latest-macos-x64.dmg \; 2>/dev/null || true
+
+          # Windows
+          find artifacts -name "Claudius_*_x64-setup.exe" -exec cp {} latest/Claudius-latest-windows-x64.exe \; 2>/dev/null || true
+
+          # Linux
+          find artifacts -name "*_amd64.AppImage" -exec cp {} latest/Claudius-latest-linux-x64.AppImage \; 2>/dev/null || true
+
+          # Upload if any exist
+          if [ "$(ls -A latest 2>/dev/null)" ]; then
+            gh release upload ${{ github.ref_name }} latest/* --clobber -R ${{ github.repository }}
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:
-    needs: [create-release, build-desktop, upload-latest]
+    needs: [create-release, build-desktop, upload-release]
     runs-on: ubuntu-latest
     steps:
       - name: Publish release

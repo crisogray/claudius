@@ -40,7 +40,7 @@
       "icons/dev/icon.ico"
     ],
     "active": true,
-    "targets": ["deb", "rpm", "dmg", "nsis", "app"],
+    "targets": ["appimage", "deb", "rpm", "dmg", "nsis", "app"],
     "externalBin": ["sidecars/opencode-cli"],
     "resources": ["sidecars/cli.js", "sidecars/vendor/**/*"],
     "macOS": {
