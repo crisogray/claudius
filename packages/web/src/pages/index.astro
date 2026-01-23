@@ -49,7 +49,6 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
                 <a href="#" data-platform="mac-arm">macOS (Apple Silicon)</a>
                 <a href="#" data-platform="mac-intel">macOS (Intel)</a>
                 <a href="#" data-platform="windows">Windows</a>
-                <a href="#" data-platform="linux">Linux</a>
               </div>
             </div>
           </div>
@@ -495,14 +494,12 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
     'mac-arm': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_aarch64.dmg',
     'mac-intel': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_x64.dmg',
     'windows': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_x64-setup.exe',
-    'linux': 'https://github.com/crisogray/claudius/releases/latest/download/Claudius_amd64.AppImage',
   };
 
   const platformLabels = {
     'mac-arm': 'Download for macOS (Apple Silicon)',
     'mac-intel': 'Download for macOS (Intel)',
     'windows': 'Download for Windows',
-    'linux': 'Download for Linux',
   };
 
   // Detect OS
@@ -524,7 +521,6 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
       return 'mac-intel';
     }
     if (/Win/.test(platform)) return 'windows';
-    if (/Linux/.test(platform)) return 'linux';
     return 'mac-arm'; // Default fallback
   }
 
