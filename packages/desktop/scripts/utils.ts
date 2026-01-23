@@ -152,29 +152,46 @@ export async function downloadRipgrep(rustTarget: string) {
       throw new Error(`Failed to extract ripgrep: ${stderr}`)
     }
   } else if (extension === "zip") {
-    // Extract zip (Windows)
-    const zipFileReader = new ZipReader(new BlobReader(new Blob([buffer])))
-    const entries = await zipFileReader.getEntries()
+    // Extract zip
+    if (process.platform === "win32") {
+      // Use JS-based extraction on Windows
+      const zipFileReader = new ZipReader(new BlobReader(new Blob([buffer])))
+      const entries = await zipFileReader.getEntries()
 
-    let rgEntry: any
-    for (const entry of entries) {
-      if (entry.filename.endsWith("rg.exe")) {
-        rgEntry = entry
-        break
+      let rgEntry: any
+      for (const entry of entries) {
+        if (entry.filename.endsWith("rg.exe")) {
+          rgEntry = entry
+          break
+        }
+      }
+
+      if (!rgEntry) {
+        throw new Error("rg.exe not found in zip archive")
+      }
+
+      const rgBlob = await rgEntry.getData(new BlobWriter())
+      if (!rgBlob) {
+        throw new Error("Failed to extract rg.exe from zip archive")
+      }
+
+      await Bun.write(rgPath, await rgBlob.arrayBuffer())
+      await zipFileReader.close()
+    } else {
+      // Use system unzip on macOS/Linux
+      const proc = Bun.spawn(["unzip", "-j", "-o", archivePath, "*/rg.exe", "-d", destDir], {
+        cwd: destDir,
+        stderr: "pipe",
+        stdout: "pipe",
+      })
+
+      await proc.exited
+
+      if (proc.exitCode !== 0) {
+        const stderr = await Bun.readableStreamToText(proc.stderr)
+        throw new Error(`Failed to extract ripgrep: ${stderr}`)
       }
     }
-
-    if (!rgEntry) {
-      throw new Error("rg.exe not found in zip archive")
-    }
-
-    const rgBlob = await rgEntry.getData(new BlobWriter())
-    if (!rgBlob) {
-      throw new Error("Failed to extract rg.exe from zip archive")
-    }
-
-    await Bun.write(rgPath, await rgBlob.arrayBuffer())
-    await zipFileReader.close()
   }
 
   // Clean up archive
