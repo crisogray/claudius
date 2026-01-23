@@ -1,6 +1,6 @@
-# Contributing to OpenCode
+# Contributing to Claudius
 
-We want to make it easy for you to contribute to OpenCode. Here are the most common type of changes that get merged:
+We want to make it easy for you to contribute to Claudius. Here are the most common type of changes that get merged:
 
 - Bug fixes
 - Additional LSPs / Formatters
@@ -24,7 +24,7 @@ If you are unsure if a PR would be accepted, feel free to ask a maintainer or lo
 
 Want to take on an issue? Leave a comment and a maintainer may assign it to you unless it is something we are already working on.
 
-## Developing OpenCode
+## Developing Claudius
 
 - Requirements: Bun 1.3+
 - Install dependencies and start the dev server from the repo root:
@@ -34,42 +34,12 @@ Want to take on an issue? Leave a comment and a maintainer may assign it to you 
   bun dev
   ```
 
-### Running against a different directory
+### Core Packages
 
-By default, `bun dev` runs OpenCode in the `packages/opencode` directory. To run it against a different directory or repository:
-
-```bash
-bun dev <directory>
-```
-
-To run OpenCode in the root of the opencode repo itself:
-
-```bash
-bun dev .
-```
-
-### Building a "localcode"
-
-To compile a standalone executable:
-
-```bash
-./packages/opencode/script/build.ts --single
-```
-
-Then run it with:
-
-```bash
-./packages/opencode/dist/opencode-<platform>/bin/opencode
-```
-
-Replace `<platform>` with your platform (e.g., `darwin-arm64`, `linux-x64`).
-
-- Core pieces:
-  - `packages/opencode`: OpenCode core business logic & server.
-  - `packages/opencode/src/cli/cmd/tui/`: The TUI code, written in SolidJS with [opentui](https://github.com/sst/opentui)
-  - `packages/app`: The shared web UI components, written in SolidJS
-  - `packages/desktop`: The native desktop app, built with Tauri (wraps `packages/app`)
-  - `packages/plugin`: Source for `@opencode-ai/plugin`
+- `packages/opencode`: Core business logic & server
+- `packages/app`: Shared web UI components (SolidJS)
+- `packages/desktop`: Native desktop app (Tauri, wraps `packages/app`)
+- `packages/plugin`: Source for `@opencode-ai/plugin`
 
 ### Running the Web App
 
@@ -114,38 +84,6 @@ This runs `bun run --cwd packages/desktop build` automatically via Tauri’s `be
 > If you make changes to the API or SDK (e.g. `packages/opencode/src/server/server.ts`), run `./script/generate.ts` to regenerate the SDK and related files.
 
 Please try to follow the [style guide](./STYLE_GUIDE.md)
-
-### Setting up a Debugger
-
-Bun debugging is currently rough around the edges. We hope this guide helps you get set up and avoid some pain points.
-
-The most reliable way to debug OpenCode is to run it manually in a terminal via `bun run --inspect=<url> dev ...` and attach
-your debugger via that URL. Other methods can result in breakpoints being mapped incorrectly, at least in VSCode (YMMV).
-
-Caveats:
-
-- If you want to run the OpenCode TUI and have breakpoints triggered in the server code, you might need to run `bun dev spawn` instead of
-  the usual `bun dev`. This is because `bun dev` runs the server in a worker thread and breakpoints might not work there.
-- If `spawn` does not work for you, you can debug the server separately:
-  - Debug server: `bun run --inspect=ws://localhost:6499/ ./src/index.ts serve --port 4096`,
-    then attach TUI with `opencode attach http://localhost:4096`
-  - Debug TUI: `bun run --inspect=ws://localhost:6499/ --conditions=browser ./src/index.ts`
-
-Other tips and tricks:
-
-- You might want to use `--inspect-wait` or `--inspect-brk` instead of `--inspect`, depending on your workflow
-- Specifying `--inspect=ws://localhost:6499/` on every invocation can be tiresome, you may want to `export BUN_OPTIONS=--inspect=ws://localhost:6499/` instead
-
-#### VSCode Setup
-
-If you use VSCode, you can use our example configurations [.vscode/settings.example.json](.vscode/settings.example.json) and [.vscode/launch.example.json](.vscode/launch.example.json).
-
-Some debug methods that can be problematic:
-
-- Debug configurations with `"request": "launch"` can have breakpoints incorrectly mapped and thus unusable
-- The same problem arises when running OpenCode in the VSCode `JavaScript Debug Terminal`
-
-With that said, you may want to try these methods, as they might work for you.
 
 ## Pull Request Expectations
 
@@ -222,4 +160,4 @@ These are not strictly enforced, they are just general guidelines:
 
 ## Feature Requests
 
-For net-new functionality, start with a design conversation. Open an issue describing the problem, your proposed approach (optional), and why it belongs in OpenCode. The core team will help decide whether it should move forward; please wait for that approval instead of opening a feature PR directly.
+For net-new functionality, start with a design conversation. Open an issue describing the problem, your proposed approach (optional), and why it belongs in Claudius. The core team will help decide whether it should move forward; please wait for that approval instead of opening a feature PR directly.

@@ -26,19 +26,15 @@
 
 ## About
 
-Claudius is a fork of [OpenCode](https://github.com/anomaly/opencode) rebuilt around the Claude Agent SDK. It provides a native Claude coding experience with deep integration into Anthropic's latest capabilities.
+Claudius is a fork of [OpenCode](https://github.com/anomaly/opencode) Desktop rebuilt around the Claude Agent SDK.
 
 ### Key Features
 
-- **Works out of the box** - No configuration required. Just download and start coding.
+- **Works out of the box** - No configuration required if already using Claude Code. Just download and start coding.
 - **Deep Claude integration** - Built on the Claude Agent SDK for native prompt caching, extended thinking, and sandboxed execution.
-- **Planning mode** - Switch between full-access build mode and read-only planning mode with `Tab`.
+- **Planning mode** - Switch between full-access build mode and read-only planning mode.
 - **Permission modes** - Granular control over what the agent can do.
-- **Native tools** - Read, Edit, Write, Bash, Glob, Grep, and more - all optimized for Claude.
-
-### Usage Terms
-
-By using Claudius, you agree to [Anthropic's Terms of Service](https://www.anthropic.com/legal/consumer-terms) and [Usage Policy](https://www.anthropic.com/legal/aup).
+- **Native tools** - Read, Edit, Write, Bash, Glob, Grep, and more - all handled natively.
 
 ---
 
@@ -48,7 +44,6 @@ Interested in contributing? See [CONTRIBUTING.md](./CONTRIBUTING.md) for guideli
 
 For technical context on the architecture:
 - [UPSTREAM.md](./UPSTREAM.md) - OpenCode upstream documentation
-- [CLAUDE_SDK_MIGRATION_PLAN.md](./CLAUDE_SDK_MIGRATION_PLAN.md) - Claude Agent SDK integration details
 
 ---
 
