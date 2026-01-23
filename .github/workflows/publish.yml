@@ -100,7 +100,7 @@ jobs:
         with:
           projectPath: packages/desktop
           args: --target ${{ matrix.target }} --config ./src-tauri/tauri.prod.conf.json
-          releaseId: ${{ needs.create-release.outputs.release_id }}
+          tagName: ${{ github.ref_name }}
           releaseDraft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,7 +113,9 @@ jobs:
     steps:
       - name: Download and rename artifacts
         run: |
-          gh release download ${{ github.ref_name }} -D artifacts -R ${{ github.repository }}
+          gh release download ${{ github.ref_name }} -D artifacts -R ${{ github.repository }} || true
+
+          mkdir -p artifacts
 
           # macOS ARM
           mv artifacts/Claudius_*_aarch64.dmg artifacts/Claudius-latest-macos-arm64.dmg 2>/dev/null || true
@@ -131,12 +133,15 @@ jobs:
 
       - name: Upload fixed-name artifacts
         run: |
-          gh release upload ${{ github.ref_name }} \
-            artifacts/Claudius-latest-macos-arm64.dmg \
-            artifacts/Claudius-latest-macos-x64.dmg \
-            artifacts/Claudius-latest-windows-x64.exe \
-            artifacts/Claudius-latest-linux-x64.AppImage \
-            --clobber -R ${{ github.repository }}
+          FILES=""
+          for f in artifacts/Claudius-latest-*; do
+            [ -f "$f" ] && FILES="$FILES $f"
+          done
+          if [ -n "$FILES" ]; then
+            gh release upload ${{ github.ref_name }} $FILES --clobber -R ${{ github.repository }}
+          else
+            echo "No artifacts to upload"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
