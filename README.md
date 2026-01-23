@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
-    <source srcset="packages/web/src/assets/logo-wreath.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="packages/web/src/assets/logo-wreath.svg" media="(prefers-color-scheme: light)">
-    <img src="packages/web/src/assets/logo-wreath.svg" alt="Claudius" width="120">
+    <source srcset="packages/web/src/assets/logo-wreath-light.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="packages/web/src/assets/logo-wreath-dark.svg" media="(prefers-color-scheme: light)">
+    <img src="packages/web/src/assets/logo-wreath-dark.svg" alt="Claudius" width="120">
   </picture>
 </p>
 <h1 align="center">Claudius</h1>
-<p align="center">A deeply integrated Claude coding agent.</p>
+<p align="center">A desktop app for Claude Code, built on OpenCode.</p>
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## About
 
-Claudius is a fork of [OpenCode](https://github.com/crisogray/claudius) rebuilt around the Claude Agent SDK. It provides a native Claude coding experience with deep integration into Anthropic's latest capabilities.
+Claudius is a fork of [OpenCode](https://github.com/anomaly/opencode) rebuilt around the Claude Agent SDK. It provides a native Claude coding experience with deep integration into Anthropic's latest capabilities.
 
 ### Key Features
 
