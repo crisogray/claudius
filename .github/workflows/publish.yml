@@ -111,6 +111,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_RUN_ID: ${{ github.run_id }}
 
+      - name: Sign vendor binaries
+        if: runner.os == 'macOS'
+        run: |
+          # Sign all vendor binaries with hardened runtime and timestamp
+          find packages/desktop/src-tauri/sidecars/vendor -type f -perm +111 | while read binary; do
+            echo "Signing $binary"
+            codesign --force --options runtime --timestamp --sign "$CERT_ID" "$binary"
+          done
+
       - name: Build
         uses: tauri-apps/tauri-action@v0
         with:
