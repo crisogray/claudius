@@ -44,8 +44,7 @@
     "externalBin": ["sidecars/opencode-cli"],
     "resources": ["sidecars/cli.js", "sidecars/vendor/**/*"],
     "macOS": {
-      "entitlements": "./entitlements.plist",
-      "signingIdentity": "-"
+      "entitlements": "./entitlements.plist"
     },
     "windows": {
       "nsis": {
