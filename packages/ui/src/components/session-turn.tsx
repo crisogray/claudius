@@ -215,11 +215,9 @@ export function SessionTurn(
     { equals: same },
   )
 
-  const lastAssistantMessage = createMemo(
-    () => assistantMessages().at(-1),
-    undefined,
-    { equals: (a, b) => a?.id === b?.id },
-  )
+  const lastAssistantMessage = createMemo(() => assistantMessages().at(-1), undefined, {
+    equals: (a, b) => a?.id === b?.id,
+  })
 
   const error = createMemo(() => assistantMessages().find((m) => m.error)?.error)
 
@@ -257,11 +255,9 @@ export function SessionTurn(
     { equals: (a, b) => a === b },
   )
 
-  const permissions = createMemo(
-    () => data.store.permission?.[props.sessionID] ?? emptyPermissions,
-    emptyPermissions,
-    { equals: same },
-  )
+  const permissions = createMemo(() => data.store.permission?.[props.sessionID] ?? emptyPermissions, emptyPermissions, {
+    equals: same,
+  })
   const permissionCount = createMemo(() => permissions().length)
   const nextPermission = createMemo(() => permissions()[0])
 
@@ -357,11 +353,9 @@ export function SessionTurn(
     { equals: (a, b) => a === b },
   )
 
-  const status = createMemo(
-    () => data.store.session_status[props.sessionID] ?? idle,
-    idle,
-    { equals: (a, b) => a.type === b.type },
-  )
+  const status = createMemo(() => data.store.session_status[props.sessionID] ?? idle, idle, {
+    equals: (a, b) => a.type === b.type,
+  })
   const working = createMemo(() => status().type !== "idle" && isLastUserMessage())
   const retry = createMemo(() => {
     const s = status()

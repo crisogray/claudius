@@ -283,7 +283,9 @@ function formatPermissionDescription(toolPart: ToolPart | undefined, agentType?:
   const action = info.title.toLowerCase()
   const target = info.subtitle
 
-  return target ? `${agent} is requesting permission to ${action}: ${target}` : `${agent} is requesting permission to ${action}`
+  return target
+    ? `${agent} is requesting permission to ${action}: ${target}`
+    : `${agent} is requesting permission to ${action}`
 }
 
 export function registerPartComponent(type: string, component: PartComponent) {
