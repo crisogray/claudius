@@ -16,11 +16,11 @@
 
 ## Download
 
-| Platform              | Download |
-| --------------------- | -------- |
-| macOS (Apple Silicon) | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-arm64.dmg) |
-| macOS (Intel)         | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-x64.dmg) |
-| Windows               | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-windows-x64.exe) |
+| Platform              | Download                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| macOS (Apple Silicon) | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-arm64.dmg)    |
+| macOS (Intel)         | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-x64.dmg)      |
+| Windows               | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-windows-x64.exe)    |
 | Linux                 | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-linux-x64.AppImage) |
 
 ---
@@ -44,6 +44,7 @@ Claudius is a fork of [OpenCode](https://github.com/anomaly/opencode) Desktop re
 Interested in contributing? See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 For technical context on the architecture:
+
 - [UPSTREAM.md](./UPSTREAM.md) - OpenCode upstream documentation
 
 ---
