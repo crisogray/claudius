@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import config from "../../config.mjs";
 import logo from '../assets/logo-wreath.svg';
 import favicon from '../assets/favicon.ico';
+import screenshot from '../assets/claudius-screenshot.png';
 
 const themes = ['brown', 'green', 'blue', 'purple'];
 const randomTheme = themes[Math.floor(Math.random() * themes.length)];
@@ -55,9 +56,7 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
         </section>
 
         <section class="visual">
-          <div class="demo-placeholder">
-            <span>demo screenshot / gif</span>
-          </div>
+          <Image src={screenshot} alt="Claudius screenshot" class="demo-image" />
         </section>
 
         <section class="grid">
@@ -294,17 +293,10 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
     margin: 3rem 0;
   }
 
-  .demo-placeholder {
-    border: 2px dashed var(--border);
-    background: var(--surface);
-    min-height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .demo-image {
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--border);
   }
 
   .grid {
