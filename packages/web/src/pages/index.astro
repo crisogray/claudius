@@ -31,7 +31,7 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
 
       <main>
         <section class="intro">
-          <h1>Claudius</h1>
+          <h1>Claudius <span class="alpha-badge">ALPHA</span></h1>
           <p class="lead">A desktop app for Claude Code, built on OpenCode.</p>
         </section>
 
@@ -225,6 +225,17 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
     width: auto;
   }
 
+  .alpha-badge {
+    font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border: 1px solid var(--muted);
+    padding: 0.15rem 0.35rem;
+    margin-bottom: 0.66rem;
+  }
+
   .logo-img {
     filter: invert(0);
   }
@@ -279,6 +290,9 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
     font-weight: 400;
     line-height: 1;
     letter-spacing: -0.02em;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
   }
 
   .lead {
