@@ -33,6 +33,9 @@
       "icons/prod/icon.icns",
       "icons/prod/icon.ico"
     ],
+    "macOS": {
+      "entitlements": "./entitlements.plist"
+    },
     "windows": {
       "nsis": {
         "installerIcon": "icons/prod/icon.ico"
