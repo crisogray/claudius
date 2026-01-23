@@ -240,13 +240,14 @@ function createGlobalSync() {
 
     // Critical requests - needed for UI to be usable
     const criticalRequests = [
-      retry(() => sdk.project.current().then((x) => setStore("project", x.data!.id))),
+      retry(() => sdk.project.current().then((x) => setStore("project", x.data?.id ?? ""))),
       // Use cached global provider if available, otherwise fetch
       globalStore.provider.all.length > 0
         ? Promise.resolve().then(() => setStore("provider", globalStore.provider))
         : retry(() =>
             sdk.provider.list().then((x) => {
-              const data = x.data!
+              const data = x.data
+              if (!data) return
               setStore("provider", {
                 ...data,
                 all: data.all.map((provider) => ({
@@ -258,20 +259,20 @@ function createGlobalSync() {
               })
             }),
           ),
-      retry(() => sdk.config.get().then((x) => setStore("config", x.data!))),
+      retry(() => sdk.config.get().then((x) => setStore("config", x.data ?? {}))),
     ]
 
     // Non-critical requests - UI can render without these
     const nonCriticalRequests = [
-      sdk.path.get().then((x) => setStore("path", x.data!)),
+      sdk.path.get().then((x) => setStore("path", x.data ?? store.path)),
       // Use cached global commands if available
       globalStore.command.length > 0
         ? Promise.resolve().then(() => setStore("command", globalStore.command))
         : sdk.command.list().then((x) => setStore("command", x.data ?? [])),
-      sdk.session.status().then((x) => setStore("session_status", x.data!)),
+      sdk.session.status().then((x) => setStore("session_status", x.data ?? {})),
       loadSessions(directory),
-      sdk.mcp.status().then((x) => setStore("mcp", x.data!)),
-      sdk.lsp.status().then((x) => setStore("lsp", x.data!)),
+      sdk.mcp.status().then((x) => setStore("mcp", x.data ?? {})),
+      sdk.lsp.status().then((x) => setStore("lsp", x.data ?? [])),
       sdk.vcs.get().then((x) => {
         const next = x.data ?? store.vcs
         setStore("vcs", next)

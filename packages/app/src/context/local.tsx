@@ -175,11 +175,14 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
 
       const fallbackModel = createMemo(() => {
         if (sync.data.config.model) {
-          const [providerID, modelID] = sync.data.config.model.split("/")
-          if (isModelValid({ providerID, modelID })) {
-            return {
-              providerID,
-              modelID,
+          const parts = sync.data.config.model.split("/")
+          if (parts.length >= 2) {
+            const [providerID, modelID] = parts
+            if (isModelValid({ providerID, modelID })) {
+              return {
+                providerID,
+                modelID,
+              }
             }
           }
         }
@@ -199,7 +202,11 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           }
         }
 
-        throw new Error("No default model found")
+        // Default to Claude Sonnet 4.5 when no providers are connected
+        return {
+          providerID: "anthropic",
+          modelID: "claude-sonnet-4-5-20250929",
+        }
       })
 
       const current = createMemo(() => {
