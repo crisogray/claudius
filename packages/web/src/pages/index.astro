@@ -32,7 +32,7 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
       <main>
         <section class="intro">
           <h1>Claudius</h1>
-          <p class="lead">An agentic development environment for Claude, built on OpenCode.</p>
+          <p class="lead">A desktop app for Claude Code, built on OpenCode.</p>
         </section>
 
         <section class="cta-row">
@@ -59,28 +59,27 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
           <Image src={screenshot} alt="Claudius screenshot" class="demo-image" />
         </section>
 
-        <section class="grid">
-          <div class="card">
-            <h3>ToS Compliant</h3>
-            <p>Built for Anthropic's usage policy. Use Claude the right way.</p>
+        <section class="features">
+          <div class="feature">
+            <span class="feature-num">1.</span>
+            <h3>Built for Claude</h3>
+            <p>Powered by Claude Agent SDK. Uses your existing Claude Code login—no extra setup.</p>
           </div>
-          <div class="card">
+          <div class="feature">
+            <span class="feature-num">2.</span>
             <h3>Enhanced Git Features</h3>
-            <p>Search, explore, edit, diff.<br/>PR integration coming soon.</p>
+            <p>Browse files, search code, and view diffs. Stage and commit without leaving the app. PR integration coming soon.</p>
           </div>
-          <div class="card">
-            <h3>Parallel Tasks</h3>
-            <p>Git worktrees let you run multiple agents simultaneously.</p>
-          </div>
-          <div class="card">
-            <h3>Open Source</h3>
-            <p>Bring your own keys. Self-host. Customize everything.</p>
+          <div class="feature">
+            <span class="feature-num">3.</span>
+            <h3>Parallel Projects & Tasks</h3>
+            <p>Work on multiple projects at once. Git worktrees let you run parallel agents on separate branches.</p>
           </div>
         </section>
       </main>
 
       <footer>
-        <span>&copy; 2025</span>
+        <span>&copy; 2026</span>
         <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
           <span class="theme-label">green</span>
         </button>
@@ -299,35 +298,34 @@ const nextTheme = themes[(themes.indexOf(randomTheme) + 1) % themes.length];
     border: 2px solid var(--border);
   }
 
-  .grid {
+  .features {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2px;
-    background: var(--border);
-    border: 2px solid var(--border);
-    margin: 3rem 0;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
   }
 
-  @media (max-width: 600px) {
-    .grid {
-      grid-template-columns: 1fr;
-    }
+  .feature-num {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.25rem;
   }
 
-  .card {
-    padding: 1.5rem;
-    background: var(--bg);
-  }
-
-  .card h3 {
+  .feature h3 {
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
   }
 
-  .card p {
+  .feature p {
     font-size: 0.8rem;
     color: var(--muted);
+  }
+
+  @media (max-width: 600px) {
+    .features {
+      grid-template-columns: 1fr;
+    }
   }
 
   .cta-row {
