@@ -33,6 +33,14 @@
       "icons/prod/icon.icns",
       "icons/prod/icon.ico"
     ],
+    "macOS": {
+      "entitlements": "./entitlements.plist",
+      "info": {
+        "NSDocumentsFolderUsageDescription": "Claudius needs access to your Documents folder to open and manage projects.",
+        "NSDesktopFolderUsageDescription": "Claudius needs access to your Desktop folder to open and manage projects.",
+        "NSDownloadsFolderUsageDescription": "Claudius needs access to your Downloads folder to open and manage projects."
+      }
+    },
     "windows": {
       "nsis": {
         "installerIcon": "icons/prod/icon.ico"

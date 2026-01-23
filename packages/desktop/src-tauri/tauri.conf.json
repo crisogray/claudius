@@ -44,7 +44,12 @@
     "externalBin": ["sidecars/opencode-cli"],
     "resources": ["sidecars/cli.js", "sidecars/vendor/**/*"],
     "macOS": {
-      "entitlements": "./entitlements.plist"
+      "entitlements": "./entitlements.plist",
+      "info": {
+        "NSDocumentsFolderUsageDescription": "Claudius needs access to your Documents folder to open and manage projects.",
+        "NSDesktopFolderUsageDescription": "Claudius needs access to your Desktop folder to open and manage projects.",
+        "NSDownloadsFolderUsageDescription": "Claudius needs access to your Downloads folder to open and manage projects."
+      }
     },
     "windows": {
       "nsis": {
