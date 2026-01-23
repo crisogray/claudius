@@ -18,7 +18,7 @@ export const Logo = (props: { class?: string }) => {
     <div
       classList={{ [props.class ?? ""]: !!props.class }}
       style={{
-        "font-family": "'Tiempos Text', Georgia, serif",
+        "font-family": "'DM Serif Display', Georgia, serif",
         "font-weight": "400",
         "letter-spacing": "-0.02em",
         "line-height": "1",
