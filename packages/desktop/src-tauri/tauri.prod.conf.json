@@ -48,7 +48,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXkgMkY3NDY4NkFCQTNGQjY2OQpSV1JwdGorNmFtaDBMenZucnFLOGF4WkN0MmRqMEdWdWxuK3VhcDlZQ0U5Skp5enZkSk94dzF2Lwo=",
+      "pubkey": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUcxcGJtbHphV2R1SUhCMVlteHBZeUJyWlhrNklESTFOemN3T1RBNU5FSkdSa1l5TkVZS1VsZFNVRGgyT1V4RFVXd3pTbVZVUzBoQ2NucG1ZVGR0UldaVVFuSm1lVEZ4TWtRcmIzaDRPRWN6VlVFck4yZElXV2xFZEdJNWFqRUs=",
       "endpoints": ["https://github.com/crisogray/claudius/releases/latest/download/latest.json"]
     }
   }
