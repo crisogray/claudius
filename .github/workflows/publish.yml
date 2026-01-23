@@ -90,8 +90,41 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-  publish-release:
+  upload-latest:
     needs: [create-release, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and rename artifacts
+        run: |
+          gh release download ${{ github.ref_name }} -D artifacts -R ${{ github.repository }}
+
+          # macOS ARM
+          mv artifacts/Claudius_*_aarch64.dmg artifacts/Claudius-latest-macos-arm64.dmg 2>/dev/null || true
+
+          # macOS Intel
+          mv artifacts/Claudius_*_x64.dmg artifacts/Claudius-latest-macos-x64.dmg 2>/dev/null || true
+
+          # Windows
+          mv artifacts/Claudius_*_x64-setup.exe artifacts/Claudius-latest-windows-x64.exe 2>/dev/null || true
+
+          # Linux
+          mv artifacts/Claudius_*_amd64.AppImage artifacts/Claudius-latest-linux-x64.AppImage 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload fixed-name artifacts
+        run: |
+          gh release upload ${{ github.ref_name }} \
+            artifacts/Claudius-latest-macos-arm64.dmg \
+            artifacts/Claudius-latest-macos-x64.dmg \
+            artifacts/Claudius-latest-windows-x64.exe \
+            artifacts/Claudius-latest-linux-x64.AppImage \
+            --clobber -R ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-release:
+    needs: [create-release, build-desktop, upload-latest]
     runs-on: ubuntu-latest
     steps:
       - name: Publish release

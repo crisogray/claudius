@@ -16,11 +16,12 @@
 
 ## Download
 
-| Platform              | Download                                    |
-| --------------------- | ------------------------------------------- |
-| macOS (Apple Silicon) | [claudius-darwin-aarch64.dmg](#)            |
-| macOS (Intel)         | [claudius-darwin-x64.dmg](#)                |
-| Windows               | [claudius-windows-x64.exe](#)               |
+| Platform              | Download |
+| --------------------- | -------- |
+| macOS (Apple Silicon) | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-arm64.dmg) |
+| macOS (Intel)         | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-x64.dmg) |
+| Windows               | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-windows-x64.exe) |
+| Linux                 | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-linux-x64.AppImage) |
 
 ---
 
