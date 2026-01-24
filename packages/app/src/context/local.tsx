@@ -57,10 +57,19 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       )
     }
 
+    const HARDCODED_FALLBACK: ModelKey = {
+      providerID: "anthropic",
+      modelID: "claude-sonnet-4-5-20250929",
+    }
+
     function getFirstValidModel(...modelFns: (() => ModelKey | undefined)[]) {
       for (const modelFn of modelFns) {
         const model = modelFn()
         if (!model) continue
+        // Always accept hardcoded fallback (prevents race condition on first launch)
+        if (model.providerID === HARDCODED_FALLBACK.providerID && model.modelID === HARDCODED_FALLBACK.modelID) {
+          return model
+        }
         if (isModelValid(model)) return model
       }
     }
@@ -202,11 +211,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           }
         }
 
-        // Default to Claude Sonnet 4.5 when no providers are connected
-        return {
-          providerID: "anthropic",
-          modelID: "claude-sonnet-4-5-20250929",
-        }
+        // Always return hardcoded fallback (bypasses validation to prevent race condition)
+        return HARDCODED_FALLBACK
       })
 
       const current = createMemo(() => {
