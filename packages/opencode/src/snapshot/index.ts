@@ -51,11 +51,11 @@ export namespace Snapshot {
     // If `to` is provided, compare two tree snapshots directly (excludes concurrent session changes)
     // If `to` is not provided, compare against the current working tree (legacy behavior)
     const result = to
-      ? await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff-tree --no-ext-diff --name-only -r ${from} ${to}`
+      ? await $`git -c core.autocrlf=false -c core.quotepath=false --git-dir ${git} --work-tree ${Instance.worktree} diff-tree --no-ext-diff --name-only -r ${from} ${to}`
           .quiet()
           .cwd(Instance.directory)
           .nothrow()
-      : await $`git -c core.autocrlf=false --git-dir ${git} --work-tree ${Instance.worktree} diff --no-ext-diff --name-only ${from} -- .`
+      : await $`git -c core.autocrlf=false -c core.quotepath=false --git-dir ${git} --work-tree ${Instance.worktree} diff --no-ext-diff --name-only ${from} -- .`
           .quiet()
           .cwd(Instance.directory)
           .nothrow()
