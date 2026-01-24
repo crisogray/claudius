@@ -1,3 +1,5 @@
+console.log(`[startup] opencode binary starting (${process.platform}-${process.arch})`)
+
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { Log } from "./util/log"
@@ -7,6 +9,8 @@ import { ServeCommand } from "./cli/cmd/serve"
 import { DebugCommand } from "./cli/cmd/debug"
 import { GenerateCommand } from "./cli/cmd/generate"
 import { EOL } from "os"
+
+console.log("[startup] imports loaded")
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {

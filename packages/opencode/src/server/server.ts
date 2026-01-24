@@ -3259,18 +3259,27 @@ export namespace Server {
   }
 
   export function listen(opts: { port: number; hostname: string; mdns?: boolean; cors?: string[] }) {
+    console.log("[startup] Server.listen() called")
     _corsWhitelist = opts.cors ?? []
+
+    console.log("[startup] initializing App()")
+    const app = App()
+    console.log("[startup] App() initialized")
 
     const args = {
       hostname: opts.hostname,
       idleTimeout: 0,
-      fetch: App().fetch,
+      fetch: app.fetch,
       websocket: websocket,
     } as const
     const tryServe = (port: number) => {
       try {
-        return Bun.serve({ ...args, port })
-      } catch {
+        console.log(`[startup] attempting to bind to port ${port}`)
+        const s = Bun.serve({ ...args, port })
+        console.log(`[startup] successfully bound to port ${s.port}`)
+        return s
+      } catch (e) {
+        console.log(`[startup] failed to bind to port ${port}: ${e}`)
         return undefined
       }
     }

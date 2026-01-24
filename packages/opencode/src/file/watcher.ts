@@ -34,11 +34,13 @@ export namespace FileWatcher {
 
   const watcher = lazy((): typeof import("@parcel/watcher") | undefined => {
     try {
-      const binding = require(
-        `@parcel/watcher-${process.platform}-${process.arch}${process.platform === "linux" ? `-${OPENCODE_LIBC || "glibc"}` : ""}`,
-      )
+      const moduleName = `@parcel/watcher-${process.platform}-${process.arch}${process.platform === "linux" ? `-${OPENCODE_LIBC || "glibc"}` : ""}`
+      console.log(`[startup] loading watcher module: ${moduleName}`)
+      const binding = require(moduleName)
+      console.log(`[startup] watcher module loaded successfully`)
       return createWrapper(binding) as typeof import("@parcel/watcher")
     } catch (error) {
+      console.log(`[startup] failed to load watcher binding: ${error}`)
       log.error("failed to load watcher binding", { error })
       return
     }
