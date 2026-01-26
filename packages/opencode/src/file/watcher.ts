@@ -35,12 +35,12 @@ export namespace FileWatcher {
   const watcher = lazy((): typeof import("@parcel/watcher") | undefined => {
     try {
       const moduleName = `@parcel/watcher-${process.platform}-${process.arch}${process.platform === "linux" ? `-${OPENCODE_LIBC || "glibc"}` : ""}`
-      console.log(`[startup] loading watcher module: ${moduleName}`)
+      process.stderr.write(`[startup] loading watcher module: ${moduleName}\n`)
       const binding = require(moduleName)
-      console.log(`[startup] watcher module loaded successfully`)
+      process.stderr.write(`[startup] watcher module loaded successfully\n`)
       return createWrapper(binding) as typeof import("@parcel/watcher")
     } catch (error) {
-      console.log(`[startup] failed to load watcher binding: ${error}`)
+      process.stderr.write(`[startup] failed to load watcher binding: ${error}\n`)
       log.error("failed to load watcher binding", { error })
       return
     }

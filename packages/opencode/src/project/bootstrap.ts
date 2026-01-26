@@ -13,25 +13,25 @@ import { Log } from "@/util/log"
 import { ShareNext } from "@/share/share-next"
 
 export async function InstanceBootstrap() {
-  console.log("[startup] InstanceBootstrap starting")
+  process.stderr.write("[startup] InstanceBootstrap starting\n")
   Log.Default.info("bootstrapping", { directory: Instance.directory })
-  console.log("[startup] Plugin.init()")
+  process.stderr.write("[startup] Plugin.init()\n")
   await Plugin.init()
-  console.log("[startup] Share.init()")
+  process.stderr.write("[startup] Share.init()\n")
   Share.init()
-  console.log("[startup] ShareNext.init()")
+  process.stderr.write("[startup] ShareNext.init()\n")
   ShareNext.init()
-  console.log("[startup] Format.init()")
+  process.stderr.write("[startup] Format.init()\n")
   Format.init()
-  console.log("[startup] LSP.init()")
+  process.stderr.write("[startup] LSP.init()\n")
   await LSP.init()
-  console.log("[startup] FileWatcher.init()")
+  process.stderr.write("[startup] FileWatcher.init()\n")
   FileWatcher.init()
-  console.log("[startup] File.init()")
+  process.stderr.write("[startup] File.init()\n")
   File.init()
-  console.log("[startup] Vcs.init()")
+  process.stderr.write("[startup] Vcs.init()\n")
   Vcs.init()
-  console.log("[startup] InstanceBootstrap complete")
+  process.stderr.write("[startup] InstanceBootstrap complete\n")
 
   Bus.subscribe(Command.Event.Executed, async (payload) => {
     if (payload.properties.name === Command.Default.INIT) {

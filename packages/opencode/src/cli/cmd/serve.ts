@@ -8,15 +8,15 @@ export const ServeCommand = cmd({
   builder: (yargs) => withNetworkOptions(yargs),
   describe: "starts a headless opencode server",
   handler: async (args) => {
-    console.log("[startup] serve command handler started")
+    process.stderr.write("[startup] serve command handler started\n")
     if (!Flag.OPENCODE_SERVER_PASSWORD) {
-      console.log("Warning: OPENCODE_SERVER_PASSWORD is not set; server is unsecured.")
+      process.stderr.write("Warning: OPENCODE_SERVER_PASSWORD is not set; server is unsecured.\n")
     }
-    console.log("[startup] resolving network options")
+    process.stderr.write("[startup] resolving network options\n")
     const opts = await resolveNetworkOptions(args)
-    console.log(`[startup] calling Server.listen with ${opts.hostname}:${opts.port}`)
+    process.stderr.write(`[startup] calling Server.listen with ${opts.hostname}:${opts.port}\n`)
     const server = Server.listen(opts)
-    console.log(`opencode server listening on http://${server.hostname}:${server.port}`)
+    process.stderr.write(`opencode server listening on http://${server.hostname}:${server.port}\n`)
     await new Promise(() => {})
     await server.stop()
   },

@@ -1,4 +1,5 @@
-console.log(`[startup] opencode binary starting (${process.platform}-${process.arch})`)
+// Use stderr.write for unbuffered output
+process.stderr.write(`[startup] opencode binary starting (${process.platform}-${process.arch})\n`)
 
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
@@ -10,7 +11,7 @@ import { DebugCommand } from "./cli/cmd/debug"
 import { GenerateCommand } from "./cli/cmd/generate"
 import { EOL } from "os"
 
-console.log("[startup] imports loaded")
+process.stderr.write("[startup] imports loaded\n")
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {

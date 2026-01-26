@@ -3259,12 +3259,12 @@ export namespace Server {
   }
 
   export function listen(opts: { port: number; hostname: string; mdns?: boolean; cors?: string[] }) {
-    console.log("[startup] Server.listen() called")
+    process.stderr.write("[startup] Server.listen() called\n")
     _corsWhitelist = opts.cors ?? []
 
-    console.log("[startup] initializing App()")
+    process.stderr.write("[startup] initializing App()\n")
     const app = App()
-    console.log("[startup] App() initialized")
+    process.stderr.write("[startup] App() initialized\n")
 
     const args = {
       hostname: opts.hostname,
@@ -3274,12 +3274,12 @@ export namespace Server {
     } as const
     const tryServe = (port: number) => {
       try {
-        console.log(`[startup] attempting to bind to port ${port}`)
+        process.stderr.write(`[startup] attempting to bind to port ${port}\n`)
         const s = Bun.serve({ ...args, port })
-        console.log(`[startup] successfully bound to port ${s.port}`)
+        process.stderr.write(`[startup] successfully bound to port ${s.port}\n`)
         return s
       } catch (e) {
-        console.log(`[startup] failed to bind to port ${port}: ${e}`)
+        process.stderr.write(`[startup] failed to bind to port ${port}: ${e}\n`)
         return undefined
       }
     }
