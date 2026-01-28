@@ -47,7 +47,7 @@
     "@actions/core": "1.11.1",
     "@actions/github": "6.0.1",
     "@agentclientprotocol/sdk": "0.5.1",
-    "@anthropic-ai/claude-agent-sdk": "0.2.3",
+    "@anthropic-ai/claude-agent-sdk": "0.2.22",
     "@hono/standard-validator": "0.1.5",
     "@hono/zod-validator": "catalog:",
     "@modelcontextprotocol/sdk": "1.25.2",
