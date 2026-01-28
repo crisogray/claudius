@@ -25,43 +25,55 @@ import { query, type Query } from "@anthropic-ai/claude-agent-sdk"
 import type { HookCallback, PreToolUseHookInput } from "@anthropic-ai/claude-agent-sdk"
 
 import fs from "fs"
+import { execSync } from "child_process"
+
+// Cache the resolved claude path
+let cachedClaudePath: string | undefined | null = null
 
 /**
- * Get path to Claude Code executable for compiled binaries.
- * When running as a compiled binary (via Bun.build), import.meta.url points to
- * a virtual filesystem path (/$bunfs/root/...) where cli.js doesn't exist.
- * We copy cli.js next to the binary during build, so we point to that.
+ * Get path to Claude Code executable.
+ * Prefers system-installed claude (has Keychain access for auth) over bundled cli.js.
  */
 function getClaudeCodeExecutablePath(): string | undefined {
-  // When running as a .js script (dev mode), let SDK find it automatically
-  if (process.execPath.endsWith(".js") || process.argv[1]?.endsWith(".ts")) {
-    return undefined
+  if (cachedClaudePath !== null) {
+    return cachedClaudePath
   }
 
+  // Try system-installed claude first - it has Keychain access for OAuth
+  try {
+    const claudePath = execSync("which claude", { encoding: "utf-8" }).trim()
+    if (claudePath && fs.existsSync(claudePath)) {
+      cachedClaudePath = claudePath
+      return claudePath
+    }
+  } catch {
+    // Not in PATH
+  }
+
+  // Fallback to bundled cli.js (may not have Keychain access in notarized app)
   const execDir = path.dirname(process.execPath)
 
-  // Check for cli.js next to the executable (standalone binary or Tauri dev)
   const localCliJs = path.join(execDir, "cli.js")
   if (fs.existsSync(localCliJs)) {
+    cachedClaudePath = localCliJs
     return localCliJs
   }
 
-  // Check in Tauri app bundle Resources folder (macOS production)
-  // Executable is at Contents/MacOS/*, resources at Contents/Resources/*
   const resourcesCliJs = path.join(execDir, "..", "Resources", "sidecars", "cli.js")
   if (fs.existsSync(resourcesCliJs)) {
+    cachedClaudePath = resourcesCliJs
     return resourcesCliJs
   }
 
-  // Check in sidecars folder relative to target/debug (Tauri dev mode)
-  // In dev mode, sidecar runs from target/debug/ but cli.js is in sidecars/
   const sidecarsFolderCliJs = path.join(execDir, "..", "..", "sidecars", "cli.js")
   if (fs.existsSync(sidecarsFolderCliJs)) {
+    cachedClaudePath = sidecarsFolderCliJs
     return sidecarsFolderCliJs
   }
 
-  // Fallback to local path (will fail with clear error if not found)
-  return localCliJs
+  // Let SDK try its default resolution
+  cachedClaudePath = undefined
+  return undefined
 }
 
 /**
