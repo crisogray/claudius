@@ -1946,8 +1946,8 @@ export namespace Server {
             },
           }),
           async (c) => {
-            const auth = await Auth.all()
-            const connected = auth["anthropic"] ? ["anthropic"] : []
+            // SDK handles auth via local Claude session - always connected
+            const connected = ["anthropic"]
             // Build full model objects for SDK compatibility
             const models = Provider.list()
             const sdkModels: Record<string, unknown> = {}
