@@ -41,7 +41,8 @@ function getClaudeCodeExecutablePath(): string | undefined {
 
   // Try system-installed claude first - it has Keychain access for OAuth
   try {
-    const claudePath = execSync("which claude", { encoding: "utf-8" }).trim()
+    const cmd = process.platform === "win32" ? "where claude" : "which claude"
+    const claudePath = execSync(cmd, { encoding: "utf-8" }).trim().split("\n")[0]
     if (claudePath && fs.existsSync(claudePath)) {
       cachedClaudePath = claudePath
       return claudePath
