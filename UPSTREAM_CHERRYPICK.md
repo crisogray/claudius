@@ -1,9 +1,9 @@
 # Upstream Cherry-Pick Analysis
 
-**Range**: v1.1.23 → v1.1.27
-**Date**: 2026-01-20
-**Total Commits**: ~230
-**Status**: ✅ Clean applies DONE (54 commits) | ⏳ Phased conflicts TODO
+**Range**: v1.1.27 → v1.1.43
+**Date**: 2026-01-30
+**Total Commits**: ~836
+**Status**: ⏳ Analysis complete, cherry-picks TODO
 
 ---
 
@@ -11,584 +11,672 @@
 
 | Phase         | Description                                                     | Status                                |
 | ------------- | --------------------------------------------------------------- | ------------------------------------- |
-| Clean Applies | 54 commits (Desktop, App, UI, Sidebar, Edit Dialog, Core, Docs) | ✅ DONE                               |
-| Phase 1       | Bug Fixes (6 commits)                                           | ✅ DONE                               |
-| Phase 2       | List/Search Robustness (2 commits)                              | ✅ DONE                               |
-| Phase 3       | Pure Styling (17 of 25 commits)                                 | ✅ DONE (9 deferred)                  |
-| Phase 4       | Workspace Management (3 commits)                                | ✅ DONE                               |
-| Phase 5       | Session Layout Architecture (6 commits)                         | ❌ **SKIP** (add hover card manually) |
-| Phase 6       | Misc Features (5 commits)                                       | ⏳ TODO                               |
+| Previous Work | v1.1.23 → v1.1.27 (83 commits)                                  | ✅ DONE                               |
+| New Range     | v1.1.27 → v1.1.43 (836 commits)                                 | ⏳ Analysis complete                  |
 
-### Deferred Commits (require dependencies)
+### Commit Breakdown Summary
 
-**From Phase 3 - Need Hover Card (Phase 5 feature):**
-| Hash | Description |
-|------|-------------|
-| `cf284e32a` | update session hover popover styling |
-| `a05c33470` | retain session hover state when popover open |
-| `ad31b555a` | position session messages popover at top |
-| `7b336add8` | update session messages popover gutter to 28px |
-| `b91b76e9e` | add 8px padding to recent sessions popover |
-| `c89085399` | fix: keep project avatar hover while popover open |
-| `ded9bd26b` | fix: adjust session list tooltip trigger/delay |
-| `389d97ece` | fix: adjust project path tooltip placement |
-
-**From Phase 3 - Now ready (Phase 4 done):**
-| Hash | Description | Status |
-|------|-------------|--------|
-| `95f7403da` | fix(app): truncate workspace title | ⏳ Ready to apply |
-
-**Note**: Phase 5 is being **SKIPPED** because:
-
-- Upstream removes the message rail (we want to keep it in active sessions)
-- Upstream refactors title system to `props.sessionTitle` (we prefer `msg().summary?.title`)
-- We'll manually add hover card for sidebar sessions without the title baggage
+| Category                        | Count  | Action |
+| ------------------------------- | ------ | ------ |
+| Releases/Stats/Downloads        | ~60    | SKIP   |
+| CI/Nix/Hashes                   | ~60    | SKIP   |
+| Chore: generate/format          | ~78    | SKIP   |
+| Zen/Black (console)             | ~14    | SKIP   |
+| TUI                             | ~8     | SKIP   |
+| Test/E2E                        | ~28    | SKIP   |
+| File Tree (ours is better)      | ~25    | SKIP   |
+| Provider/LLM (SDK migration)    | ~15    | SKIP   |
+| Line Selection + Comments       | ~50    | ⏳ REVIEW (mostly net new) |
+| Settings Overhaul               | ~25    | ⏳ REVIEW (mostly net new) |
+| i18n/Translations               | ~38    | ⏳ OPTIONAL (medium-high effort) |
+| Desktop Features                | ~16    | ⏳ REVIEW |
+| App/UI Fixes                    | ~100+  | ⏳ REVIEW |
+| Core/Config                     | ~15    | ⏳ REVIEW |
+| Performance                     | ~10    | ⏳ REVIEW |
+| AGENTS.md Features              | ~4     | ⏳ HIGH PRIORITY |
 
 ---
 
-## Policy Decisions
+## Policy Decisions (Updated)
 
 | Category             | Decision                                                  |
 | -------------------- | --------------------------------------------------------- |
-| Share/Unshare        | **SKIP** - Remove sharing entirely                        |
-| Workspace management | **ACCEPT** - Rename, delete, reset                        |
-| Session layout       | **SKIP** - Keep rail, add hover card manually             |
-| Bug fixes            | **ACCEPT ALL**                                            |
-| Pure styling         | **ACCEPT ALL** (note: session row deliberately different) |
+| File Tree            | **SKIP** - Our implementation is better                   |
+| Line Selection       | **ACCEPT** - Mostly net new files, useful feature         |
+| Comment Cards        | **ACCEPT** - Part of line selection, mostly net new       |
+| Settings Overhaul    | **ACCEPT** - Mostly net new files, cleaner settings UI    |
+| i18n/Translations    | **OPTIONAL** - Medium-high effort, can add later          |
+| Zen/Black            | **SKIP** - Console deleted                                |
+| TUI                  | **SKIP** - TUI deleted                                    |
+| Provider/LLM         | **SKIP** - SDK migration makes irrelevant                 |
+| Desktop Features     | **ACCEPT** - Bug fixes and useful features                |
+| App/UI Fixes         | **SELECTIVE** - Bug fixes, avoid feature conflicts        |
+| AGENTS.md Features   | **HIGH PRIORITY** - Very useful for agent behavior        |
+| Performance          | **ACCEPT** - Memory and rendering improvements            |
 
 ---
 
-## Context: Claude SDK Migration Impact
+## ⭐ HIGH PRIORITY: AGENTS.md Improvements
 
-Our migration from Vercel AI SDK to Claude Agent SDK has **deleted several core files**, making many upstream commits irrelevant or conflicting:
+These are very valuable commits that improve agent behavior:
 
-| Deleted File                                     | Upstream Commits Affected                    |
-| ------------------------------------------------ | -------------------------------------------- |
-| `src/session/llm.ts`                             | Provider features, LiteLLM, user-agent       |
-| `src/session/prompt.ts`                          | Attachment handling, image fixes, truncation |
-| `src/provider/transform.ts`                      | GPT ID fixes, interleaved blocks, Azure      |
-| `src/provider/sdk/*` (21 providers)              | All provider-specific fixes                  |
-| `src/tool/task.ts`                               | Subagent reasoning effort                    |
-| `src/tool/batch.ts`                              | Batch tool limits                            |
-| `src/tool/websearch.ts`, `src/tool/question.txt` | Tool description updates                     |
-| `src/cli/cmd/tui/*`                              | All TUI-related commits                      |
-| `packages/console/*`                             | All Zen/Black/console commits                |
-
-**Bottom line**: ~40% of commits touch deleted files and are N/A. Focus should be on app/desktop/UI changes.
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `39a73d489` | feat: dynamically resolve AGENTS.md files from subdirectories    | High   |
+| `b59aec6f0` | feat: add /learn command to extract session learnings            | High   |
+| `558590712` | fix: ensure parallel tool calls dont double load AGENTS.md       | Medium |
+| `07d84fe00` | feat(app): show loaded agents.md files                           | Medium |
 
 ---
 
-## ✅ DONE: Desktop/App Clean Applies (54 commits)
+## ⭐ HIGH PRIORITY: Performance Improvements
 
-These commits have been cherry-picked successfully:
-
-### Desktop UI Fixes (Clean Apply)
-
-| Hash        | Description                                             | Value  |
-| ----------- | ------------------------------------------------------- | ------ |
-| `c325aa114` | fix(desktop): Stream bash output + strip-ansi (#8961)   | High   |
-| `c4e4f2a05` | fix(desktop): Windows getComputedStyle polyfill (#9054) | Medium |
-| `8b379329a` | fix(desktop): completely disable pinch to zoom          | Medium |
-| `46f415ecb` | fix: desktop hamburger shift                            | Low    |
-| `d645e8bbe` | fix: (desktop) command palette width                    | Low    |
-
-### App UI Fixes (Clean Apply)
-
-| Hash        | Description                                                  | Value  |
-| ----------- | ------------------------------------------------------------ | ------ |
-| `529eb6e14` | fix(app): persist workspace order and collapsed state        | High   |
-| `c551a4b6e` | fix(app): persist workspace order and collapsed state        | Dup    |
-| `00ec29dae` | fix(app): scroll jumping when expanding workspaces           | High   |
-| `360765c59` | fix(app): center dialog on page instead of session           | Medium |
-| `da78b758d` | fix(app): handle new session correctly                       | Medium |
-| `6c0991d16` | fix(app): remove redundant toast for thinking effort (#9181) | Medium |
-| `5a199b04c` | fix: don't open command palette if dialog open (#9116)       | Medium |
-| `4ee540309` | fix(app): hide settings button                               | Low    |
-| `72cb7ccc0` | fix(app): list jumping with mouse/keyboard nav (#9435)       | Medium |
-| `cac35bc52` | fix(app): global terminal/review pane toggles                | Medium |
-| `5f0372183` | fix(app): persist quota                                      | Low    |
-| `c3393ecc6` | fix(app): feedback for unsupported paste filetype (#9452)    | Low    |
-| `b4075cd85` | fix: remove loading text after splash                        | Low    |
-
-### UI Component Fixes (Clean Apply)
-
-| Hash        | Description                                            | Value  |
-| ----------- | ------------------------------------------------------ | ------ |
-| `1250486dd` | feat: add Keybind component for keyboard shortcuts     | High   |
-| `54e52896a` | refactor: use Keybind component in search modal        | Medium |
-| `69215d456` | fix: display arrow keys as symbols in keybind          | Low    |
-| `6f78a71fa` | feat: add hideIcon/class to List search                | Medium |
-| `e0c6459fa` | fix: remove smooth scroll from list component          | Low    |
-| `38847e13b` | fix: truncate long search queries in empty state       | Low    |
-| `3173ba128` | fix(app): fade under sticky elements                   | Medium |
-| `79ae749ed` | fix(app): don't change resize handle on hover          | Low    |
-| `7f9ffe57f` | update thinking text styling in desktop app            | Low    |
-| `c7f0cb3d2` | fix: remove focus outline from dropdown menu           | Low    |
-| `b72a00eaa` | fix text field border showing through focus ring       | Low    |
-| `d19e76d96` | fix: keyboard nav when mouse hovered over list (#9500) | Medium |
-
-### Sidebar/Layout Fixes (Clean Apply)
-
-| Hash        | Description                                       | Value  |
-| ----------- | ------------------------------------------------- | ------ |
-| `94ab87ffa` | fix: view all sessions state styles               | Low    |
-| `2c5437791` | fix: updated project/sessions list width          | Low    |
-| `e8dad8523` | fix: responsive menu desktop                      | Medium |
-| `9a71a73f5` | fix: updating panel min size and button max-width | Low    |
-| `21012fab4` | fix: load more label alignment                    | Low    |
-| `e36b3433f` | fix: remove max width on sidebar new buttons      | Low    |
-| `cad415872` | fix: recent sessions gutter                       | Low    |
-| `ab705dacf` | fix: add left padding to command items in search  | Low    |
-| `53227bfc2` | fix: command palette file list item spacing       | Low    |
-
-### Edit Dialog Fixes (Clean Apply)
-
-| Hash        | Description                                      | Value |
-| ----------- | ------------------------------------------------ | ----- |
-| `89be504ab` | update: align edit project dialog padding/avatar | Low   |
-| `e12b94d91` | update: adjust edit project icon helper text     | Low   |
-| `494e8d5be` | update: tweak edit project icon container        | Low   |
-| `b0794172b` | update: tighten edit project color spacing       | Low   |
-
-### Core/Config Fixes (Clean Apply)
-
-| Hash        | Description                                               | Value  |
-| ----------- | --------------------------------------------------------- | ------ |
-| `e1d0b2ba6` | fix: dynamic import for circular dep in config.ts         | High   |
-| `98578d3a7` | fix(bun): reinstall plugins when cache missing (#8815)    | High   |
-| `10433cb45` | fix(windows): fix jdtls download on Windows (#9195)       | Medium |
-| `3591372c4` | feat(tool): increase question header/label limits (#9201) | Medium |
-| `2dcca4755` | fix: import issue in patch module                         | High   |
-| `b1684f3d1` | fix(config): rename uv formatter for consistency (#9409)  | Low    |
-| `5b8672463` | fix: cargo fmt doesn't support single files               | Low    |
-| `769c97af0` | chore: rm double conditional                              | Low    |
-
-### Docs (Clean Apply)
-
-| Hash        | Description                                            | Value  |
-| ----------- | ------------------------------------------------------ | ------ |
-| `db78a59f0` | docs: Add OpenWork to ecosystem (#8741)                | Low    |
-| `eb968a665` | docs(config): autoupdate with package managers (#9092) | Low    |
-| `c29d44fce` | docs: note untracked files in review                   | Low    |
-| `b4d4a1ea7` | docs: clarify agent tool access (#9300)                | Medium |
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `842f17d6d` | perf(app): better memory management                              | High   |
+| `27bb82761` | perf(app): shared terminal ghostty-web instance                  | High   |
+| `c7e2f1965` | perf(app): cleanup connect provider timers                       | Medium |
+| `3e420bf8e` | perf(app): don't keep parts in memory                            | High   |
+| `c87232d5d` | perf(app): performance improvements                              | Medium |
+| `d03c5f6b3` | perf(app): performance improvements                              | Medium |
+| `dcc8d1a63` | perf(app): performance improvements                              | Medium |
+| `da8f3e92a` | perf(app): better session stream rendering                       | High   |
+| `4afb46f57` | perf(app): don't remount directory layout                        | Medium |
+| `c4d223eb9` | perf(app): faster workspace creation                             | Medium |
 
 ---
 
-## ⏳ TODO: Desktop/App Conflicts (Phased Approach)
+## ⭐ HIGH PRIORITY: Desktop Features
 
-These have conflicts but are **valuable desktop features** worth manual resolution.
-See "Phased Approach" section below for recommended order:
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `2af326606` | feat(desktop): Add desktop deep link (#10072)                    | High   |
+| `d00b8df77` | feat(desktop): properly integrate window controls on windows     | High   |
+| `c365f0a7c` | feat: add restart and reload menu items on macOS                 | Medium |
+| `98b66ff93` | feat(desktop): add Iosevka as a font choice                      | Low    |
+| `65d9e829e` | feat(desktop): standardize desktop layout icons                  | Medium |
+| `57ad1814e` | fix(desktop): enable ctrl+n and ctrl+p for popover navigation    | Medium |
+| `d9e8b2b65` | fix(desktop): disable magnification gestures on macOS            | Medium |
+| `df2ed9923` | fix(desktop): Navigation with Big Sessions                       | High   |
+| `b29898226` | fix(desktop): Fixed reactive feedback loop in global project cache | High |
+| `c3f393bcc` | fix(desktop): Expand font stacks to include macOS Nerd Font      | Low    |
+| `b776ba6b7` | fix(desktop): correct NO_PROXY syntax                            | Medium |
+| `224b2c37d` | fix(desktop): attempt to improve connection reliability          | Medium |
+| `d6caaee81` | fix(desktop): no proxy for connecting to sidecar                 | Medium |
+| `ab705bbc3` | fix(desktop): add workaround for nushell                         | Low    |
+| `366da595a` | fix(desktop): change project path tooltip position to bottom     | Low    |
+| `c73777695` | refactor(desktop): move markdown rendering to rust               | Medium |
 
-### High Priority Conflicts
+---
 
-| Hash        | Description                                                   | Conflict Reason                  | Effort |
-| ----------- | ------------------------------------------------------------- | -------------------------------- | ------ |
-| `06bc4dcb0` | feat(desktop): session unshare button (#8660)                 | session-header.tsx changes       | Medium |
-| `ad2e03284` | refactor(desktop): session search button styling (#9251)      | session-header.tsx changes       | Low    |
-| `08005d755` | refactor(desktop): share button layout shift (#9322)          | session-header.tsx changes       | Low    |
-| `13276aee8` | fix(desktop): getComputedStyle polyfill all platforms (#9369) | desktop/index.tsx                | Low    |
-| `0384e6b0e` | fix: update desktop initializing splash logo                  | desktop/index.tsx changes        | Low    |
-| `657f3d508` | feat(app): unified search for commands/files                  | dialog-select-file.tsx           | High   |
-| `49939c4d8` | feat(app): skeleton loader for sessions                       | layout.tsx changes               | Medium |
-| `086603494` | feat(app): edit project and session titles                    | layout.tsx + global-sync.tsx     | Medium |
-| `f26de6c52` | feat(app): delete workspace                                   | layout.tsx + experimental routes | Medium |
-| `093a3e787` | feat(app): reset worktree                                     | layout.tsx + worktree            | Medium |
-| `befd0f163` | feat(app): new session layout                                 | session.tsx + session-turn       | High   |
-| `7811e01c8` | fix(app): new layout improvements                             | session-turn.tsx/css             | High   |
-| `1f11a8a6e` | feat(app): improved session layout                            | layout.tsx + session.tsx         | High   |
-| `a4d182441` | fix(app): no more favicons                                    | layout.tsx + project.ts          | Medium |
-| `4ddfa86e7` | fix(app): message list overflow & scrolling (#9530)           | session.tsx                      | Medium |
-| `bfa986d45` | feat(app): select project directory text (#9344)              | layout.tsx                       | Low    |
-| `b711ca57f` | fix(app): localStorage quota                                  | persist.ts changes               | Low    |
-| `353115a89` | fix(app): user message expand on click                        | message-part.tsx                 | Low    |
+## ⭐ HIGH PRIORITY: Line Selection + Comments Feature
 
-### Medium Priority Conflicts (Sidebar/Layout)
+**Difficulty: MEDIUM** - Mostly net new files with some modifications to existing components.
 
-| Hash        | Description                                       | Conflict Reason         | Effort |
-| ----------- | ------------------------------------------------- | ----------------------- | ------ |
-| `306fc05c0` | fix: project avatar border radius                 | layout.tsx              | Low    |
-| `b1a22e08f` | fix: avatar radius and current project            | layout.tsx              | Low    |
-| `3ba03a97d` | fix: search bar size/padding, shortcut style      | session-header.tsx      | Low    |
-| `416f419a8` | fix: add default icon to sessions                 | layout.tsx              | Low    |
-| `704276753` | bug: moved createMemo down                        | layout.tsx              | Low    |
-| `74d584af3` | fix: session icon and label alignment             | layout.tsx              | Low    |
-| `a49102db0` | fix: truncate workspace name on hover             | layout.tsx              | Low    |
-| `4be0ba19c` | fix: web mobile menu                              | layout.tsx              | Low    |
-| `d0399045d` | fix: hamburger centred with avatars               | titlebar.tsx            | Low    |
-| `e92d5b592` | fix(app): can't expand workspaces                 | layout.tsx              | Low    |
-| `2ccaa10e7` | fix(app): open workspace on session nav           | layout.tsx              | Low    |
-| `95f7403da` | fix(app): truncate workspace title                | layout.tsx              | Low    |
-| `6e00348bd` | fix(app): remember last opened project            | layout.tsx + server.tsx | Low    |
-| `c3d33562c` | fix: align project avatar notification dot        | layout.tsx              | Low    |
-| `d3baaf740` | fix: shrink project notification dot and mask     | layout.tsx              | Low    |
-| `0cc9a22a4` | fix: show project name in avatar hover            | layout.tsx              | Low    |
-| `c19d03114` | fix: reduce prompt dock bottom spacing            | session.tsx             | Low    |
-| `2a4e8bc01` | fix: adjust recent sessions popover padding       | layout.tsx              | Low    |
-| `c89085399` | fix: keep project avatar hover while popover open | layout.tsx              | Low    |
-| `ded9bd26b` | fix: adjust session list tooltip trigger/delay    | layout.tsx              | Low    |
-| `389d97ece` | fix: adjust project path tooltip placement        | layout.tsx              | Low    |
+### New Files (Clean Additions)
 
-### Search Modal Conflicts
+| File | Lines | Description |
+| ---- | ----- | ----------- |
+| `packages/app/src/context/comments.tsx` | +155 | Comment state management context |
+| `packages/ui/src/components/line-comment.tsx` | new | Line comment component |
+| `packages/ui/src/components/line-comment.css` | new | Line comment styles |
 
-| Hash        | Description                                     | Conflict Reason        | Effort |
-| ----------- | ----------------------------------------------- | ---------------------- | ------ |
-| `b18fb16e9` | refactor: use Keybind in titlebar search button | session-header.tsx     | Low    |
-| `d1b93616f` | fix: keybind border-radius in search modal      | dialog-select-file.tsx | Low    |
-| `f8f1f46a4` | fix: command item left padding in search        | dialog-select-file.tsx | Low    |
-| `dfa2a9f22` | fix: reduce command item left padding           | dialog-select-file.tsx | Low    |
-| `d23c21023` | fix: refine search modal styling and list       | dialog-select-file.tsx | Low    |
-| `ef7ef6538` | fix: limit search modal max-height to 480px     | dialog-select-file.tsx | Low    |
-| `80b278dda` | fix: remove secondary text from commands        | session.tsx            | Low    |
-| `759ce8fb8` | fix: prevent text clipping on search button     | session-header.tsx     | Low    |
-| `07dc8d8ce` | fix: escape CSS selector keys (#9030)           | list.tsx               | Low    |
-| `092428633` | fix(app): layout jumping                        | list.tsx               | Low    |
+### Modified Files (Need Review)
 
-### Session Popover/Hover Conflicts
+| File | Changes | Risk |
+| ---- | ------- | ---- |
+| `packages/ui/src/components/code.tsx` | +392 lines | Medium - adds line selection to code blocks |
+| `packages/ui/src/components/diff.tsx` | +558 lines | Medium - adds line selection to diffs |
+| `packages/app/src/pages/session.tsx` | +340 lines | Medium - integrates comment UI |
+| `packages/app/src/components/prompt-input.tsx` | ~40 lines | Low - comment card display |
 
-| Hash        | Description                                    | Conflict Reason             | Effort |
-| ----------- | ---------------------------------------------- | --------------------------- | ------ |
-| `cf284e32a` | update session hover popover styling           | layout.tsx + hover-card.css | Low    |
-| `a05c33470` | retain session hover state when popover open   | layout.tsx + hover-card.css | Low    |
-| `ad31b555a` | position session messages popover at top       | layout.tsx                  | Low    |
-| `7b336add8` | update session messages popover gutter to 28px | layout.tsx                  | Low    |
-| `b91b76e9e` | add 8px padding to recent sessions popover     | layout.tsx                  | Low    |
+### Core Commits (in order)
 
-### Edit Project Dialog Conflicts
+| Hash | Description |
+| ---- | ----------- |
+| `640d1f1ec` | wip(app): line selection - initial implementation |
+| `0ce0cacb2` | wip(app): line selection |
+| `cb481d9ac` | wip(app): line selection |
+| `1e1872aad` | wip(app): line selection |
+| `99e15caaf` | wip(app): line selection |
+| `0eb523631` | wip(app): line selection |
+| `82f718b3c` | wip(app): line selection |
+| `1780bab1c` | wip(app): line selection |
+| `82ec84982` | Reapply "wip(app): line selection" |
 
-| Hash        | Description                                 | Conflict Reason                    | Effort |
-| ----------- | ------------------------------------------- | ---------------------------------- | ------ |
-| `9fbf2e72b` | update: constrain edit project dialog width | dialog-edit-project.tsx            | Low    |
-| `2dbdd1848` | add hover overlay with upload/trash icons   | dialog-edit-project.tsx + icon.tsx | Medium |
-| `6ed656a61` | remove top padding from edit project form   | dialog-edit-project.tsx            | Low    |
+### Polish/Fix Commits
 
-### Session Turn Conflicts
+| Hash | Description |
+| ---- | ----------- |
+| `6c1e18f11` | fix(app): line selection waits on ready |
+| `5369e96ab` | fix(app): line selection colors |
+| `9a89cd91d` | fix(app): line selection styling |
+| `4c2d597ae` | fix(app): line selection colors |
+| `d90b4c9eb` | fix(app): line selection ux |
+| `42b802b68` | fix(app): line selection ux fixes |
+| `6d8e99438` | fix(app): line selection fixes |
 
-| Hash        | Description                               | Conflict Reason      | Effort |
-| ----------- | ----------------------------------------- | -------------------- | ------ |
-| `c720a2163` | chore: cleanup                            | session-turn.css     | Low    |
-| `eb779a7cc` | chore: cleanup                            | session-turn.tsx/css | Low    |
-| `bec294b78` | fix(app): remove copy button from summary | session-turn.tsx     | Low    |
+### Comment Card Styling (~27 commits)
+
+All the `fix(app): comment*` and `fix(ui): comment*` commits for styling refinements.
+
+---
+
+## ⭐ HIGH PRIORITY: Settings Overhaul
+
+**Difficulty: MEDIUM** - Mostly net new component files with clean integration points.
+
+### New Files (Clean Additions - ~1,600 lines)
+
+| File | Lines | Description |
+| ---- | ----- | ----------- |
+| `packages/app/src/context/settings.tsx` | +177 | Settings state management |
+| `packages/app/src/components/dialog-settings.tsx` | +82 | Settings dialog container |
+| `packages/app/src/components/settings-general.tsx` | +417 | General settings panel |
+| `packages/app/src/components/settings-keybinds.tsx` | +434 | Keyboard shortcuts panel |
+| `packages/app/src/components/settings-providers.tsx` | +263 | Provider settings panel |
+| `packages/app/src/components/settings-permissions.tsx` | +228 | Permissions panel |
+| `packages/app/src/components/settings-models.tsx` | +130 | Model settings panel |
+| `packages/app/src/components/settings-agents.tsx` | +15 | Agents panel (stub) |
+| `packages/app/src/components/settings-commands.tsx` | +15 | Commands panel (stub) |
+| `packages/app/src/components/settings-mcp.tsx` | +15 | MCP panel (stub) |
+
+### Modified Files (Need Review)
+
+| File | Changes | Risk |
+| ---- | ------- | ---- |
+| `packages/app/src/app.tsx` | ~40 lines | Low - add settings context provider |
+| `packages/app/src/pages/layout.tsx` | ~5 lines | Low - add settings trigger |
+| `packages/ui/src/components/dialog.tsx` | ~4 lines | Low - x-large size support |
+| `packages/ui/src/components/tabs.tsx` | ~9 lines | Low - settings variant |
+
+### Core Commits
+
+| Hash | Description |
+| ---- | ----------- |
+| `8bcbfd639` | wip(app): settings - initial structure |
+| `de3641e8e` | wip(app): settings |
+| `df094a10f` | wip(app): settings |
+| `924fc9ed8` | wip(app): settings |
+| `03d884797` | wip(app): provider settings |
+| `c323d96de` | wip(app): provider settings |
+| `1934ee13d` | wip(app): model settings |
+| `84b12a8fb` | feat(app): model settings |
+| `65e1186ef` | wip(app): global config |
+| `2f35c40bb` | chore(app): global config changes |
+| `bdfd8f8b0` | feat(app): custom provider |
+
+### Settings Styling Commits (~15 commits)
+
+Various commits for select dropdowns, tabs, icons, spacing, etc.
+
+---
+
+## OPTIONAL: i18n/Translations
+
+**Difficulty: MEDIUM-HIGH** - Translation files are easy, but requires modifying many components.
+
+### Assessment
+
+| Aspect | Details |
+| ------ | ------- |
+| Translation files | ~11,000 lines across 15 language files (easy copy) |
+| Infrastructure | `context/language.tsx` (+198 lines) - language context |
+| Component changes | Many components need `t()` function calls |
+| Languages included | EN, ZH, ZHT, JA, KO, DE, FR, ES, PL, RU, AR, BR, DA, NO, TH |
+
+### New Files (Clean Additions)
+
+| File | Lines | Description |
+| ---- | ----- | ----------- |
+| `packages/app/src/context/language.tsx` | +198 | Language context provider |
+| `packages/app/src/i18n/en.ts` | +734 | English translations |
+| `packages/app/src/i18n/*.ts` | ~720 each | Other language files (14 total) |
+
+### Estimated Effort
+
+| Task | Effort |
+| ---- | ------ |
+| Copy translation infrastructure | Low |
+| Copy language files | Low |
+| Modify components to use `t()` | Medium-High |
+| Test all UI strings | Medium |
+
+### Recommendation
+
+**Phased approach:**
+1. **Phase 1**: Add infrastructure only (`context/language.tsx`, `i18n/en.ts`)
+2. **Phase 2**: Gradually add `t()` calls to components as needed
+3. **Phase 3**: Add additional language files when ready
+
+### Core Commits
+
+| Hash | Description |
+| ---- | ----------- |
+| `0470717c7` | feat(app): initial i18n stubbing |
+| `92beae141` - `233d003b4` | wip(app): i18n (infrastructure) |
+| `e6438aa3f` | feat(app): korean translations |
+| `118b4f65d` | feat(app): german translations |
+| `09a9556c7` | feat(app): spanish translations |
+| `efff52714` | feat(app): french translations |
+| `4a386906d` | feat(app): japanese translations |
+| `8b0353cb2` | feat(app): danish translations |
+| `5ca28b645` | feat(app): polish translations |
+| `383c2787f` | feat(i18n): add Russian language support |
+| `23daac217` | feat(i18n): add Traditional Chinese |
+| `ba2e35e29` | feat(i18n): add Arabic language support |
+| `8427f40e8` | feat: Add support for Norwegian translations |
+| `32f72f49a` | feat(i18n): add br locale support |
+| `775d28802` | feat(i18n): add th locale support |
+
+---
+
+## Medium Priority: App Bug Fixes
+
+### Session/Workspace Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `e84d92da2` | feat: Sequential numbering for forked session titles             | Medium |
+| `d4e3acf17` | fix(app): session sync issue                                     | High   |
+| `319ad2a39` | fix(app): session load cap                                       | Medium |
+| `e2c57735b` | fix(app): session diffs not always loading                       | Medium |
+| `71cd59932` | fix(app): session shouldn't be keyed                             | Medium |
+| `8595dae1a` | fix(app): session loading loop                                   | High   |
+| `7170983ef` | fix(app): duplicate session loads                                | Medium |
+| `7b23bf7c1` | fix(app): don't auto nav to workspace after reset                | Low    |
+| `7c2e59de6` | fix(app): new workspace expanded and at the top                  | Low    |
+| `5f67e6fd1` | fix(app): don't jump accordion on expand/collapse                | Low    |
+| `7f862533d` | fix(app): better pending states for workspace operations         | Medium |
+| `c72d9a473` | fix(app): View all sessions flakiness                            | Medium |
+
+### Terminal Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `df7f9ae3f` | fix(app): terminal corruption                                    | High   |
+| `3fdd6ec12` | fix(app): terminal clone needs remount                           | Medium |
+| `2f1be914c` | fix(app): remove terminal connection error overlay               | Low    |
+| `01b12949e` | fix(app): terminal no longer hangs on exit or ctrl + D           | High   |
+| `3ba1111ed` | fix(app): terminal issues/regression                             | High   |
+| `87d91c29e` | fix(app): terminal improvements - focus, rename, error state     | High   |
+| `af1e2887b` | fix(app): open terminal pane when creating new terminal          | Low    |
+| `80481c224` | fix(app): cleanup pty.exited event listener on unmount           | Medium |
+| `281c9d187` | fix(app): change terminal.new keybind to ctrl+alt+t              | Low    |
+
+### Auto-scroll Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `b4a9e1b19` | fix(app): auto-scroll                                            | Medium |
+| `d7948c237` | fix(app): auto-scroll                                            | Medium |
+| `b6565c606` | fix(app): auto-scroll button sometimes sticks                    | Low    |
+| `3807523f4` | fix(app): auto-scroll                                            | Medium |
+| `09997bb6c` | fix(app): auto-scroll                                            | Medium |
+| `ae2693425` | fix(app): snap to bottom on prompt                               | Medium |
+| `85ef23a09` | fix(app): don't interfere with scroll when using message nav     | Medium |
+| `847a7ca00` | fix(app): don't show scroll to bottom if no scroll               | Low    |
+| `a0636fcd5` | fix(app): auto-scroll ux                                         | Medium |
+| `c69e3bbde` | fix(app): auto-scroll ux                                         | Medium |
+| `63da3a338` | fix(app): breaking out of auto-scroll                            | Medium |
+
+### Model Selector Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `dc1ff0e63` | fix(app): model select not closing on escape                     | Low    |
+| `7ba25c6af` | fix(app): model selector ux                                      | Medium |
+| `b951187a6` | fix(app): no select on new session                               | Low    |
+| `27b45d070` | fix(app): scrolling for unpaid model selector                    | Low    |
+| `00e79210e` | fix(app): tooltips causing getComputedStyle errors in model select | Medium |
+| `19c787449` | fix(app): select model anchor                                    | Low    |
+| `e376e1de1` | fix(app): enable dialog dismiss on model selector                | Low    |
+| `f7a4cdcd3` | fix(app): no default model crash                                 | High   |
+| `7655f51e1` | fix(app): add connect provider in model selector                 | Medium |
+
+### UI/Dialog Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `aa1d0f616` | fix(app): better header item wrapping                            | Low    |
+| `36df0d823` | fix(app): alignment and padding in dialogs                       | Low    |
+| `14b00f64a` | fix(app): escape should always close dialogs                     | Medium |
+| `f607353be` | fix(app): close review pane                                      | Low    |
+| `d9741866c` | fix(app): reintroduce review tab                                 | Medium |
+| `e5fe50f7d` | fix(app): close delete workspace dialog immediately              | Low    |
+| `7962ff38b` | feat(app): add transition to command palette                     | Low    |
+| `3ac11df66` | feat(app): add transition to select provider dialog              | Low    |
+| `7caf59b43` | fix(ui): prevent double-close and fix dialog replacement         | Medium |
+| `c551f7e47` | fix(ui): reduce dialog transition in time to 150ms               | Low    |
+
+### Prompt/Input Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `2f9f588f7` | fix(app): submit button state                                    | Medium |
+| `41f2653a3` | fix(app): prompt submission failing on first message             | High   |
+| `52535654e` | fix(app): tab should select suggestion                           | Medium |
+| `156ce5436` | fix(ui): prevent Enter key action during IME composition         | Medium |
+
+### Project Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `1d5ee3e58` | fix(app): not auto-navigating to last project                    | Medium |
+| `14db336e3` | fix(app): flash of fallback icon for projects                    | Low    |
+| `2b9b98e9c` | fix(app): project icon color flash on load                       | Low    |
+| `07015aae0` | fix(app): folder suggestions missing last part                   | Medium |
+| `972cb01d5` | fix(app): allow adding projects from any depth                   | Medium |
+| `a8018dcc4` | fix(app): allow adding projects from root                        | Medium |
+| `bcf7a65e3` | fix(app): non-git projects should be renameable                  | Medium |
+| `1f3b2b595` | fix(app): Edit-project name race condition                       | Medium |
+| `ae8cff22e` | fix(app): renaming non-git projects shouldn't affect other projects | Medium |
+| `d115f33b5` | fix(app): don't allow workspaces in non-vcs projects             | Medium |
+
+### Miscellaneous App Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `095328faf` | fix(app): non-fatal error handling                               | Medium |
+| `743e83d9b` | fix(app): agent fallback colors                                  | Low    |
+| `33d400c56` | fix(app): spinner color                                          | Low    |
+| `1ebf63c70` | fix(app): don't connect to localhost through vpn                 | Medium |
+| `eac2d4c69` | fix(app): navigate to tabs when opening file                     | Medium |
+| `3297e5230` | fix(app): open markdown links in external browser                | Medium |
+| `984518b1c` | fix(app): restore external link opening in system browser        | Medium |
+| `7fcdbd155` | fix(app): Order themes alphabetically                            | Low    |
+| `7c34319b1` | fix(app): query selector with non-latin chars                    | Medium |
+| `3296b9037` | fix(app): handle non-tool call permissions                       | Medium |
+| `8d1a66d04` | fix(app): unnecessary suspense flash                             | Low    |
+| `399fec770` | fix(app): markdown rendering with morphdom for better dom        | Medium |
+| `6abe86806` | fix(app): better error screen when connecting to sidecar         | Medium |
+| `962ab3bc8` | fix(app): reactive loops                                         | High   |
+| `a900c8924` | fix(app): mobile horizontal scrolling due to session stat btn    | Low    |
+| `caecc7911` | fix(app): cursor on resize                                       | Low    |
+| `6d656e482` | fix(app): querySelector errors, more defensive scroll-to-item    | Medium |
+| `46de1ed3b` | fix(app): windows path handling issues                           | Medium |
+
+---
+
+## Medium Priority: Core/Config Features
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `45ec3105b` | feat: support config skill registration                          | Medium |
+| `b5ffa997d` | feat(config): add managed settings support for enterprise        | Low    |
+| `aa92ef37f` | tweak: add 'skill' to permissions config section                 | Low    |
+| `a18ae2c8b` | feat: add OPENCODE_DISABLE_PROJECT_CONFIG env var                | Medium |
+| `c9ea96680` | feat: add OPENCODE_DISABLE_FILETIME_CHECK flag                   | Medium |
+| `2a370f803` | feat: implement home directory expansion for permission patterns | High   |
+| `1f9313847` | feat(core): add worktree to plugin tool context                  | Medium |
+| `a8c18dba8` | fix(core): expose Instance.directory to custom tools             | Medium |
+| `6cf2c3e3d` | fix: use Instance.directory instead of process.cwd() in read tool | Medium |
+| `bb710e9ea` | fix(core): snapshot regression                                   | High   |
+| `32e6bcae3` | core: fix unicode filename handling in snapshot diff             | Medium |
+| `65938baf0` | core: update session summary after revert to show file changes   | Medium |
+| `68bd16df6` | core: fix models snapshot loading to prevent caching issues      | Medium |
+
+---
+
+## Medium Priority: UI Component Improvements
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `c68261fc0` | fix(ui): add max-width 280px to tabs with text truncation        | Low    |
+| `783121c06` | fix(ui): use focus-visible instead of focus                      | Medium |
+| `a5b72a7d9` | fix(ui): tab click hit area                                      | Medium |
+| `10d227b8d` | fix(ui): tab focus state                                         | Low    |
+| `d97cd5686` | fix(ui): popover exit ux                                         | Low    |
+| `b69521606` | fix(ui): align list search input width with list items           | Low    |
+| `c2ec60821` | feat(ui): add link icon and use it for copy-to-clipboard buttons | Low    |
+| `8845f2b92` | feat(ui): add onFilter callback to List                          | Medium |
+| `9424f829e` | fix(ui): allow KaTeX inline math to be followed by punctuation   | Medium |
+| `8c05eb22b` | fix(markdown): Add streaming prop to markdown element            | Medium |
+| `2e5fe6d5c` | fix(ui): preserve filename casing in edit/write tool titles      | Medium |
+| `a3a06ffc4` | fix(ui): show filename in Edit/Write permission titles           | Medium |
+| `3c7d5174b` | fix(ui): prevent copy buttons from stealing focus from prompt    | Medium |
+| `225b72ca3` | feat: always center selected item in selection dialogs           | Medium |
+| `8105f186d` | fix(app): center checkbox indicator in provider selection        | Low    |
+
+---
+
+## Low Priority: Sidebar Features
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `cd4676171` | feat(app): better sidebar hover when collapsed                   | Medium |
+| `5f7111fe9` | fix(app): Always close hovercard when view-sessions clicked      | Low    |
+| `e85b95308` | fix(app): clear session hover state on navigation                | Low    |
+| `8639b0767` | feat(app): add tooltips to sidebar new session/workspace buttons | Low    |
+| `3b46f9012` | fix: icon size in sidebar                                        | Low    |
+| `575cc59b3` | fix: increase sidebar icon size by removing 16px constraint      | Low    |
+| `4350b8fd6` | fix: show View all sessions button for active project            | Low    |
+| `211147374` | fix: remove close delay on hover cards to stop overlapping       | Low    |
+
+---
+
+## Low Priority: Misc Features
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `58b9b5460` | feat(app): forward and back buttons                              | Medium |
+| `aeeb05e4a` | feat(app): back button in subagent sessions                      | Medium |
+| `fb007d6ba` | feat(app): copy buttons for assistant messages and code blocks   | Medium |
+| `aa1772900` | feat(app): add scrollbar styling to session page                 | Low    |
+| `cf1fc02d2` | update jump to latest button with circular design and animation  | Low    |
+| `80dc74a0e` | add keyboard shortcut (mod+,) to open settings dialog            | Medium |
+| `de6582b38` | feat(app): delete sessions                                       | Medium |
+| `fc53abe58` | feat(app): close projects from hover card                        | Low    |
+| `62115832f` | feat(app): render audio players in session review                | Low    |
+| `496bbd70f` | feat(app): render images in session review                       | Low    |
+| `16fad51b5` | feat(app): add workspace startup script to projects              | High   |
+| `94ce289dd` | fix(app): run start command after reset                          | Medium |
+| `923e3da97` | feat(ui): add aura theme                                         | Low    |
+| `936f3ebe9` | feat(ui): add gruvbox theme                                      | Low    |
+| `fdac21688` | feat(app): add app version display to settings                   | Low    |
+
+---
+
+## Low Priority: OpenCode Core Fixes
+
+| Hash        | Description                                                      | Value  |
+| ----------- | ---------------------------------------------------------------- | ------ |
+| `427ef95f7` | fix(opencode): allow media-src data: URL for small audio files   | Low    |
+| `e5b33f8a5` | fix(opencode): add AbortSignal support to Ripgrep.files()        | Medium |
+| `63f5669eb` | fix(opencode): ensure unsub(PartUpdated) is always called        | Medium |
+| `694695050` | fix(opencode): preserve tool input from running state for MCP    | Medium |
+| `c4594c4c1` | fix(opencode): relax bun version requirement                     | Medium |
+| `17c4202ea` | fix(opencode): Allow compatible Bun versions in packageManager   | Medium |
+| `3b7c347b2` | tweak: bash tool, ensure cat will trigger external_directory perm | Medium |
+| `68e41a1ee` | fix: pass arguments to commands without explicit placeholders    | Medium |
+| `397ee419d` | tweak: make question validation more lax to avoid tool failures  | Medium |
+| `74bd52e8a` | fix: ensure apply patch tool emits edited events                 | Medium |
+| `cbe20d22d` | fix: don't update session timestamp for metadata-only changes    | Low    |
+| `3723e1b8d` | fix: correct dot prefix display in directory names for RTL       | Low    |
+| `c2844697f` | fix: ensure images are properly returned as tool results         | Medium |
 
 ---
 
 ## Irrelevant (Skip Entirely)
 
-### TUI/CLI (Deleted)
+### Releases/Stats (~60 commits)
 
-All commits touching `src/cli/cmd/tui/*` - we deleted the TUI.
+| Pattern                    | Description                                    |
+| -------------------------- | ---------------------------------------------- |
+| `release: v1.1.*`          | Release commits (v1.1.28 through v1.1.43)      |
+| `ignore: update download*` | Daily download stats updates                   |
 
-| Hash        | Description                                      |
-| ----------- | ------------------------------------------------ |
-| `83ed1adcb` | feat: add Carbonfox theme (#8723)                |
-| `07e7ebdb8` | fix(tui): add tab navigation in questions        |
-| `12b621068` | fix(tui): dim question option prefixes           |
-| `4af9defb8` | fix(tui): correct theme count tip                |
-| `46be47d0b` | stop select dialog event propagation             |
-| `ac5453548` | feat: add version to session header/status       |
-| `bd914a8c0` | Revert "stop select dialog event propagation"    |
-| `626fa1462` | fix: home/end keys in menu list modals           |
-| `08b94a689` | fix: keep primary model after subagent runs      |
-| `c25155586` | fix: open help dialog with tui/open-help route   |
-| `3d095e7fe` | fix: centralize OSC 52 clipboard for SSH         |
-| `93e43d8e5` | Hide variants hint when list empty               |
-| `759e68616` | refactor(tui): unify command registry            |
-| `bfb8c531c` | feat: bind vim-style line-by-line scrolling      |
-| `f3513bacf` | tui: fix model state persistence                 |
-| `d939a3ad5` | feat(tui): use mouse for permission buttons      |
-| `e81bb8679` | fix: Windows evaluating text on copy             |
-| `c47699536` | fix: Don't wrap lines unnecessarily              |
-| `091e88c1e` | fix(opencode): sets input mode mouse vs keyboard |
-| `88c5a7fe9` | fix(tui): clarify resume session tip             |
-| `aa4b06e16` | tui: fix message history cleanup memory leaks    |
+### CI/Nix (~60 commits)
 
-### Console/Zen/Black (Deleted)
+| Pattern                        | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `ci:`, `ci$`, `ci (`           | CI workflow changes                      |
+| `chore: update nix*`           | Nix hash updates                         |
+| `chore: follow conventional*`  | Nix CI changes                           |
 
-All commits touching `packages/console/*` - we deleted console.
+### Chore: generate/format (~78 commits)
 
-| Hash        | Description                                           |
-| ----------- | ----------------------------------------------------- |
-| `7443b9929` | feat(console): Fix /black page View Transition Safari |
-| `7e619a930` | zen: black admin                                      |
-| `12ae80856` | wip: zen                                              |
-| `e4a34beb8` | chore: update GitHub stars and commits statistics     |
-| `f66e6d703` | wip: zen                                              |
-| `ea8ef37d5` | wip: zen                                              |
-| `d5a5e6e06` | feat(console): /black shader improvements             |
-| `cbe1c8147` | wip: black                                            |
-| `f96c4badd` | wip: black                                            |
-| `e8746ddb1` | zen: fix opus unicode characters                      |
-| `bee2f6540` | zen: fix checkout link for black users                |
-| `843d76191` | zen: fix black reset date                             |
+| Pattern              | Description                              |
+| -------------------- | ---------------------------------------- |
+| `chore: generate`    | SDK/type generation                      |
+| `chore: format code` | Code formatting                          |
+| `chore: regen sdk`   | SDK regeneration                         |
 
-### Provider/LLM (SDK Migration Made Irrelevant)
+### Zen/Black/Console (~14 commits)
 
-All commits touching deleted provider/llm code:
+| Pattern        | Description                              |
+| -------------- | ---------------------------------------- |
+| `zen:*`        | Zen subscription/model changes           |
+| `wip: black`   | Black feature development                |
+| `wip: zen*`    | Zen feature development                  |
 
-| Hash        | Description                                         | Why N/A                       |
-| ----------- | --------------------------------------------------- | ----------------------------- |
-| `9b57db30d` | feat: add litellmProxy provider option              | llm.ts deleted                |
-| `f4086ac45` | fix: subagent reasoningEffort not applied           | task.ts deleted               |
-| `9d8d0e97e` | Revert subagent reasoningEffort                     | task.ts deleted               |
-| `8b08d340a` | fix: stop changing main model/agent from subtasks   | prompt.ts deleted             |
-| `d47510785` | strip itemIds in more cases                         | transform.ts deleted          |
-| `d7192d6af` | tweak: set opencode as user agent                   | llm.ts deleted                |
-| `d8ef9f808` | test: fix transform test                            | transform.test.ts deleted     |
-| `40836e968` | fix: itemId stripping logic for gpt models          | transform.ts deleted          |
-| `578239e0d` | chore: cleanup transform code                       | transform.ts deleted          |
-| `b8e2895df` | fix(app): support anthropic models on azure         | llm.ts + transform.ts deleted |
-| `14d1e2028` | Revert azure cognitive services                     | llm.ts + transform.ts deleted |
-| `7c3eeeb0f` | fix: gpt id stuff fr fr this time                   | transform.ts deleted          |
-| `ea13b6e8a` | test: add azure test case                           | transform.test.ts deleted     |
-| `d841e70d2` | fix: bad variants for grok models                   | transform.ts deleted          |
-| `0d8e706fa` | test: fix transform test                            | transform.test.ts deleted     |
-| `fc6c9cbbd` | fix(github-copilot): auto-route GPT-5+ to Responses | transform.ts deleted          |
-| `260ab60c0` | fix: track reasoning by output_index for copilot    | provider/sdk deleted          |
-| `3fd0043d1` | chore: handle fields in interleaved block           | transform.ts deleted          |
+### TUI (~8 commits)
 
-### Tool Descriptions (SDK Handles)
+| Pattern        | Description                              |
+| -------------- | ---------------------------------------- |
+| `fix(tui):*`   | TUI fixes (we deleted TUI)               |
 
-| Hash        | Description                                   | Why N/A                    |
-| ----------- | --------------------------------------------- | -------------------------- |
-| `5092b5f07` | docs: clarify question tool guidance          | question.txt deleted       |
-| `1a43e5fe8` | fix: websearch tool date emphasis             | websearch.ts/txt deleted   |
-| `b7ad6bd83` | feat: apply_patch tool for openai models      | tool/registry.ts deleted   |
-| `4299450d7` | tweak apply_patch tool description            | apply_patch.ts/txt deleted |
-| `dd0906be8` | tweak: apply patch description                | apply_patch.txt deleted    |
-| `673e79f45` | tweak(batch): up max batch tool from 10 to 25 | batch.ts/txt deleted       |
-| `36f5ba52e` | fix(batch): update batch tool definition      | batch.txt deleted          |
-| `9706aaf55` | rm filetime assertions from patch tool        | apply_patch.ts deleted     |
-| `616329ae9` | chore: generate (apply_patch)                 | apply_patch.ts deleted     |
-| `3515b4ff7` | omit todo tools for openai models             | registry.ts deleted        |
+### Test/E2E (~28 commits)
 
-### Session/Prompt (SDK Migration)
+| Pattern              | Description                              |
+| -------------------- | ---------------------------------------- |
+| `test:*`             | Test fixes                               |
+| `test(app):*`        | App test updates                         |
 
-| Hash        | Description                                     | Why N/A              |
-| ----------- | ----------------------------------------------- | -------------------- |
-| `de2de099b` | fix: rm user message with image attachments     | prompt.ts deleted    |
-| `e0a854f03` | Revert image attachment fix                     | prompt.ts deleted    |
-| `8fd1b92e6` | fix: tool attachments not sent as user messages | prompt.ts deleted    |
-| `f5a6a4af7` | Revert tool attachment fix                      | prompt.ts deleted    |
-| `bfd2f91d5` | feat(hook): command execute before hook         | prompt.ts deleted    |
-| `0d49df46e` | fix: truncation handling for mcp servers        | prompt.ts deleted    |
-| `419004992` | chore: remove duplicate prompt file             | prompt file conflict |
+### File Tree (~25 commits)
 
-### Nix (Deleted)
+**SKIP - Our implementation is better**
 
-All commits touching nix/_ or flake._ files:
+| Pattern                    | Description                              |
+| -------------------------- | ---------------------------------------- |
+| `feat(app): file tree`     | File tree implementation                 |
+| `wip(app): file tree*`     | File tree WIP                            |
+| `fix(app):*filetree*`      | File tree fixes                          |
+| `fix(ui):*filetree*`       | File tree UI                             |
 
-| Hash                      | Description                                  |
-| ------------------------- | -------------------------------------------- |
-| `a7cae8f67`               | fix: nix desktop workflow                    |
-| `aca1eb6b5`               | fix(nix): add desktop application entry      |
-| `6e020ef9e`               | chore: cleanup nix                           |
-| `55224d64a`               | Update flake.lock                            |
-| `43a9c5038` - `f5eb90514` | Update node_modules hash (various platforms) |
-| `06c543e93`               | fix(nix): resolve hash race condition        |
-| `dac099a48`               | feat(nix): overhaul nix flake and packages   |
-| `2fc4ab968`               | ci: simplify nix hash updates                |
-| `91787ceb3`               | fix: nix ci - swapped dash/underscore        |
+### Provider/LLM (~15 commits)
 
-### Releases/Stats (Skip)
+**SKIP - SDK migration makes irrelevant**
 
-| Hash        | Description                              |
-| ----------- | ---------------------------------------- |
-| `bc3616d9c` | release: v1.1.24                         |
-| `968239bb7` | release: v1.1.25                         |
-| `1ee8a9c0b` | release: v1.1.26                         |
-| `f197b8a0c` | ignore: update download stats 2026-01-16 |
-| `a58d1be82` | ignore: update download stats 2026-01-17 |
-| `5c9cc9c74` | ignore: update download stats 2026-01-18 |
-| `06d03dec3` | ignore: update download stats 2026-01-19 |
-
-### SDK/Docs Generation (Usually Conflicts)
-
-| Hash                       | Description                      | Note             |
-| -------------------------- | -------------------------------- | ---------------- |
-| Multiple `chore: generate` | Various SDK regen                | Usually conflict |
-| Various docs commits       | providers.mdx, acp.mdx conflicts | Some may apply   |
-
-### Test/E2E (Conflicts on Deleted)
-
-| Hash        | Description                       |
-| ----------- | --------------------------------- |
-| `03d7467ea` | test(app): initial e2e test setup |
-| `19d15ca4d` | test(app): more e2e tests         |
-| `dd19c3d8f` | test(app): e2e utilities          |
-| `f1daf3b43` | fix(app): tests in ci             |
-| `182c43a78` | chore: cleanup (e2e)              |
-| `b90315bc7` | chore: cleanup (test.yml)         |
-| `e9ede7079` | chore: cleanup (test.yml)         |
-| `1ba7c606e` | chore: cleanup (e2e specs)        |
-
-### MCP/OAuth (Conflicts)
-
-| Hash        | Description                                     | Reason                 |
-| ----------- | ----------------------------------------------- | ---------------------- |
-| `b572c6810` | fix(mcp): show auth URL when browser can't open | cli/cmd/mcp.ts deleted |
-| `40b275d7e` | feat(mcp): add OAuth redirect URI configuration | complex conflict       |
-| `33290c54c` | Revert OAuth redirect URI configuration         | complex conflict       |
-
-### ACP (Conflicts but Less Relevant)
-
-| Hash        | Description                                         | Reason                |
-| ----------- | --------------------------------------------------- | --------------------- |
-| `bef1f6628` | fix(acp): single global event subscription (#5628)  | acp/agent.ts conflict |
-| `095a64291` | fix(acp): preserve file attachment metadata (#6342) | acp/agent.ts conflict |
-
-### Misc Conflicts (Low Priority)
-
-| Hash        | Description                                               | Reason                         |
-| ----------- | --------------------------------------------------------- | ------------------------------ |
-| `81983d4a2` | fix(agent): default agent selection in acp/headless       | agent/agent.ts conflict        |
-| `052f887a9` | core: prevent env vars in config from being replaced      | config.ts conflict             |
-| `6b481b5fb` | fix(opencode): use streamObject for openai oauth in agent | agent/agent.ts conflict        |
-| `e2f1f4d81` | add scheduler, cleanup module (#9346)                     | snapshot + truncation conflict |
-| `501ef2d98` | fix: update gitlab-ai-provider to 1.3.2                   | bun.lock + package.json        |
-| `38c641a2f` | fix(tool): treat .fbs files as text                       | tool/read.ts deleted           |
-| `fc50b2962` | fix(app): terminal sessions scoped to workspace           | terminal.tsx conflict          |
-| `c2f9fd5fe` | fix(app): reload instance after workspace reset           | layout.tsx conflict            |
-| `88fd6a294` | feat(desktop): Terminal Splits (#8767)                    | terminal-split.tsx add/add     |
-| `71306cbd1` | Revert Terminal Splits                                    | terminal-split.tsx             |
-| `889c60d63` | fix(web): rename favicons to v2 for cache busting         | Multiple conflicts             |
-| `ecc51ddb4` | fix(app): hash nav                                        | layout.tsx + session.tsx       |
-| `d605a78a0` | fix(app): keybind for cycling thinking effort             | session.tsx                    |
-| `4e04bee0c` | fix(app): favicon                                         | layout.tsx                     |
-| `272970559` | fix(app): archive session sometimes flaky                 | layout.tsx                     |
-| `054ccee78` | update review session empty state styling                 | session.tsx                    |
+| Pattern                    | Description                              |
+| -------------------------- | ---------------------------------------- |
+| `fix(provider):*`          | Provider fixes                           |
+| `feat(provider):*`         | Provider features                        |
+| Provider temperature/model | Model-specific fixes                     |
+| Copilot/Codex auth         | Auth plugin changes                      |
 
 ---
 
-## Summary
+## Recommended Phased Approach
 
-| Category          | Clean (Done) | Conflict (TODO) | Irrelevant/Skip |
-| ----------------- | ------------ | --------------- | --------------- |
-| Desktop Core      | 5 ✅         | 5               | 0               |
-| App UI Fixes      | 13 ✅        | 50+             | 0               |
-| UI Components     | 12 ✅        | 15              | 0               |
-| Core/Config       | 8 ✅         | 3               | 0               |
-| Sidebar/Layout    | 9 ✅         | -               | 0               |
-| Edit Dialog       | 4 ✅         | -               | 0               |
-| Docs              | 4 ✅         | 4               | 0               |
-| TUI               | 0            | 0               | 21              |
-| Console/Zen       | 0            | 0               | 12              |
-| Provider/LLM      | 0            | 0               | 17              |
-| Tool Descriptions | 0            | 0               | 10              |
-| Session/Prompt    | 0            | 0               | 6               |
-| Nix               | 0            | 0               | 20+             |
-| Releases/Stats    | 0            | 0               | 7               |
-| Tests/E2E         | 2            | 8               | 0               |
-| **Total**         | **54 ✅**    | **~48**         | **~93**         |
+### Phase 1: AGENTS.md Features (4 commits) - HIGH PRIORITY
+- `39a73d489` - dynamically resolve AGENTS.md from subdirectories
+- `b59aec6f0` - /learn command for session learnings
+- `558590712` - parallel tool calls AGENTS.md fix
+- `07d84fe00` - show loaded agents.md files
 
-### Progress
+### Phase 2: Performance (10 commits) - HIGH PRIORITY
+All `perf(app):` commits listed above
 
-```
-Clean applies:    54 commits ✅
-Phase 1-3:        25 commits ✅
-Phase 4:           3 commits ✅ (+ 1 fix commit)
-Deferred:          8 commits ⏳ (need hover card)
-Remaining:         5 commits ⏳ (Phase 6)
-Skipped:          ~93 commits ❌
-────────────────────────────
-Total applied:    83 commits
-```
+### Phase 3: Line Selection + Comments (~50 commits) - HIGH PRIORITY
+New feature with mostly net new files:
+- Start with core WIP commits (`640d1f1ec` through `82ec84982`)
+- Apply comment context and UI components
+- Apply styling/polish commits
 
----
+### Phase 4: Settings Overhaul (~25 commits) - HIGH PRIORITY
+Cleaner settings UI with mostly net new files:
+- Start with core WIP commits (`8bcbfd639` through `bdfd8f8b0`)
+- Apply individual settings panels
+- Apply styling commits
 
-## Phased Approach (Remaining Work)
+### Phase 5: Desktop Features (16 commits) - MEDIUM PRIORITY
+Critical desktop fixes and new features
 
-### ✅ Phase 1: Bug Fixes (6 commits) - DONE
+### Phase 6: Session/Terminal Fixes (~20 commits) - MEDIUM PRIORITY
+Session loading, terminal corruption, auto-scroll
 
-| Hash        | Description                                           | Conflict Level |
-| ----------- | ----------------------------------------------------- | -------------- |
-| `13276aee8` | fix(desktop): getComputedStyle polyfill all platforms | Low            |
-| `704276753` | bug: moved createMemo down                            | Low            |
-| `e92d5b592` | fix(app): can't expand workspaces                     | Medium         |
-| `2ccaa10e7` | fix(app): open workspace on session nav               | Low            |
-| `416f419a8` | fix: add default icon to sessions                     | Low            |
-| `4be0ba19c` | fix: web mobile menu                                  | Low            |
+### Phase 7: Core/Config Fixes (~12 commits) - MEDIUM PRIORITY
+Permission patterns, snapshot fixes, etc.
 
-### ✅ Phase 2: List/Search Robustness (2 commits) - DONE
+### Phase 8: UI Component Fixes (~15 commits) - LOW PRIORITY
+Dialog, tab, and popover improvements
 
-| Hash        | Description                                      | Conflict Level |
-| ----------- | ------------------------------------------------ | -------------- |
-| `07dc8d8ce` | fix: escape CSS selector keys                    | Low            |
-| `092428633` | fix(app): layout jumping (custom scrollIntoView) | Low            |
-
-### ✅ Phase 3: Pure Styling (17 of 25 commits) - DONE
-
-Applied: Avatar (5), Workspace (1), Search/Dialog (8), Edit Dialog (3)
-Deferred: Popover styling (8) - needs hover card, Workspace title (1) - needs Phase 4
-
-### ✅ Phase 4: Workspace Management (3 commits) - DONE
-
-| Hash        | Description                                | Status                             |
-| ----------- | ------------------------------------------ | ---------------------------------- |
-| `086603494` | feat(app): edit project and session titles | ✅ Applied (+ fix for SessionItem) |
-| `f26de6c52` | feat(app): delete workspace                | ✅ Applied                         |
-| `093a3e787` | feat(app): reset worktree                  | ✅ Applied                         |
-
-**Notes**:
-
-- Kept our `${folder}: ${branch}` format instead of upstream's "local"/"sandbox" labels
-- Added `workspaceName?.[]` optional chaining to prevent runtime errors
-- Fixed SessionItem duplicate title/diff from merge conflict
-
-### ❌ Phase 5: Session Layout Architecture (6 commits) - SKIP
-
-**Decision**: Skip all 6 commits. Will manually add hover card instead.
-
-| Hash        | Description                               | Status |
-| ----------- | ----------------------------------------- | ------ |
-| `1f11a8a6e` | feat(app): improved session layout        | SKIP   |
-| `befd0f163` | feat(app): new session layout             | SKIP   |
-| `7811e01c8` | fix(app): new layout improvements         | SKIP   |
-| `eb779a7cc` | chore: cleanup                            | SKIP   |
-| `c720a2163` | chore: cleanup                            | SKIP   |
-| `bec294b78` | fix(app): remove copy button from summary | SKIP   |
-
-**Why skip**:
-
-- Removes message rail (we want to keep it)
-- Refactors title to `props.sessionTitle` (we prefer `msg().summary?.title`)
-- Hover card feature will be added manually without the baggage
-
-### ⏳ Phase 6: Misc Features (5 commits)
-
-| Hash        | Description                                  | Conflict Level |
-| ----------- | -------------------------------------------- | -------------- |
-| `a4d182441` | fix(app): no more favicons                   | Low            |
-| `6e00348bd` | fix(app): remember last opened project       | Low            |
-| `0384e6b0e` | fix: update desktop initializing splash logo | Low            |
-| `4ddfa86e7` | fix(app): message list overflow & scrolling  | Low            |
-| `353115a89` | fix(app): user message expand on click       | Low            |
-
-### ❌ SKIP: Share Functionality
-
-Policy decision: Remove sharing entirely
-
-- SKIP `06bc4dcb0` - feat(desktop): session unshare button
-- SKIP `ad2e03284` - refactor(desktop): session search button styling
-- SKIP `08005d755` - refactor(desktop): share button layout shift
+### Phase 9: i18n Infrastructure (OPTIONAL)
+If internationalization is desired:
+- Add `context/language.tsx` and `i18n/en.ts` first
+- Gradually update components to use `t()` function
+- Add language files as needed
 
 ---
 
 ## Notes
 
-**Key Files with Many Conflicts**:
+**Key Files with Many Upstream Changes (Likely Conflicts):**
 
-- `layout.tsx` - Many sidebar/workspace commits touch this file
-- `session-turn.tsx` - Session layout changes touch this file
-- `session.tsx` - Various session-related commits
+- `packages/app/src/layout.tsx` - Sidebar, hover cards, workspace management
+- `packages/app/src/session.tsx` - Session rendering, auto-scroll
+- `packages/app/src/components/ui/*.tsx` - Many UI component changes
+- `packages/app/src/settings/*.tsx` - Complete settings overhaul
+- `packages/desktop/*` - Desktop-specific features
 
-**Recommended Approach**:
+**What to Preserve in Our Fork:**
 
-1. Apply phases 1-4 one at a time, verify build after each phase
-2. Skip phase 5 entirely
-3. Apply phase 6
-4. Manually add hover card to sidebar sessions
-
-**What to preserve in our fork**:
-
+- Our file tree implementation (better than upstream)
 - Two-row session item design in layout.tsx
-- `msg().summary?.title` approach for session titles (not upstream's `props.sessionTitle`)
+- `msg().summary?.title` approach for session titles
 - "Claudius" branding (not OpenCode)
+
+**SDK Migration Impact (same as before):**
+
+~40% of commits touch deleted files (TUI, provider SDK, tool descriptions, etc.) and are automatically irrelevant.
+
+---
+
+## Summary
+
+| Category          | Potential Applies | Irrelevant/Skip |
+| ----------------- | ----------------- | --------------- |
+| AGENTS.md         | 4 ⭐              | 0               |
+| Performance       | 10 ⭐             | 0               |
+| Line Selection    | ~50 ⭐            | 0               |
+| Settings Overhaul | ~25 ⭐            | 0               |
+| Desktop           | 16                | 0               |
+| Session/Terminal  | ~20               | 0               |
+| Core/Config       | ~12               | 0               |
+| UI Components     | ~15               | 0               |
+| App Bug Fixes     | ~50               | 0               |
+| i18n (optional)   | ~38               | 0               |
+| Releases/Stats    | 0                 | ~60             |
+| CI/Nix            | 0                 | ~60             |
+| Chore: generate   | 0                 | ~78             |
+| Zen/Console       | 0                 | ~14             |
+| TUI               | 0                 | ~8              |
+| Test/E2E          | 0                 | ~28             |
+| File Tree         | 0                 | ~25             |
+| Provider/LLM      | 0                 | ~15             |
+| **Total**         | **~240 ⏳**       | **~290**        |
+
+### Difficulty Estimates
+
+| Feature | Difficulty | Notes |
+| ------- | ---------- | ----- |
+| AGENTS.md | Low | Small, targeted changes |
+| Performance | Low-Medium | Isolated optimizations |
+| Line Selection | **Medium** | Mostly net new files (~1,000 lines new), some integration |
+| Settings Overhaul | **Medium** | Mostly net new files (~1,600 lines new), clean integration |
+| i18n | **Medium-High** | Infrastructure easy, component changes extensive |
+| Desktop | Low | Isolated to desktop package |
+| Session/Terminal | Medium | Some overlap with existing code |
+
+### Progress
+
+```
+Previous work:      83 commits ✅ (v1.1.23 → v1.1.27)
+New analysis:      836 commits analyzed
+Potentially useful: ~240 commits (including line selection, settings, i18n)
+Skip (irrelevant):  ~290 commits
+Skip (file tree):   ~25 commits (ours is better)
+────────────────────────────────
+Recommended order: AGENTS.md → Performance → Line Selection → Settings → Desktop
+```
