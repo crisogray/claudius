@@ -127,9 +127,7 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
         case "permission.asked":
         case "question.asked":
         case "plan.asked": {
-          try {
-            requestPlayer?.play()
-          } catch {}
+          playSound(soundSrc(settings.sounds.permissions()))
           break
         }
       }
