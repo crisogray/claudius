@@ -114,6 +114,7 @@ for (const item of targets) {
   await $`mkdir -p dist/${name}/bin`
 
   await Bun.build({
+    conditions: ["browser"],
     tsconfig: "./tsconfig.json",
     sourcemap: "external",
     compile: {
