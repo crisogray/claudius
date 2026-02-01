@@ -25,7 +25,8 @@
 | Phase 4 | Settings Overhaul | ✅ DONE | Settings dialog fully functional, sound utils added |
 | Phase 7 | Core/Config Fixes | ✅ PARTIAL | Unicode filenames, DISABLE_PROJECT_CONFIG, DISABLE_FILETIME_CHECK |
 | Phase 3 | Line Selection | ⚠️ BLOCKED | Heavy conflicts with session.tsx (16 conflict markers) |
-| Phase 5-8 | Remaining | ⏳ PENDING | Will attempt next |
+| Phase 5 | Desktop Features | ✅ PARTIAL | Tooltip position fix applied |
+| Phase 6-8 | Remaining | ⏸️ BLOCKED | i18n dependencies, heavy conflicts |
 
 ### Applied Commits
 
@@ -38,6 +39,7 @@
 | `32e6bcae3` | fix: unicode filename handling in snapshot diff | Phase 7 |
 | `a18ae2c8b` | feat: add OPENCODE_DISABLE_PROJECT_CONFIG | Phase 7 |
 | `c9ea96680` | feat: add OPENCODE_DISABLE_FILETIME_CHECK | Phase 7 |
+| `366da595a` | fix: tooltip position to bottom | Phase 5 |
 | manual | enable settings button in sidebar | Phase 4 |
 | manual | fix notification.tsx sound for permission/question/plan events | Phase 4 |
 
@@ -47,6 +49,8 @@
 - **Performance commits**: Heavy worktree dependencies, files deleted in our fork
 - **Line Selection**: 16 conflict markers in session.tsx alone, needs manual implementation
 - **Settings**: Applied cleanly after resolving dialog.tsx and notification.tsx conflicts
+- **UI Fixes**: Many commits depend on i18n (`language.t()`) which we don't have
+- **Remaining fixes**: Heavy divergence from upstream makes cherry-picking difficult
 
 ### Commit Breakdown Summary
 
