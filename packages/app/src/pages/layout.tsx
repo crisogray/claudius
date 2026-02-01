@@ -1997,10 +1997,6 @@ export default function Layout(props: ParentProps) {
                           gutter={2}
                           value={project()?.worktree}
                           class="shrink-0"
-                          contentStyle={{
-                            "max-width": "640px",
-                            transform: "translate3d(52px, 0, 0)",
-                          }}
                         >
                           <span class="text-12-regular text-text-base truncate select-text">
                             {project()?.worktree.replace(homedir(), "~")}
