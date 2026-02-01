@@ -289,6 +289,10 @@ export function GitTab() {
             rows={2}
             value={commitMessage()}
             onInput={(e) => setCommitMessage(e.currentTarget.value)}
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck={false}
           />
           <div class="flex items-center gap-2 mt-2">
             <label class="flex items-center gap-1 text-[10px] text-text-muted cursor-pointer">
