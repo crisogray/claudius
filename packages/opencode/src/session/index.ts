@@ -17,7 +17,7 @@ import { Command } from "../command"
 import { Snapshot } from "@/snapshot"
 
 import type { Provider } from "@/provider/provider"
-import { PermissionNext } from "@/permission/next"
+import { PermissionNext } from "@/permission"
 
 /**
  * Token usage information (replaces AI SDK LanguageModelUsage)

@@ -8,7 +8,7 @@ import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
-import { PermissionNext } from "@/permission/next"
+import { PermissionNext } from "@/permission"
 import { pipe, sortBy, values } from "remeda"
 
 export namespace Agent {

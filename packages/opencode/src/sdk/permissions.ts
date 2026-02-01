@@ -1,6 +1,6 @@
 import { Agent } from "@/agent/agent"
 import { Bus } from "@/bus"
-import { PermissionNext } from "@/permission/next"
+import { PermissionNext } from "@/permission"
 import { PlanApproval } from "@/plan"
 import { Question } from "@/question"
 import { Session } from "@/session"

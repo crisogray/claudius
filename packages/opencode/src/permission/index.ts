@@ -1,210 +1,285 @@
-import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
+import { BusEvent } from "@/bus/bus-event"
+import { Config } from "@/config/config"
+import { Identifier } from "@/id/id"
+import { Instance } from "@/project/instance"
+import { Storage } from "@/storage/storage"
+import { fn } from "@/util/fn"
+import { Log } from "@/util/log"
+import { Wildcard } from "@/util/wildcard"
 import z from "zod"
-import { Log } from "../util/log"
-import { Identifier } from "../id/id"
-import { Plugin } from "../plugin"
-import { Instance } from "../project/instance"
-import { Wildcard } from "../util/wildcard"
 
-export namespace Permission {
+export namespace PermissionNext {
   const log = Log.create({ service: "permission" })
 
-  function toKeys(pattern: Info["pattern"], type: string): string[] {
-    return pattern === undefined ? [type] : Array.isArray(pattern) ? pattern : [pattern]
-  }
+  export const Action = z.enum(["allow", "deny", "ask"]).meta({
+    ref: "PermissionAction",
+  })
+  export type Action = z.infer<typeof Action>
 
-  function covered(keys: string[], approved: Record<string, boolean>): boolean {
-    const pats = Object.keys(approved)
-    return keys.every((k) => pats.some((p) => Wildcard.match(k, p)))
-  }
-
-  export const Info = z
+  export const Rule = z
     .object({
-      id: z.string(),
-      type: z.string(),
-      pattern: z.union([z.string(), z.array(z.string())]).optional(),
-      sessionID: z.string(),
-      messageID: z.string(),
-      callID: z.string().optional(),
-      message: z.string(),
-      metadata: z.record(z.string(), z.any()),
-      time: z.object({
-        created: z.number(),
-      }),
+      permission: z.string(),
+      pattern: z.string(),
+      action: Action,
     })
     .meta({
-      ref: "Permission",
+      ref: "PermissionRule",
     })
-  export type Info = z.infer<typeof Info>
+  export type Rule = z.infer<typeof Rule>
+
+  export const Ruleset = Rule.array().meta({
+    ref: "PermissionRuleset",
+  })
+  export type Ruleset = z.infer<typeof Ruleset>
+
+  export function fromConfig(permission: Config.Permission) {
+    const ruleset: Ruleset = []
+    for (const [key, value] of Object.entries(permission)) {
+      if (typeof value === "string") {
+        ruleset.push({
+          permission: key,
+          action: value,
+          pattern: "*",
+        })
+        continue
+      }
+      ruleset.push(...Object.entries(value).map(([pattern, action]) => ({ permission: key, pattern, action })))
+    }
+    return ruleset
+  }
+
+  export function merge(...rulesets: Ruleset[]): Ruleset {
+    return rulesets.flat()
+  }
+
+  export const Request = z
+    .object({
+      id: Identifier.schema("permission"),
+      sessionID: Identifier.schema("session"),
+      permission: z.string(),
+      patterns: z.string().array(),
+      metadata: z.record(z.string(), z.any()),
+      always: z.string().array(),
+      tool: z
+        .object({
+          messageID: z.string(),
+          callID: z.string(),
+        })
+        .optional(),
+    })
+    .meta({
+      ref: "PermissionRequest",
+    })
+
+  export type Request = z.infer<typeof Request>
+
+  export const Reply = z.enum(["once", "always", "reject"])
+  export type Reply = z.infer<typeof Reply>
+
+  export const Approval = z.object({
+    projectID: z.string(),
+    patterns: z.string().array(),
+  })
 
   export const Event = {
-    Updated: BusEvent.define("permission.updated", Info),
+    Asked: BusEvent.define("permission.asked", Request),
     Replied: BusEvent.define(
       "permission.replied",
       z.object({
         sessionID: z.string(),
-        permissionID: z.string(),
-        response: z.string(),
+        requestID: z.string(),
+        reply: Reply,
       }),
     ),
   }
 
-  const state = Instance.state(
-    () => {
-      const pending: {
-        [sessionID: string]: {
-          [permissionID: string]: {
-            info: Info
-            resolve: () => void
-            reject: (e: any) => void
-          }
-        }
-      } = {}
+  const state = Instance.state(async () => {
+    const projectID = Instance.project.id
+    const stored = await Storage.read<Ruleset>(["permission", projectID]).catch(() => [] as Ruleset)
 
-      const approved: {
-        [sessionID: string]: {
-          [permissionID: string]: boolean
-        }
-      } = {}
-
-      return {
-        pending,
-        approved,
+    const pending: Record<
+      string,
+      {
+        info: Request
+        resolve: () => void
+        reject: (e: any) => void
       }
-    },
-    async (state) => {
-      for (const pending of Object.values(state.pending)) {
-        for (const item of Object.values(pending)) {
-          item.reject(new RejectedError(item.info.sessionID, item.info.id, item.info.callID, item.info.metadata))
+    > = {}
+
+    return {
+      pending,
+      approved: stored,
+    }
+  })
+
+  export const ask = fn(
+    Request.partial({ id: true }).extend({
+      ruleset: Ruleset,
+    }),
+    async (input) => {
+      const s = await state()
+      const { ruleset, ...request } = input
+      for (const pattern of request.patterns ?? []) {
+        const rule = evaluate(request.permission, pattern, ruleset, s.approved)
+        log.info("evaluated", { permission: request.permission, pattern, action: rule })
+        if (rule.action === "deny")
+          throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
+        if (rule.action === "ask") {
+          const id = input.id ?? Identifier.ascending("permission")
+          return new Promise<void>((resolve, reject) => {
+            const info: Request = {
+              id,
+              ...request,
+            }
+            s.pending[id] = {
+              info,
+              resolve,
+              reject,
+            }
+            Bus.publish(Event.Asked, info)
+          })
         }
+        if (rule.action === "allow") continue
       }
     },
   )
 
-  export function pending() {
-    return state().pending
-  }
-
-  export function list() {
-    const { pending } = state()
-    const result: Info[] = []
-    for (const items of Object.values(pending)) {
-      for (const item of Object.values(items)) {
-        result.push(item.info)
-      }
-    }
-    return result.sort((a, b) => a.id.localeCompare(b.id))
-  }
-
-  export async function ask(input: {
-    type: Info["type"]
-    message: Info["message"]
-    pattern?: Info["pattern"]
-    callID?: Info["callID"]
-    sessionID: Info["sessionID"]
-    messageID: Info["messageID"]
-    metadata: Info["metadata"]
-  }) {
-    const { pending, approved } = state()
-    log.info("asking", {
-      sessionID: input.sessionID,
-      messageID: input.messageID,
-      toolCallID: input.callID,
-      pattern: input.pattern,
-    })
-    const approvedForSession = approved[input.sessionID] || {}
-    const keys = toKeys(input.pattern, input.type)
-    if (covered(keys, approvedForSession)) return
-    const info: Info = {
-      id: Identifier.ascending("permission"),
-      type: input.type,
-      pattern: input.pattern,
-      sessionID: input.sessionID,
-      messageID: input.messageID,
-      callID: input.callID,
-      message: input.message,
-      metadata: input.metadata,
-      time: {
-        created: Date.now(),
-      },
-    }
-
-    switch (
-      await Plugin.trigger("permission.ask", info, {
-        status: "ask",
-      }).then((x) => x.status)
-    ) {
-      case "deny":
-        throw new RejectedError(info.sessionID, info.id, info.callID, info.metadata)
-      case "allow":
+  export const reply = fn(
+    z.object({
+      requestID: Identifier.schema("permission"),
+      reply: Reply,
+      message: z.string().optional(),
+    }),
+    async (input) => {
+      const s = await state()
+      const existing = s.pending[input.requestID]
+      if (!existing) return
+      delete s.pending[input.requestID]
+      Bus.publish(Event.Replied, {
+        sessionID: existing.info.sessionID,
+        requestID: existing.info.id,
+        reply: input.reply,
+      })
+      if (input.reply === "reject") {
+        existing.reject(input.message ? new CorrectedError(input.message) : new RejectedError())
+        // Reject all other pending permissions for this session
+        const sessionID = existing.info.sessionID
+        for (const [id, pending] of Object.entries(s.pending)) {
+          if (pending.info.sessionID === sessionID) {
+            delete s.pending[id]
+            Bus.publish(Event.Replied, {
+              sessionID: pending.info.sessionID,
+              requestID: pending.info.id,
+              reply: "reject",
+            })
+            pending.reject(new RejectedError())
+          }
+        }
         return
-    }
-
-    pending[input.sessionID] = pending[input.sessionID] || {}
-    return new Promise<void>((resolve, reject) => {
-      pending[input.sessionID][info.id] = {
-        info,
-        resolve,
-        reject,
       }
-      Bus.publish(Event.Updated, info)
-    })
-  }
-
-  export const Response = z.enum(["once", "always", "reject"])
-  export type Response = z.infer<typeof Response>
-
-  export function respond(input: { sessionID: Info["sessionID"]; permissionID: Info["id"]; response: Response }) {
-    log.info("response", input)
-    const { pending, approved } = state()
-    const match = pending[input.sessionID]?.[input.permissionID]
-    if (!match) return
-    delete pending[input.sessionID][input.permissionID]
-    Bus.publish(Event.Replied, {
-      sessionID: input.sessionID,
-      permissionID: input.permissionID,
-      response: input.response,
-    })
-    if (input.response === "reject") {
-      match.reject(new RejectedError(input.sessionID, input.permissionID, match.info.callID, match.info.metadata))
-      return
-    }
-    match.resolve()
-    if (input.response === "always") {
-      approved[input.sessionID] = approved[input.sessionID] || {}
-      const approveKeys = toKeys(match.info.pattern, match.info.type)
-      for (const k of approveKeys) {
-        approved[input.sessionID][k] = true
+      if (input.reply === "once") {
+        existing.resolve()
+        return
       }
-      const items = pending[input.sessionID]
-      if (!items) return
-      for (const item of Object.values(items)) {
-        const itemKeys = toKeys(item.info.pattern, item.info.type)
-        if (covered(itemKeys, approved[input.sessionID])) {
-          respond({
-            sessionID: item.info.sessionID,
-            permissionID: item.info.id,
-            response: input.response,
+      if (input.reply === "always") {
+        for (const pattern of existing.info.always) {
+          s.approved.push({
+            permission: existing.info.permission,
+            pattern,
+            action: "allow",
           })
         }
+
+        existing.resolve()
+
+        const sessionID = existing.info.sessionID
+        for (const [id, pending] of Object.entries(s.pending)) {
+          if (pending.info.sessionID !== sessionID) continue
+          const ok = pending.info.patterns.every(
+            (pattern) => evaluate(pending.info.permission, pattern, s.approved).action === "allow",
+          )
+          if (!ok) continue
+          delete s.pending[id]
+          Bus.publish(Event.Replied, {
+            sessionID: pending.info.sessionID,
+            requestID: pending.info.id,
+            reply: "always",
+          })
+          pending.resolve()
+        }
+
+        // TODO: we don't save the permission ruleset to disk yet until there's
+        // UI to manage it
+        // await Storage.write(["permission", Instance.project.id], s.approved)
+        return
       }
+    },
+  )
+
+  export function evaluate(permission: string, pattern: string, ...rulesets: Ruleset[]): Rule {
+    const merged = merge(...rulesets)
+    log.info("evaluate", { permission, pattern, ruleset: merged })
+    const match = merged.findLast(
+      (rule) => Wildcard.match(permission, rule.permission) && Wildcard.match(pattern, rule.pattern),
+    )
+    return match ?? { action: "ask", permission, pattern: "*" }
+  }
+
+  const EDIT_TOOLS = ["edit", "write", "patch", "multiedit"]
+
+  export function disabled(tools: string[], ruleset: Ruleset): Set<string> {
+    const result = new Set<string>()
+    for (const tool of tools) {
+      const permission = EDIT_TOOLS.includes(tool) ? "edit" : tool
+
+      const rule = ruleset.findLast((r) => Wildcard.match(permission, r.permission))
+      if (!rule) continue
+      if (rule.pattern === "*" && rule.action === "deny") result.add(tool)
+    }
+    return result
+  }
+
+  /** User rejected without message - halts execution */
+  export class RejectedError extends Error {
+    constructor() {
+      super(`The user rejected permission to use this specific tool call.`)
     }
   }
 
-  export class RejectedError extends Error {
-    constructor(
-      public readonly sessionID: string,
-      public readonly permissionID: string,
-      public readonly toolCallID?: string,
-      public readonly metadata?: Record<string, any>,
-      public readonly reason?: string,
-    ) {
+  /** User rejected with message - continues with guidance */
+  export class CorrectedError extends Error {
+    constructor(message: string) {
+      super(`The user rejected permission to use this specific tool call with the following feedback: ${message}`)
+    }
+  }
+
+  /** Auto-rejected by config rule - halts execution */
+  export class DeniedError extends Error {
+    constructor(public readonly ruleset: Ruleset) {
       super(
-        reason !== undefined
-          ? reason
-          : `The user rejected permission to use this specific tool call. You may try again with different parameters.`,
+        `The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules ${JSON.stringify(ruleset)}`,
       )
+    }
+  }
+
+  export async function list() {
+    return state().then((x) => Object.values(x.pending).map((x) => x.info))
+  }
+
+  export async function rejectBySession(sessionID: string): Promise<void> {
+    const s = await state()
+    for (const [requestID, pending] of Object.entries(s.pending)) {
+      if (pending.info.sessionID === sessionID) {
+        delete s.pending[requestID]
+        log.info("permission rejected by session interrupt", { requestID, sessionID })
+        Bus.publish(Event.Replied, {
+          sessionID: pending.info.sessionID,
+          requestID: pending.info.id,
+          reply: "reject",
+        })
+        pending.reject(new RejectedError())
+      }
     }
   }
 }
