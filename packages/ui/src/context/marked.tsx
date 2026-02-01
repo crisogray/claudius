@@ -389,6 +389,7 @@ export const { use: useMarked, provider: MarkedProvider } = createSimpleContext(
       },
       markedKatex({
         throwOnError: false,
+        nonStandard: true,
       }),
       markedShiki({
         async highlight(code, lang) {
