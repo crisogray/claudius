@@ -63,6 +63,23 @@ function createTerminalSession(sdk: ReturnType<typeof useSDK>, dir: string, id: 
     }),
   )
 
+  const unsub = sdk.event.on("pty.exited", (event) => {
+    const id = event.properties.id
+    const pty = store.all.find((x) => x.id === id)
+    if (!pty) return
+    batch(() => {
+      setStore(
+        "all",
+        store.all.filter((x) => x.id !== id),
+      )
+      if (store.active === pty.tabId) {
+        // Find remaining root tabs (where tabId === id)
+        const remaining = store.all.filter((x) => x.id !== id && x.tabId === x.id)
+        setStore("active", remaining[0]?.tabId)
+      }
+    })
+  })
+
   const getNextTitleNumber = () => {
     const existing = new Set(store.all.filter((p) => p.tabId === p.id).map((pty) => pty.titleNumber))
     let next = 1
@@ -134,6 +151,7 @@ function createTerminalSession(sdk: ReturnType<typeof useSDK>, dir: string, id: 
     return result
   })
   const all = createMemo(() => migrate(store.all))
+  onCleanup(unsub)
 
   return {
     ready,
@@ -174,10 +192,23 @@ function createTerminalSession(sdk: ReturnType<typeof useSDK>, dir: string, id: 
         return undefined
       })
       if (!clone?.data) return
-      setStore("all", index, { ...pty, ...clone.data })
-      if (store.active === pty.tabId) {
-        setStore("active", pty.tabId)
-      }
+
+      // For root tabs (id === tabId), update tabId to match new id
+      // For split panes, keep the original tabId
+      const isRootTab = pty.id === pty.tabId
+      const newTabId = isRootTab ? clone.data.id : pty.tabId
+      const wasActiveTab = store.active === pty.tabId
+
+      batch(() => {
+        setStore("all", index, {
+          ...pty,
+          ...clone.data,
+          tabId: newTabId,
+        })
+        if (wasActiveTab && isRootTab) {
+          setStore("active", newTabId)
+        }
+      })
     },
 
     open(id: string) {

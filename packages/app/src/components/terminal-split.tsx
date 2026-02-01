@@ -141,12 +141,14 @@ export function TerminalSplit(props: TerminalSplitProps) {
                 class="flex-1 min-h-0"
                 classList={{ "opacity-50": !containerFocused() || (hasSplits() && !isFocused()) }}
               >
-                <Terminal
-                  pty={pty}
-                  onCleanup={terminal.update}
-                  onConnectError={() => terminal.clone(pty.id)}
-                  class="size-full"
-                />
+                <Show when={pty.id} keyed>
+                  <Terminal
+                    pty={pty}
+                    onCleanup={terminal.update}
+                    onConnectError={() => terminal.clone(pty.id)}
+                    class="size-full"
+                  />
+                </Show>
               </div>
             </div>
           )

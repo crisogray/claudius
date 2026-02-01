@@ -24,8 +24,9 @@
 | Phase 2 | Performance | ⏸️ SKIPPED | SDK architecture conflicts (worktree.ts deleted) |
 | Phase 4 | Settings Overhaul | ✅ DONE | Settings dialog fully functional, sound utils added |
 | Phase 7 | Core/Config Fixes | ✅ PARTIAL | Unicode filenames, DISABLE_PROJECT_CONFIG, DISABLE_FILETIME_CHECK |
-| Phase 3 | Line Selection | ⚠️ BLOCKED | Heavy conflicts with session.tsx (16 conflict markers) |
+| Phase 3 | Line Selection | ⚠️ BLOCKED | Shadow DOM complexity in pierre diffs library |
 | Phase 5 | Desktop Features | ✅ PARTIAL | Tooltip position fix applied |
+| Phase 6 | Terminal Fixes | ✅ DONE | Terminal cleanup, adapted for our tabId split architecture |
 | Phase 6-8 | Remaining | ⏸️ BLOCKED | i18n dependencies, heavy conflicts |
 
 ### Applied Commits
@@ -42,14 +43,25 @@
 | `366da595a` | fix: tooltip position to bottom | Phase 5 |
 | manual | enable settings button in sidebar | Phase 4 |
 | manual | fix notification.tsx sound for permission/question/plan events | Phase 4 |
+| `41f2653a3` | fix(app): prompt submission failing on first message | Standalone |
+| `14b00f64a` | fix(app): escape should always close dialogs | Standalone |
+| `52535654e` | fix(app): tab should select suggestion | Standalone |
+| `156ce5436` | fix(ui): prevent Enter key action during IME composition | Standalone |
+| `07015aae0` | fix(app): folder suggestions missing last part | Standalone |
+| `9424f829e` | fix(ui): allow KaTeX inline math to be followed by punctuation | Standalone |
+| `3e6710425` | fix(app): show retry status only on active turn | Standalone |
+| `33d400c56` | fix(app): spinner color inherits | Standalone |
+| manual | Terminal cleanup: pty.exited handler, WS close, auto-close panel | Phase 6 |
+| manual | Terminal clone fix: proper tabId handling for remount | Phase 6 |
 
 ### Conflict Resolution Notes
 
 - **AGENTS.md backend commits**: SDK tool architecture differences, files deleted in our fork
 - **Performance commits**: Heavy worktree dependencies, files deleted in our fork
-- **Line Selection**: 16 conflict markers in session.tsx alone, needs manual implementation
+- **Line Selection**: Shadow DOM in pierre diffs blocks text selection events; needs custom implementation
 - **Settings**: Applied cleanly after resolving dialog.tsx and notification.tsx conflicts
 - **UI Fixes**: Many commits depend on i18n (`language.t()`) which we don't have
+- **Terminal Splits**: Upstream added then reverted terminal splits (PR #8767). We kept the feature, so terminal fixes need adaptation for our `tabId` architecture
 - **Remaining fixes**: Heavy divergence from upstream makes cherry-picking difficult
 
 ### Commit Breakdown Summary
@@ -330,16 +342,18 @@ Various commits for select dropdowns, tabs, icons, spacing, etc.
 
 ### Terminal Fixes
 
-| Hash        | Description                                                      | Value  |
-| ----------- | ---------------------------------------------------------------- | ------ |
-| `df7f9ae3f` | fix(app): terminal corruption                                    | High   |
-| `3fdd6ec12` | fix(app): terminal clone needs remount                           | Medium |
-| `2f1be914c` | fix(app): remove terminal connection error overlay               | Low    |
-| `01b12949e` | fix(app): terminal no longer hangs on exit or ctrl + D           | High   |
-| `3ba1111ed` | fix(app): terminal issues/regression                             | High   |
-| `87d91c29e` | fix(app): terminal improvements - focus, rename, error state     | High   |
-| `af1e2887b` | fix(app): open terminal pane when creating new terminal          | Low    |
-| `80481c224` | fix(app): cleanup pty.exited event listener on unmount           | Medium |
+**Note**: Upstream added terminal splits (PR #8767) then reverted it the same day. We kept the feature, so these fixes needed manual adaptation for our `tabId` architecture.
+
+| Hash        | Description                                                      | Value  | Status |
+| ----------- | ---------------------------------------------------------------- | ------ | ------ |
+| `01b12949e` | fix(app): terminal no longer hangs on exit or ctrl + D           | High   | ✅ Adapted |
+| `80481c224` | fix(app): cleanup pty.exited event listener on unmount           | Medium | ✅ Adapted |
+| `3fdd6ec12` | fix(app): terminal clone needs remount                           | Medium | ✅ Adapted |
+| `df7f9ae3f` | fix(app): terminal corruption                                    | High   | ✅ Included in clone fix |
+| `3ba1111ed` | fix(app): terminal issues/regression                             | High   | ⏸️ Review needed |
+| `87d91c29e` | fix(app): terminal improvements - focus, rename, error state     | High   | ⏸️ Review needed |
+| `2f1be914c` | fix(app): remove terminal connection error overlay               | Low    | SKIP |
+| `af1e2887b` | fix(app): open terminal pane when creating new terminal          | Low    | SKIP |
 | `281c9d187` | fix(app): change terminal.new keybind to ctrl+alt+t              | Low    |
 
 ### Auto-scroll Fixes
@@ -710,11 +724,18 @@ If internationalization is desired:
 ### Progress
 
 ```
-Previous work:      83 commits ✅ (v1.1.23 → v1.1.27)
-New analysis:      836 commits analyzed
-Potentially useful: ~240 commits (including line selection, settings, i18n)
-Skip (irrelevant):  ~290 commits
-Skip (file tree):   ~25 commits (ours is better)
+Previous work:        83 commits ✅ (v1.1.23 → v1.1.27)
+New analysis:        836 commits analyzed
 ────────────────────────────────
-Recommended order: AGENTS.md → Performance → Line Selection → Settings → Desktop
+✅ Settings Overhaul:  ~25 commits applied
+✅ Terminal Fixes:     ~4 commits adapted (for tabId architecture)
+✅ Standalone Fixes:   ~8 commits applied
+✅ Core/Config:        ~3 commits applied
+⏸️ Line Selection:     Blocked (shadow DOM in pierre diffs)
+⏸️ Performance:        Blocked (deleted worktree files)
+⏸️ AGENTS.md backend:  Blocked (SDK architecture)
+────────────────────────────────
+Skip (irrelevant):   ~290 commits (releases, CI, chore)
+Skip (file tree):    ~25 commits (ours is better)
+Skip (i18n):         ~38 commits (optional, high effort)
 ```

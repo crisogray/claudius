@@ -359,6 +359,8 @@ export function SessionTurn(
   })
   const working = createMemo(() => status().type !== "idle" && isLastUserMessage())
   const retry = createMemo(() => {
+    // session_status is session-scoped; only show retry on the active (last) turn
+    if (!isLastUserMessage()) return
     const s = status()
     if (s.type !== "retry") return
     return s
