@@ -22,8 +22,8 @@ import { getLanguageExtension } from "./codemirror-languages"
 import { opencodeDark } from "./codemirror-theme"
 
 export interface CodeMirrorEditorProps {
-  /** Current document content */
-  value: string
+  /** Current document content - can be a string or accessor function */
+  value: string | (() => string)
   /** File path for language detection */
   path?: string
   /** Whether the editor is read-only */
@@ -113,8 +113,9 @@ export function CodeMirrorEditor(props: CodeMirrorEditorProps) {
     ]
 
     // Create initial state
+    const initialValue = typeof props.value === "function" ? props.value() : props.value
     const state = EditorState.create({
-      doc: props.value,
+      doc: initialValue,
       extensions,
     })
 
@@ -129,7 +130,8 @@ export function CodeMirrorEditor(props: CodeMirrorEditorProps) {
 
   // Sync external value changes
   createEffect(() => {
-    const newValue = props.value
+    // Support both accessor functions and raw strings
+    const newValue = typeof props.value === "function" ? props.value() : props.value
     if (view && newValue !== view.state.doc.toString()) {
       isUpdating = true
       view.dispatch({

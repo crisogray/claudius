@@ -142,7 +142,7 @@ export function FileEditor(props: FileEditorProps) {
       <Show when={state()?.loaded}>
         <div class="flex-1 min-h-0 overflow-hidden">
           <CodeMirrorEditor
-            value={currentContent()}
+            value={currentContent}
             path={props.path}
             readOnly={props.readOnly || isSaving()}
             onChange={handleChange}
