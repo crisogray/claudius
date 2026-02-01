@@ -22,6 +22,7 @@
     flex-direction: column;
     align-items: center;
     justify-items: start;
+    overflow: visible;
 
     [data-slot="dialog-content"] {
       display: flex;
@@ -31,6 +32,14 @@
       width: 100%;
       max-height: 100%;
       min-height: 280px;
+      overflow: auto;
+
+      /* Hide scrollbar */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
 
       border: 1px solid
         light-dark(
@@ -91,7 +100,7 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        overflow-y: auto;
+        overflow: hidden;
 
         &:focus-visible {
           outline: none;
@@ -105,5 +114,10 @@
     &:focus-visible {
       outline: none;
     }
+  }
+
+  &[data-size="large"] [data-slot="dialog-container"] {
+    width: min(calc(100vw - 32px), 800px);
+    height: min(calc(100vh - 32px), 600px);
   }
 }
