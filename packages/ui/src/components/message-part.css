@@ -500,6 +500,7 @@
   &[data-question="true"] {
     background: var(--background-base);
     border: 1px solid var(--border-weak-base);
+    border-radius: 6px;
   }
 }
 
