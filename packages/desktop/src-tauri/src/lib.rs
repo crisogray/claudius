@@ -7,7 +7,10 @@ use futures::future;
 use std::{
     collections::VecDeque,
     net::TcpListener,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, LogicalSize, Manager, RunEvent, State, WebviewWindowBuilder};
@@ -31,6 +34,7 @@ struct ServerReadyData {
 struct ServerState {
     child: Arc<Mutex<Option<CommandChild>>>,
     status: future::Shared<oneshot::Receiver<Result<ServerReadyData, String>>>,
+    shutdown_flag: Arc<AtomicBool>,
 }
 
 impl ServerState {
@@ -41,6 +45,7 @@ impl ServerState {
         Self {
             child: Arc::new(Mutex::new(child)),
             status: status.shared(),
+            shutdown_flag: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -54,6 +59,16 @@ struct LogState(Arc<Mutex<VecDeque<String>>>);
 
 const MAX_LOG_ENTRIES: usize = 200;
 
+/// Configuration for auto-restarting the sidecar on crash
+#[derive(Clone)]
+struct RestartConfig {
+    hostname: String,
+    port: u32,
+    password: String,
+    app_handle: AppHandle,
+    shutdown_requested: Arc<AtomicBool>,
+}
+
 #[tauri::command]
 fn kill_sidecar(app: AppHandle) {
     let Some(server_state) = app.try_state::<ServerState>() else {
@@ -61,7 +76,10 @@ fn kill_sidecar(app: AppHandle) {
         return;
     };
 
-    let Some(server_state) = server_state
+    // Set shutdown flag to prevent auto-restart
+    server_state.shutdown_flag.store(true, Ordering::SeqCst);
+
+    let Some(child) = server_state
         .child
         .lock()
         .expect("Failed to acquire mutex lock")
@@ -71,7 +89,7 @@ fn kill_sidecar(app: AppHandle) {
         return;
     };
 
-    let _ = server_state.kill();
+    let _ = child.kill();
 
     println!("Killed server");
 }
@@ -145,7 +163,13 @@ fn get_sidecar_port() -> u32 {
         }) as u32
 }
 
-fn spawn_sidecar(app: &AppHandle, hostname: &str, port: u32, password: &str) -> CommandChild {
+fn spawn_sidecar(
+    app: &AppHandle,
+    hostname: &str,
+    port: u32,
+    password: &str,
+    restart_config: Option<RestartConfig>,
+) -> CommandChild {
     let log_state = app.state::<LogState>();
     let log_state_clone = log_state.inner().clone();
 
@@ -188,6 +212,43 @@ fn spawn_sidecar(app: &AppHandle, hostname: &str, port: u32, password: &str) -> 
                             logs.pop_front();
                         }
                     }
+                }
+                CommandEvent::Terminated(payload) => {
+                    eprintln!("Sidecar terminated: {:?}", payload);
+
+                    let Some(config) = restart_config.as_ref() else {
+                        break;
+                    };
+
+                    // Don't restart if shutdown was requested (app is closing)
+                    if config.shutdown_requested.load(Ordering::SeqCst) {
+                        println!("Shutdown requested, not restarting sidecar");
+                        break;
+                    }
+
+                    println!("Restarting sidecar...");
+
+                    // Small delay to ensure port is released
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+
+                    // Respawn the sidecar
+                    let new_child = spawn_sidecar(
+                        &config.app_handle,
+                        &config.hostname,
+                        config.port,
+                        &config.password,
+                        Some(config.clone()),
+                    );
+
+                    config
+                        .app_handle
+                        .state::<ServerState>()
+                        .set_child(Some(new_child));
+
+                    break; // Exit this event loop; new spawn has its own
+                }
+                CommandEvent::Error(err) => {
+                    eprintln!("Sidecar error: {}", err);
                 }
                 _ => {}
             }
@@ -482,7 +543,16 @@ async fn spawn_local_server(
     port: u32,
     password: &str,
 ) -> Result<CommandChild, String> {
-    let child = spawn_sidecar(app, hostname, port, password);
+    // Create restart config for auto-restart on crash
+    let restart_config = RestartConfig {
+        hostname: hostname.to_string(),
+        port,
+        password: password.to_string(),
+        app_handle: app.clone(),
+        shutdown_requested: app.state::<ServerState>().shutdown_flag.clone(),
+    };
+
+    let child = spawn_sidecar(app, hostname, port, password, Some(restart_config));
     let url = format!("http://{hostname}:{port}");
 
     let timestamp = Instant::now();
