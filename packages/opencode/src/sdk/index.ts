@@ -534,6 +534,10 @@ export namespace SDK {
     return {
       model: modelID,
       cwd: Instance.directory,
+      env: {
+        ...process.env,
+        CLAUDE_CODE_ENABLE_TASKS: "true",
+      },
       tools: { type: "preset" as const, preset: "claude_code" as const },
       mcpServers,
       maxThinkingTokens: variantToThinkingBudget(variant),
