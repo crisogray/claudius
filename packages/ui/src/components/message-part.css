@@ -453,11 +453,10 @@
 [data-component="tool-part-wrapper"] {
   width: 100%;
 
-  &[data-permission="true"],
-  &[data-question="true"] {
+  &[data-permission="true"] {
     position: sticky;
     top: calc(2px + var(--sticky-header-height, 40px));
-    bottom: 0px;
+    bottom: calc(var(--prompt-height, 8rem) + 18px);
     z-index: 20;
     border-radius: 6px;
     border: none;
@@ -465,6 +464,7 @@
     background-color: var(--surface-raised-base);
     overflow: visible;
     overflow-anchor: none;
+    margin-bottom: 2px;
 
     & > *:first-child {
       border-top-left-radius: 6px;
@@ -492,7 +492,6 @@
       content: "";
       position: absolute;
       inset: -1.5px;
-      top: -5px;
       border-radius: 7.5px;
       border: 1.5px solid transparent;
       background:
@@ -511,10 +510,6 @@
     }
   }
 
-  &[data-question="true"] {
-    background: var(--background-base);
-    border: 1px solid var(--border-weak-base);
-  }
 }
 
 @property --border-angle {
