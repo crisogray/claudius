@@ -133,7 +133,7 @@ export function DialogSelectFile() {
     state.cleanup?.()
   })
   return (
-    <Dialog class="pt-3 pb-0 !max-h-[480px]">
+    <Dialog class="pt-3 pb-0 !max-h-[480px]" transition>
       <List
         search={{ placeholder: "Search files and commands", autofocus: true, hideIcon: true, class: "pl-3 pr-2 !mb-0" }}
         emptyMessage="No results found"

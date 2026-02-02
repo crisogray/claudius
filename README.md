@@ -22,9 +22,6 @@
 | macOS (Intel)         | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-macos-x64.dmg)   |
 | Windows               | [Download](https://github.com/crisogray/claudius/releases/latest/download/Claudius-latest-windows-x64.exe) |
 
-> **macOS Note:** Since Claudius is not notarized, macOS will show a security warning on first launch.
-> Right-click the app → Open → "Open Anyway", or run: `xattr -cr /Applications/Claudius.app`
-
 ---
 
 ## About

@@ -130,7 +130,6 @@ export default function Layout(props: ParentProps) {
   const openEditor = (id: string, value: string) => {
     if (!id) return
     setEditor({ active: id, value })
-    queueMicrotask(() => editorRef.current?.focus())
   }
 
   const closeEditor = () => setEditor({ active: "", value: "" })
@@ -199,6 +198,7 @@ export default function Layout(props: ParentProps) {
         <InlineInput
           ref={(el) => {
             editorRef.current = el
+            requestAnimationFrame(() => el.focus())
           }}
           value={editorValue()}
           class={props.class}
@@ -507,7 +507,6 @@ export default function Layout(props: ParentProps) {
         }
         layout.mobileSidebar.hide()
       },
-      { defer: true },
     ),
   )
 
@@ -825,6 +824,13 @@ export default function Layout(props: ParentProps) {
         onSelect: () => openServer(),
       },
       {
+        id: "settings.open",
+        title: "Open settings",
+        category: "Settings",
+        keybind: "mod+comma",
+        onSelect: () => openSettings(),
+      },
+      {
         id: "session.previous",
         title: "Previous session",
         category: "Session",
@@ -1070,9 +1076,9 @@ export default function Layout(props: ParentProps) {
         })
     })
 
-    const handleDelete = async () => {
-      await deleteWorkspace(props.directory)
+    const handleDelete = () => {
       dialog.close()
+      void deleteWorkspace(props.directory)
     }
 
     const description = () => {
@@ -1956,9 +1962,13 @@ export default function Layout(props: ParentProps) {
             </DragDropProvider>
           </div>
           <div class="shrink-0 w-full pt-3 pb-3 flex flex-col items-center gap-2">
-            <Tooltip placement={sidebarProps.mobile ? "bottom" : "right"} value="Settings">
-              <IconButton onClick={openSettings} icon="settings-gear" variant="ghost" size="large" />
-            </Tooltip>
+            <TooltipKeybind
+              placement={sidebarProps.mobile ? "bottom" : "right"}
+              title="Settings"
+              keybind={command.keybind("settings.open")}
+            >
+              <IconButton icon="settings-gear" variant="ghost" size="large" onClick={openSettings} />
+            </TooltipKeybind>
             <Tooltip placement={sidebarProps.mobile ? "bottom" : "right"} value="Help">
               <IconButton
                 icon="help"

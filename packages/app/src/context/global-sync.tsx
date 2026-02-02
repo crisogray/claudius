@@ -117,6 +117,8 @@ function createGlobalSync() {
   })
 
   const children: Record<string, [Store<State>, SetStoreFunction<State>]> = {}
+  const booting = new Map<string, Promise<void>>()
+  const sessionLoads = new Map<string, Promise<void>>()
 
   function child(directory: string) {
     if (!directory) console.error("No directory provided")
@@ -164,8 +166,11 @@ function createGlobalSync() {
   }
 
   async function loadSessions(directory: string) {
+    const pending = sessionLoads.get(directory)
+    if (pending) return pending
+
     const [store, setStore] = child(directory)
-    return globalSDK.client.session
+    const promise = globalSDK.client.session
       .list({ directory })
       .then((x) => {
         const nonArchived = (x.data ?? [])
@@ -197,106 +202,119 @@ function createGlobalSync() {
         const project = getFilename(directory)
         showToast({ title: `Failed to load sessions for ${project}`, description: err.message })
       })
+
+    sessionLoads.set(directory, promise)
+    promise.finally(() => sessionLoads.delete(directory))
+    return promise
   }
 
   async function bootstrapInstance(directory: string) {
     if (!directory) return
-    const [store, setStore] = child(directory)
-    const cache = vcsCache.get(directory)
-    if (!cache) return
-    const sdk = createOpencodeClient({
-      baseUrl: globalSDK.url,
-      fetch: platform.fetch,
-      directory,
-      throwOnError: true,
-    })
+    const pending = booting.get(directory)
+    if (pending) return pending
 
-    createEffect(() => {
-      if (!cache.ready()) return
-      const cached = cache.store.value
-      if (!cached?.branch) return
-      setStore("vcs", (value) => value ?? cached)
-    })
-
-    function loadSessionGrouped<T extends { id: string; sessionID: string }>(
-      promise: Promise<{ data?: T[] | null }>,
-      key: "permission" | "question" | "plan",
-    ) {
-      return promise.then((x) => {
-        const grouped: Record<string, T[]> = {}
-        for (const item of x.data ?? []) {
-          if (!item?.id || !item.sessionID) continue
-          ;(grouped[item.sessionID] ??= []).push(item)
-        }
-        // Sort items once before updating store
-        for (const sessionID of Object.keys(grouped)) {
-          grouped[sessionID].sort((a, b) => a.id.localeCompare(b.id))
-        }
-        // Single atomic update using reconcile
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setStore(key, reconcile(grouped as any, { key: null }))
+    const promise = (async () => {
+      const [store, setStore] = child(directory)
+      const cache = vcsCache.get(directory)
+      if (!cache) return
+      const sdk = createOpencodeClient({
+        baseUrl: globalSDK.url,
+        fetch: platform.fetch,
+        directory,
+        throwOnError: true,
       })
-    }
 
-    // Critical requests - needed for UI to be usable
-    const criticalRequests = [
-      retry(() => sdk.project.current().then((x) => setStore("project", x.data?.id ?? ""))),
-      // Use cached global provider if available, otherwise fetch
-      globalStore.provider.all.length > 0
-        ? Promise.resolve().then(() => setStore("provider", globalStore.provider))
-        : retry(() =>
-            sdk.provider.list().then((x) => {
-              const data = x.data
-              if (!data) return
-              setStore("provider", {
-                ...data,
-                all: data.all.map((provider) => ({
-                  ...provider,
-                  models: Object.fromEntries(
-                    Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
-                  ),
-                })),
-              })
-            }),
-          ),
-      retry(() => sdk.config.get().then((x) => setStore("config", x.data ?? {}))),
-    ]
-
-    // Non-critical requests - UI can render without these
-    const nonCriticalRequests = [
-      sdk.path.get().then((x) => setStore("path", x.data ?? store.path)),
-      // Use cached global commands if available
-      globalStore.command.length > 0
-        ? Promise.resolve().then(() => setStore("command", globalStore.command))
-        : sdk.command.list().then((x) => setStore("command", x.data ?? [])),
-      sdk.session.status().then((x) => setStore("session_status", x.data ?? {})),
-      loadSessions(directory),
-      sdk.mcp.status().then((x) => setStore("mcp", x.data ?? {})),
-      sdk.lsp.status().then((x) => setStore("lsp", x.data ?? [])),
-      sdk.vcs.get().then((x) => {
-        const next = x.data ?? store.vcs
-        setStore("vcs", next)
-        if (next?.branch) cache.setStore("value", next)
-      }),
-      loadSessionGrouped(sdk.permission.list(), "permission"),
-      loadSessionGrouped(sdk.question.list(), "question"),
-      loadSessionGrouped(sdk.plan.list(), "plan"),
-    ]
-
-    // Start ALL requests in parallel - don't block non-critical on critical
-    const allRequests = [...criticalRequests, ...nonCriticalRequests]
-
-    // Set partial status as soon as critical requests complete
-    Promise.all(criticalRequests)
-      .then(() => {
-        if (store.status !== "complete") setStore("status", "partial")
+      createEffect(() => {
+        if (!cache.ready()) return
+        const cached = cache.store.value
+        if (!cached?.branch) return
+        setStore("vcs", (value) => value ?? cached)
       })
-      .catch((e) => setGlobalStore("error", e))
 
-    // Set complete status when all requests finish
-    Promise.all(allRequests)
-      .then(() => setStore("status", "complete"))
-      .catch((e) => setGlobalStore("error", e))
+      function loadSessionGrouped<T extends { id: string; sessionID: string }>(
+        innerPromise: Promise<{ data?: T[] | null }>,
+        key: "permission" | "question" | "plan",
+      ) {
+        return innerPromise.then((x) => {
+          const grouped: Record<string, T[]> = {}
+          for (const item of x.data ?? []) {
+            if (!item?.id || !item.sessionID) continue
+            ;(grouped[item.sessionID] ??= []).push(item)
+          }
+          // Sort items once before updating store
+          for (const sessionID of Object.keys(grouped)) {
+            grouped[sessionID].sort((a, b) => a.id.localeCompare(b.id))
+          }
+          // Single atomic update using reconcile
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setStore(key, reconcile(grouped as any, { key: null }))
+        })
+      }
+
+      // Critical requests - needed for UI to be usable
+      const criticalRequests = [
+        retry(() => sdk.project.current().then((x) => setStore("project", x.data?.id ?? ""))),
+        // Use cached global provider if available, otherwise fetch
+        globalStore.provider.all.length > 0
+          ? Promise.resolve().then(() => setStore("provider", globalStore.provider))
+          : retry(() =>
+              sdk.provider.list().then((x) => {
+                const data = x.data
+                if (!data) return
+                setStore("provider", {
+                  ...data,
+                  all: data.all.map((provider) => ({
+                    ...provider,
+                    models: Object.fromEntries(
+                      Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
+                    ),
+                  })),
+                })
+              }),
+            ),
+        retry(() => sdk.config.get().then((x) => setStore("config", x.data ?? {}))),
+      ]
+
+      // Non-critical requests - UI can render without these
+      const nonCriticalRequests = [
+        sdk.path.get().then((x) => setStore("path", x.data ?? store.path)),
+        // Use cached global commands if available
+        globalStore.command.length > 0
+          ? Promise.resolve().then(() => setStore("command", globalStore.command))
+          : sdk.command.list().then((x) => setStore("command", x.data ?? [])),
+        sdk.session.status().then((x) => setStore("session_status", x.data ?? {})),
+        loadSessions(directory),
+        sdk.mcp.status().then((x) => setStore("mcp", x.data ?? {})),
+        sdk.lsp.status().then((x) => setStore("lsp", x.data ?? [])),
+        sdk.vcs.get().then((x) => {
+          const next = x.data ?? store.vcs
+          setStore("vcs", next)
+          if (next?.branch) cache.setStore("value", next)
+        }),
+        loadSessionGrouped(sdk.permission.list(), "permission"),
+        loadSessionGrouped(sdk.question.list(), "question"),
+        loadSessionGrouped(sdk.plan.list(), "plan"),
+      ]
+
+      // Start ALL requests in parallel - don't block non-critical on critical
+      const allRequests = [...criticalRequests, ...nonCriticalRequests]
+
+      // Set partial status as soon as critical requests complete
+      Promise.all(criticalRequests)
+        .then(() => {
+          if (store.status !== "complete") setStore("status", "partial")
+        })
+        .catch((e) => setGlobalStore("error", e))
+
+      // Set complete status when all requests finish
+      await Promise.all(allRequests)
+        .then(() => setStore("status", "complete"))
+        .catch((e) => setGlobalStore("error", e))
+    })()
+
+    booting.set(directory, promise)
+    promise.finally(() => booting.delete(directory))
+    return promise
   }
 
   const unsub = globalSDK.event.listen((e) => {

@@ -12,7 +12,7 @@ export const DialogSelectProvider: Component = () => {
   const providers = useProviders()
 
   return (
-    <Dialog title="Connect provider">
+    <Dialog title="Connect provider" transition>
       <List
         activeIcon="plus-small"
         key={(x) => x?.id}

@@ -27,6 +27,7 @@
 | Phase 3 | Line Selection | ⚠️ BLOCKED | Shadow DOM complexity in pierre diffs library |
 | Phase 5 | Desktop Features | ✅ PARTIAL | Tooltip position fix applied |
 | Phase 6 | Terminal Fixes | ✅ DONE | Terminal cleanup, adapted for our tabId split architecture |
+| Phase 6 | Auto-scroll Fixes | ✅ DONE | All 11 auto-scroll commits applied |
 | Phase 6-8 | Remaining | ⏸️ BLOCKED | i18n dependencies, heavy conflicts |
 
 ### Applied Commits
@@ -53,6 +54,28 @@
 | `33d400c56` | fix(app): spinner color inherits | Standalone |
 | manual | Terminal cleanup: pty.exited handler, WS close, auto-close panel | Phase 6 |
 | manual | Terminal clone fix: proper tabId handling for remount | Phase 6 |
+| `b4a9e1b19` | fix(app): auto-scroll | Phase 6 |
+| `d7948c237` | fix(app): auto-scroll | Phase 6 |
+| `b6565c606` | fix(app): auto-scroll button sometimes sticks | Phase 6 |
+| `3807523f4` | fix(app): auto-scroll | Phase 6 |
+| `09997bb6c` | fix(app): auto-scroll | Phase 6 |
+| `ae2693425` | fix(app): snap to bottom on prompt | Phase 6 |
+| `85ef23a09` | fix(app): don't interfere with scroll when using message nav | Phase 6 |
+| `847a7ca00` | fix(app): don't show scroll to bottom if no scroll | Phase 6 |
+| `a0636fcd5` | fix(app): auto-scroll ux | Phase 6 |
+| `c69e3bbde` | fix(app): auto-scroll ux | Phase 6 |
+| `63da3a338` | fix(app): breaking out of auto-scroll | Phase 6 |
+| manual | Session loading deduplication (booting/sessionLoads Maps) | Phase 6 |
+| manual | Hover card viewport overflow fix (max-height, overflow-y) | Phase 6 |
+| `923e3da97` | feat(ui): add aura theme | Misc |
+| `936f3ebe9` | feat(ui): add gruvbox theme | Misc |
+| `7962ff38b` | feat(app): add transition to command palette | UI/Dialog |
+| `3ac11df66` | feat(app): add transition to select provider dialog | UI/Dialog |
+| `1d5ee3e58` | fix(app): not auto-navigating to last project | Project |
+| `1f3b2b595` | fix(app): Edit-project name race condition | Project |
+| `e5fe50f7d` | fix(app): close delete workspace dialog immediately | UI/Dialog |
+| `80dc74a0e` | add keyboard shortcut (mod+,) to open settings dialog | Misc |
+| manual | Add transition prop to Dialog component | UI/Dialog |
 
 ### Conflict Resolution Notes
 
@@ -325,15 +348,15 @@ Various commits for select dropdowns, tabs, icons, spacing, etc.
 
 ### Session/Workspace Fixes
 
-| Hash        | Description                                                      | Value  |
-| ----------- | ---------------------------------------------------------------- | ------ |
-| `e84d92da2` | feat: Sequential numbering for forked session titles             | Medium |
-| `d4e3acf17` | fix(app): session sync issue                                     | High   |
-| `319ad2a39` | fix(app): session load cap                                       | Medium |
-| `e2c57735b` | fix(app): session diffs not always loading                       | Medium |
-| `71cd59932` | fix(app): session shouldn't be keyed                             | Medium |
-| `8595dae1a` | fix(app): session loading loop                                   | High   |
-| `7170983ef` | fix(app): duplicate session loads                                | Medium |
+| Hash        | Description                                                      | Value  | Status |
+| ----------- | ---------------------------------------------------------------- | ------ | ------ |
+| `e84d92da2` | feat: Sequential numbering for forked session titles             | Medium | |
+| `d4e3acf17` | fix(app): session sync issue                                     | High   | |
+| `319ad2a39` | fix(app): session load cap                                       | Medium | |
+| `e2c57735b` | fix(app): session diffs not always loading                       | Medium | |
+| `71cd59932` | fix(app): session shouldn't be keyed                             | Medium | |
+| `8595dae1a` | fix(app): session loading loop                                   | High   | ✅ Core dedup |
+| `7170983ef` | fix(app): duplicate session loads                                | Medium | ✅ Via dedup |
 | `7b23bf7c1` | fix(app): don't auto nav to workspace after reset                | Low    |
 | `7c2e59de6` | fix(app): new workspace expanded and at the top                  | Low    |
 | `5f67e6fd1` | fix(app): don't jump accordion on expand/collapse                | Low    |
@@ -356,21 +379,21 @@ Various commits for select dropdowns, tabs, icons, spacing, etc.
 | `af1e2887b` | fix(app): open terminal pane when creating new terminal          | Low    | SKIP |
 | `281c9d187` | fix(app): change terminal.new keybind to ctrl+alt+t              | Low    |
 
-### Auto-scroll Fixes
+### Auto-scroll Fixes ✅ DONE
 
-| Hash        | Description                                                      | Value  |
-| ----------- | ---------------------------------------------------------------- | ------ |
-| `b4a9e1b19` | fix(app): auto-scroll                                            | Medium |
-| `d7948c237` | fix(app): auto-scroll                                            | Medium |
-| `b6565c606` | fix(app): auto-scroll button sometimes sticks                    | Low    |
-| `3807523f4` | fix(app): auto-scroll                                            | Medium |
-| `09997bb6c` | fix(app): auto-scroll                                            | Medium |
-| `ae2693425` | fix(app): snap to bottom on prompt                               | Medium |
-| `85ef23a09` | fix(app): don't interfere with scroll when using message nav     | Medium |
-| `847a7ca00` | fix(app): don't show scroll to bottom if no scroll               | Low    |
-| `a0636fcd5` | fix(app): auto-scroll ux                                         | Medium |
-| `c69e3bbde` | fix(app): auto-scroll ux                                         | Medium |
-| `63da3a338` | fix(app): breaking out of auto-scroll                            | Medium |
+| Hash        | Description                                                      | Value  | Status |
+| ----------- | ---------------------------------------------------------------- | ------ | ------ |
+| `b4a9e1b19` | fix(app): auto-scroll                                            | Medium | ✅ |
+| `d7948c237` | fix(app): auto-scroll                                            | Medium | ✅ |
+| `b6565c606` | fix(app): auto-scroll button sometimes sticks                    | Low    | ✅ |
+| `3807523f4` | fix(app): auto-scroll                                            | Medium | ✅ |
+| `09997bb6c` | fix(app): auto-scroll                                            | Medium | ✅ |
+| `ae2693425` | fix(app): snap to bottom on prompt                               | Medium | ✅ |
+| `85ef23a09` | fix(app): don't interfere with scroll when using message nav     | Medium | ✅ |
+| `847a7ca00` | fix(app): don't show scroll to bottom if no scroll               | Low    | ✅ |
+| `a0636fcd5` | fix(app): auto-scroll ux                                         | Medium | ✅ |
+| `c69e3bbde` | fix(app): auto-scroll ux                                         | Medium | ✅ |
+| `63da3a338` | fix(app): breaking out of auto-scroll                            | Medium | ✅ |
 
 ### Model Selector Fixes
 
@@ -695,6 +718,7 @@ If internationalization is desired:
 | Settings Overhaul | ~25 ⭐            | 0               |
 | Desktop           | 16                | 0               |
 | Session/Terminal  | ~20               | 0               |
+| Auto-scroll       | ✅ 11 applied      | 0               |
 | Core/Config       | ~12               | 0               |
 | UI Components     | ~15               | 0               |
 | App Bug Fixes     | ~50               | 0               |
@@ -729,8 +753,15 @@ New analysis:        836 commits analyzed
 ────────────────────────────────
 ✅ Settings Overhaul:  ~25 commits applied
 ✅ Terminal Fixes:     ~4 commits adapted (for tabId architecture)
+✅ Auto-scroll Fixes:  ~11 commits applied
+✅ Session Dedup:      Core fix applied (booting/sessionLoads Maps)
+✅ Hover Card:         Viewport overflow fix applied
 ✅ Standalone Fixes:   ~8 commits applied
 ✅ Core/Config:        ~3 commits applied
+✅ Themes:             Aura + Gruvbox themes added
+✅ UI/Dialog:          Dialog transitions, delete dialog fix
+✅ Project Fixes:      Auto-nav fix, race condition fix
+✅ Misc:               mod+, settings shortcut
 ⏸️ Line Selection:     Blocked (shadow DOM in pierre diffs)
 ⏸️ Performance:        Blocked (deleted worktree files)
 ⏸️ AGENTS.md backend:  Blocked (SDK architecture)
