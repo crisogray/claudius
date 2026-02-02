@@ -21,7 +21,7 @@
     },
     "packages/app": {
       "name": "@opencode-ai/app",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@kobalte/core": "catalog:",
         "@opencode-ai/sdk": "workspace:*",
@@ -70,7 +70,7 @@
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -100,7 +100,7 @@
     },
     "packages/opencode": {
       "name": "opencode",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -166,7 +166,7 @@
     },
     "packages/plugin": {
       "name": "@opencode-ai/plugin",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
         "zod": "catalog:",
@@ -186,7 +186,7 @@
     },
     "packages/sdk/js": {
       "name": "@opencode-ai/sdk",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "devDependencies": {
         "@hey-api/openapi-ts": "0.88.1",
         "@tsconfig/node22": "catalog:",
@@ -197,7 +197,7 @@
     },
     "packages/slack": {
       "name": "@opencode-ai/slack",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@opencode-ai/sdk": "workspace:*",
         "@slack/bolt": "^3.17.1",
@@ -210,7 +210,7 @@
     },
     "packages/ui": {
       "name": "@opencode-ai/ui",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@codemirror/autocomplete": "^6.18.0",
         "@codemirror/commands": "^6.6.0",
@@ -267,7 +267,7 @@
     },
     "packages/util": {
       "name": "@opencode-ai/util",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "zod": "catalog:",
       },
@@ -278,7 +278,7 @@
     },
     "packages/web": {
       "name": "@claudius.to/web",
-      "version": "0.1.20",
+      "version": "0.1.21",
       "dependencies": {
         "@astrojs/cloudflare": "12.6.3",
         "@astrojs/markdown-remark": "6.3.1",
