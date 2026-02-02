@@ -335,7 +335,10 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
     setCanExpand(el.scrollHeight > el.clientHeight + 2)
   }
 
-  createResizeObserver(() => textRef, () => updateCanExpand())
+  createResizeObserver(
+    () => textRef,
+    () => updateCanExpand(),
+  )
 
   const toggleExpanded = () => {
     if (!canExpand()) return
@@ -661,7 +664,11 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const needsAttention = () => showPermission() || !!questionRequest() || hasPendingPlan()
 
   return (
-    <div data-component="tool-part-wrapper" data-permission={needsAttention()} data-question={part.tool === "askuserquestion" && !needsAttention()}>
+    <div
+      data-component="tool-part-wrapper"
+      data-permission={needsAttention()}
+      data-question={part.tool === "askuserquestion" && !needsAttention()}
+    >
       <Switch>
         <Match when={part.state.status === "error" && part.tool !== "exitplanmode" && part.state.error}>
           {(error) => {

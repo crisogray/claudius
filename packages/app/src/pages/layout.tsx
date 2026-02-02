@@ -2003,12 +2003,7 @@ export default function Layout(props: ParentProps) {
                           stopPropagation
                         />
 
-                        <Tooltip
-                          placement="bottom"
-                          gutter={2}
-                          value={project()?.worktree}
-                          class="shrink-0"
-                        >
+                        <Tooltip placement="bottom" gutter={2} value={project()?.worktree} class="shrink-0">
                           <span class="text-12-regular text-text-base truncate select-text">
                             {project()?.worktree.replace(homedir(), "~")}
                           </span>

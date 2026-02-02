@@ -270,13 +270,7 @@ export default function FileTree(props: {
           const deep = () => deeps().get(node.path) ?? -1
 
           return (
-            <Tooltip
-              forceMount={false}
-              openDelay={2000}
-              placement="bottom-start"
-              class="w-full"
-              value={node.path}
-            >
+            <Tooltip forceMount={false} openDelay={2000} placement="bottom-start" class="w-full" value={node.path}>
               <Switch>
                 <Match when={node.type === "directory"}>
                   <Collapsible

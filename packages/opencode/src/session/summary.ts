@@ -12,7 +12,6 @@ import { Storage } from "@/storage/storage"
 import { Bus } from "@/bus"
 
 export namespace SessionSummary {
-
   export const summarize = fn(
     z.object({
       sessionID: z.string(),

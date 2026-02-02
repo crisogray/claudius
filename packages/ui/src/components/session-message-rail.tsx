@@ -12,7 +12,15 @@ export interface SessionMessageRailProps extends ComponentProps<"div"> {
 }
 
 export function SessionMessageRail(props: SessionMessageRailProps) {
-  const [local, others] = splitProps(props, ["messages", "current", "wide", "onMessageSelect", "getMessageText", "class", "classList"])
+  const [local, others] = splitProps(props, [
+    "messages",
+    "current",
+    "wide",
+    "onMessageSelect",
+    "getMessageText",
+    "class",
+    "classList",
+  ])
 
   return (
     <Show when={(local.messages?.length ?? 0) > 1}>
