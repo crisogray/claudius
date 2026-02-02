@@ -2,6 +2,7 @@ import { useLocal, type LocalFile } from "@/context/local"
 import { useSDK } from "@/context/sdk"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
 import { FileIcon } from "@opencode-ai/ui/file-icon"
+import { Icon } from "@opencode-ai/ui/icon"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import {
   For,
@@ -10,8 +11,11 @@ import {
   Switch,
   createSignal,
   createEffect,
+  createMemo,
   on,
   onCleanup,
+  splitProps,
+  untrack,
   type ComponentProps,
   type ParentProps,
 } from "solid-js"
@@ -36,6 +40,7 @@ export default function FileTree(props: {
   path: string
   class?: string
   nodeClass?: string
+  active?: string
   level?: number
   filter?: string
   gitStatuses?: Map<string, GitFileStatus>
@@ -45,6 +50,7 @@ export default function FileTree(props: {
   visiblePaths?: Set<string>
   collapsedPaths?: Set<string>
   onCollapseChange?: (path: string, collapsed: boolean) => void
+  _deeps?: Map<string, number>
 }) {
   const local = useLocal()
   const sdk = useSDK()
@@ -149,10 +155,47 @@ export default function FileTree(props: {
     return visible ? children.filter((node) => visible.has(node.path)) : []
   }
 
-  const Node = (p: ParentProps & ComponentProps<"div"> & { node: LocalFile; as?: "div" | "button" }) => {
+  // Track deepest expanded level for nesting line opacity
+  const deeps = createMemo(() => {
+    if (props._deeps) return props._deeps
+
+    const out = new Map<string, number>()
+
+    const visit = (dir: string, lvl: number): number => {
+      const file = local.file.state(dir)
+      const expanded = file?.expanded ?? false
+      if (!expanded) return -1
+
+      const nodes = local.file.children(dir)
+      const max = nodes.reduce((max, node) => {
+        if (node.type !== "directory") return max
+        const nodeFile = local.file.state(node.path)
+        const open = nodeFile?.expanded ?? false
+        if (!open) return max
+        return Math.max(max, visit(node.path, lvl + 1))
+      }, lvl)
+
+      out.set(dir, max)
+      return max
+    }
+
+    visit(props.path, level - 1)
+    return out
+  })
+
+  const Node = (
+    p: ParentProps &
+      ComponentProps<"div"> &
+      ComponentProps<"button"> & {
+        node: LocalFile
+        as?: "div" | "button"
+      },
+  ) => {
+    const [local_, rest] = splitProps(p, ["node", "as", "children", "class", "classList"])
+
     const getFolderColor = () => {
-      if (p.node.type !== "directory") return null
-      const statuses = props.folderStatuses?.get(p.node.path)
+      if (local_.node.type !== "directory") return null
+      const statuses = props.folderStatuses?.get(local_.node.path)
       if (!statuses) return null
       if (statuses.has("deleted")) return "deleted"
       if (statuses.has("modified")) return "modified"
@@ -162,104 +205,133 @@ export default function FileTree(props: {
 
     return (
       <Dynamic
-        component={p.as ?? "div"}
+        component={local_.as ?? "div"}
         classList={{
-          "h-6 w-full flex items-center justify-start gap-x-2 hover:bg-background-element text-left": true,
+          "w-full min-w-0 h-6 flex items-center justify-start gap-x-1.5 rounded-md mx-1 px-1 py-0 text-left hover:bg-surface-raised-base-hover active:bg-surface-base-active transition-colors cursor-pointer": true,
+          "bg-surface-base-active": local_.node.path === props.active,
+          ...(local_.classList ?? {}),
+          [local_.class ?? ""]: !!local_.class,
           [props.nodeClass ?? ""]: !!props.nodeClass,
         }}
-        style={`padding-left: ${level * 10}px`}
+        style={`padding-left: ${Math.max(0, 8 + level * 12 - (local_.node.type === "file" ? 24 : 4))}px`}
         draggable={true}
         onContextMenu={(e: MouseEvent) => {
           e.preventDefault()
-          props.onContextMenu?.(p.node, e)
+          props.onContextMenu?.(local_.node, e)
         }}
-        onDragStart={(e: any) => {
-          const evt = e as globalThis.DragEvent
-          evt.dataTransfer!.effectAllowed = "copy"
-          evt.dataTransfer!.setData("text/plain", `file:${p.node.path}`)
+        onDragStart={(e: DragEvent) => {
+          e.dataTransfer?.setData("text/plain", `file:${local_.node.path}`)
+          e.dataTransfer?.setData("text/uri-list", `file://${local_.node.path}`)
+          if (e.dataTransfer) e.dataTransfer.effectAllowed = "copy"
+
           const dragImage = document.createElement("div")
           dragImage.className =
-            "flex items-center gap-x-2 px-2 py-1 bg-background-element rounded-md border border-border-1"
+            "flex items-center gap-x-2 px-2 py-1 bg-surface-raised-base rounded-md border border-border-base text-12-regular text-text-strong"
           dragImage.style.position = "absolute"
           dragImage.style.top = "-1000px"
-          const icon = e.currentTarget.querySelector("svg")
-          const text = e.currentTarget.querySelector("span")
-          if (icon && text) dragImage.innerHTML = icon.outerHTML + text.outerHTML
+
+          const icon =
+            (e.currentTarget as HTMLElement).querySelector('[data-component="file-icon"]') ??
+            (e.currentTarget as HTMLElement).querySelector("svg")
+          const text = (e.currentTarget as HTMLElement).querySelector("span")
+          if (icon && text) {
+            dragImage.innerHTML = (icon as SVGElement).outerHTML + (text as HTMLSpanElement).outerHTML
+          }
+
           document.body.appendChild(dragImage)
-          evt.dataTransfer!.setDragImage(dragImage, 0, 12)
+          e.dataTransfer?.setDragImage(dragImage, 0, 12)
           setTimeout(() => document.body.removeChild(dragImage), 0)
         }}
-        {...p}
+        {...rest}
       >
-        {p.children}
+        {local_.children}
         <span
           classList={{
-            "text-xs whitespace-nowrap truncate flex-1": true,
-            "text-text-muted/40": p.node.ignored,
-            "text-text-muted/80": !p.node.ignored && !getFolderColor(),
+            "flex-1 min-w-0 text-12-medium whitespace-nowrap truncate": true,
+            "text-text-weaker": local_.node.ignored,
+            "text-text-weak": !local_.node.ignored && !getFolderColor(),
             "text-icon-warning-base": getFolderColor() === "modified",
             "text-text-diff-add-base": getFolderColor() === "added",
             "text-text-diff-delete-base": getFolderColor() === "deleted",
           }}
         >
-          {p.node.name}
+          {local_.node.name}
         </span>
-        <Show when={props.gitStatuses?.get(p.node.path)}>{(status) => <GitBadge status={status()} />}</Show>
+        <Show when={props.gitStatuses?.get(local_.node.path)}>{(status) => <GitBadge status={status()} />}</Show>
       </Dynamic>
     )
   }
 
   return (
-    <div class={`flex flex-col ${props.class}`}>
+    <div class={`flex flex-col ${props.class ?? ""}`}>
       <For each={filteredChildren()}>
-        {(node) => (
-          <Tooltip forceMount={false} openDelay={2000} value={node.path} placement="right">
-            <Switch>
-              <Match when={node.type === "directory"}>
-                <Collapsible
-                  variant="ghost"
-                  class="w-full"
-                  forceMount={false}
-                  open={filtering() ? !collapsed().has(node.path) : undefined}
-                  onOpenChange={(open) =>
-                    filtering()
-                      ? onCollapse(node.path, !open)
-                      : open
-                        ? local.file.expand(node.path)
-                        : local.file.collapse(node.path)
-                  }
-                >
-                  <Collapsible.Trigger class="!h-auto">
-                    <Node node={node}>
-                      <Collapsible.Arrow class="text-text-muted/60 ml-1" />
-                      <FileIcon node={node} class="text-text-muted/60 -ml-1" />
-                    </Node>
-                  </Collapsible.Trigger>
-                  <Collapsible.Content>
-                    <FileTree
-                      path={node.path}
-                      level={level + 1}
-                      filter={props.filter}
-                      gitStatuses={props.gitStatuses}
-                      folderStatuses={props.folderStatuses}
-                      onFileClick={props.onFileClick}
-                      onContextMenu={props.onContextMenu}
-                      visiblePaths={filtering() ?? undefined}
-                      collapsedPaths={collapsed()}
-                      onCollapseChange={onCollapse}
-                    />
-                  </Collapsible.Content>
-                </Collapsible>
-              </Match>
-              <Match when={node.type === "file"}>
-                <Node node={node} as="button" onClick={() => props.onFileClick?.(node)}>
-                  <div class="w-4 shrink-0" />
-                  <FileIcon node={node} class="text-primary" />
-                </Node>
-              </Match>
-            </Switch>
-          </Tooltip>
-        )}
+        {(node) => {
+          const expanded = () => local.file.state(node.path)?.expanded ?? false
+          const deep = () => deeps().get(node.path) ?? -1
+
+          return (
+            <Tooltip
+              forceMount={false}
+              openDelay={2000}
+              placement="bottom-start"
+              class="w-full"
+              value={node.path}
+            >
+              <Switch>
+                <Match when={node.type === "directory"}>
+                  <Collapsible
+                    variant="ghost"
+                    class="w-full"
+                    forceMount={false}
+                    open={filtering() ? !collapsed().has(node.path) : expanded()}
+                    onOpenChange={(open) =>
+                      filtering()
+                        ? onCollapse(node.path, !open)
+                        : open
+                          ? local.file.expand(node.path)
+                          : local.file.collapse(node.path)
+                    }
+                  >
+                    <Collapsible.Trigger class="!h-auto">
+                      <Node node={node}>
+                        <div class="w-5 h-4 flex items-center justify-center text-icon-weak">
+                          <Icon name={expanded() ? "chevron-down" : "chevron-right"} size="small" />
+                        </div>
+                        <FileIcon node={node} class="text-icon-weak size-4" />
+                      </Node>
+                    </Collapsible.Trigger>
+                    <Collapsible.Content class="relative pt-0.5">
+                      <div
+                        class="absolute top-0 bottom-0 w-px pointer-events-none bg-border-weak-base"
+                        style={`left: ${Math.max(0, 8 + level * 12 - 4) + 13.5}px`}
+                      />
+                      <FileTree
+                        path={node.path}
+                        level={level + 1}
+                        active={props.active}
+                        filter={props.filter}
+                        gitStatuses={props.gitStatuses}
+                        folderStatuses={props.folderStatuses}
+                        onFileClick={props.onFileClick}
+                        onContextMenu={props.onContextMenu}
+                        visiblePaths={filtering() ?? undefined}
+                        collapsedPaths={collapsed()}
+                        onCollapseChange={onCollapse}
+                        _deeps={deeps()}
+                      />
+                    </Collapsible.Content>
+                  </Collapsible>
+                </Match>
+                <Match when={node.type === "file"}>
+                  <Node node={node} as="button" type="button" onClick={() => props.onFileClick?.(node)}>
+                    <div class="w-5 shrink-0" />
+                    <FileIcon node={node} class="text-icon-weak size-4" />
+                  </Node>
+                </Match>
+              </Switch>
+            </Tooltip>
+          )
+        }}
       </For>
     </div>
   )

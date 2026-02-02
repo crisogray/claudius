@@ -552,6 +552,9 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         },
         // changes,
         // changed,
+        state(path: string) {
+          return store.node[path]
+        },
         children(path: string) {
           // Root directory: match files without "/" (direct children)
           if (path === "." || path === "") {
