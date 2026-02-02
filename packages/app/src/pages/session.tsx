@@ -288,12 +288,20 @@ export default function Page() {
     return sync.session.history.loading(id)
   })
   const emptyUserMessages: UserMessage[] = []
-  const userMessages = createMemo(() => messages().filter((m) => m.role === "user") as UserMessage[], emptyUserMessages)
-  const visibleUserMessages = createMemo(() => {
-    const revert = revertMessageID()
-    if (!revert) return userMessages()
-    return userMessages().filter((m) => m.id < revert)
-  }, emptyUserMessages)
+  const userMessages = createMemo(
+    () => messages().filter((m) => m.role === "user") as UserMessage[],
+    emptyUserMessages,
+    { equals: same },
+  )
+  const visibleUserMessages = createMemo(
+    () => {
+      const revert = revertMessageID()
+      if (!revert) return userMessages()
+      return userMessages().filter((m) => m.id < revert)
+    },
+    emptyUserMessages,
+    { equals: same },
+  )
   const lastUserMessage = createMemo(() => visibleUserMessages().at(-1))
 
   // Sync UI permission mode when session's permissionMode changes (e.g., after plan approval)
@@ -340,15 +348,21 @@ export default function Page() {
     mobileTab: "session" as "session" | "review",
     newSessionWorktree: "main",
     promptHeight: 0,
+    scrollGesture: 0,
+    autoCreated: false,
   })
 
-  const renderedUserMessages = createMemo(() => {
-    const msgs = visibleUserMessages()
-    const start = store.turnStart
-    if (start <= 0) return msgs
-    if (start >= msgs.length) return emptyUserMessages
-    return msgs.slice(start)
-  }, emptyUserMessages)
+  const renderedUserMessages = createMemo(
+    () => {
+      const msgs = visibleUserMessages()
+      const start = store.turnStart
+      if (start <= 0) return msgs
+      if (start >= msgs.length) return emptyUserMessages
+      return msgs.slice(start)
+    },
+    emptyUserMessages,
+    { equals: same },
+  )
 
   const newSessionWorktree = createMemo(() => {
     if (store.newSessionWorktree === "create") return "create"
@@ -404,10 +418,14 @@ export default function Page() {
   })
 
   createEffect(() => {
-    if (!view().terminal.opened()) return
+    if (!view().terminal.opened()) {
+      setStore("autoCreated", false)
+      return
+    }
     if (!terminal.ready()) return
-    if (terminal.all().length !== 0) return
+    if (terminal.all().length !== 0 || store.autoCreated) return
     terminal.new()
+    setStore("autoCreated", true)
   })
 
   createEffect(
@@ -844,8 +862,21 @@ export default function Page() {
     autoScroll.scrollRef(el)
   }
 
-  const turnInit = 10
-  const turnBatch = 10
+  // Scroll gesture detection - track when user manually scrolls
+  const scrollGestureWindowMs = 250
+
+  const markScrollGesture = (target?: EventTarget | null) => {
+    if (!scroller) return
+    const el = target instanceof Element ? target : undefined
+    const nested = el?.closest("[data-scrollable]")
+    if (nested && nested !== scroller) return
+    setStore("scrollGesture", Date.now())
+  }
+
+  const hasScrollGesture = () => Date.now() - store.scrollGesture < scrollGestureWindowMs
+
+  const turnInit = 20
+  const turnBatch = 20
   let turnHandle: number | undefined
   let turnIdle = false
 
@@ -1192,11 +1223,13 @@ export default function Page() {
                               ref={setScrollRef}
                               onScroll={() => autoScroll.handleScroll()}
                               onClick={autoScroll.handleInteraction}
+                              onWheel={(e) => markScrollGesture(e.target)}
+                              onTouchMove={(e) => markScrollGesture(e.target)}
                               class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
                             >
                               <div
                                 ref={autoScroll.contentRef}
-                                class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,8rem)+64px)] mt-0.5"
+                                class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,8rem)+64px)] pt-4"
                               >
                                 <For each={renderedUserMessages()}>
                                   {(message) => (
@@ -1402,6 +1435,12 @@ export default function Page() {
                               messages={renderedUserMessages()}
                               current={activeMessage()}
                               onMessageSelect={scrollToMessage}
+                              getMessageText={(messageId) => {
+                                const parts = sync.data.part[messageId]
+                                if (!parts) return undefined
+                                const textPart = parts.find((p) => p.type === "text" && !p.synthetic)
+                                return textPart?.type === "text" ? textPart.text : undefined
+                              }}
                               wide={false}
                               class="pointer-events-auto"
                             />
@@ -1413,11 +1452,13 @@ export default function Page() {
                               scheduleScrollSpy(e.currentTarget)
                             }}
                             onClick={autoScroll.handleInteraction}
+                            onWheel={(e) => markScrollGesture(e.target)}
+                            onTouchMove={(e) => markScrollGesture(e.target)}
                             class="relative min-w-0 w-full h-full overflow-y-auto no-scrollbar"
                           >
                             <div
                               ref={autoScroll.contentRef}
-                              class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,10rem)+64px)] mt-0"
+                              class="flex flex-col gap-32 items-start justify-start pb-[calc(var(--prompt-height,10rem)+64px)] pt-4"
                             >
                               <Show when={store.turnStart > 0}>
                                 <div class="w-full flex justify-center">

@@ -5,14 +5,20 @@ import { createResizeObserver } from "@solid-primitives/resize-observer"
 export interface AutoScrollOptions {
   working: () => boolean
   onUserInteracted?: () => void
+  overflowAnchor?: "none" | "auto" | "dynamic"
+  bottomThreshold?: number
 }
 
 export function createAutoScroll(options: AutoScrollOptions) {
   let scroll: HTMLElement | undefined
   let settling = false
   let settleTimer: ReturnType<typeof setTimeout> | undefined
-  let down = false
+  let autoTimer: ReturnType<typeof setTimeout> | undefined
   let cleanup: (() => void) | undefined
+  let auto: { top: number; time: number } | undefined
+  let down = false
+
+  const threshold = () => options.bottomThreshold ?? 10
 
   const [store, setStore] = createStore({
     contentRef: undefined as HTMLElement | undefined,
@@ -21,16 +27,54 @@ export function createAutoScroll(options: AutoScrollOptions) {
 
   const active = () => options.working() || settling
 
-  const distanceFromBottom = () => {
-    const el = scroll
-    if (!el) return 0
+  const distanceFromBottom = (el: HTMLElement) => {
     return el.scrollHeight - el.clientHeight - el.scrollTop
+  }
+
+  const canScroll = (el: HTMLElement) => {
+    return el.scrollHeight - el.clientHeight > 1
+  }
+
+  // Browsers can dispatch scroll events asynchronously. If new content arrives
+  // between us calling `scrollTo()` and the subsequent `scroll` event firing,
+  // the handler can see a non-zero `distanceFromBottom` and incorrectly assume
+  // the user scrolled.
+  const markAuto = (el: HTMLElement) => {
+    auto = {
+      top: Math.max(0, el.scrollHeight - el.clientHeight),
+      time: Date.now(),
+    }
+
+    if (autoTimer) clearTimeout(autoTimer)
+    autoTimer = setTimeout(() => {
+      auto = undefined
+      autoTimer = undefined
+    }, 250)
+  }
+
+  const isAuto = (el: HTMLElement) => {
+    const a = auto
+    if (!a) return false
+
+    if (Date.now() - a.time > 250) {
+      auto = undefined
+      return false
+    }
+
+    return Math.abs(el.scrollTop - a.top) < 2
   }
 
   const scrollToBottomNow = (behavior: ScrollBehavior) => {
     const el = scroll
     if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior })
+    markAuto(el)
+    if (behavior === "smooth") {
+      el.scrollTo({ top: el.scrollHeight, behavior })
+      return
+    }
+
+    // `scrollTop` assignment bypasses any CSS `scroll-behavior: smooth`.
+    el.scrollTop = el.scrollHeight
   }
 
   const scrollToBottom = (force: boolean) => {
@@ -40,7 +84,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
     if (!force && store.userScrolled) return
     if (force && store.userScrolled) setStore("userScrolled", false)
 
-    const distance = distanceFromBottom()
+    const distance = distanceFromBottom(scroll)
     if (distance < 2) return
 
     const behavior: ScrollBehavior = force || distance > 96 ? "auto" : "smooth"
@@ -86,7 +130,10 @@ export function createAutoScroll(options: AutoScrollOptions) {
     if (!active()) return
     if (!scroll) return
 
-    if (distanceFromBottom() < 10) {
+    // Check if this scroll event was from our programmatic scroll
+    if (isAuto(scroll)) return
+
+    if (distanceFromBottom(scroll) < threshold()) {
       if (store.userScrolled) setStore("userScrolled", false)
       return
     }
@@ -101,8 +148,16 @@ export function createAutoScroll(options: AutoScrollOptions) {
   createResizeObserver(
     () => store.contentRef,
     () => {
+      const el = scroll
+      if (el && !canScroll(el)) {
+        if (store.userScrolled) setStore("userScrolled", false)
+        return
+      }
       if (!active()) return
       if (store.userScrolled) return
+      // ResizeObserver fires after layout, before paint.
+      // Keep the bottom locked in the same frame to avoid visible
+      // "jump up then catch up" artifacts while streaming content.
       scrollToBottom(false)
     },
   )
@@ -129,6 +184,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
 
   onCleanup(() => {
     if (settleTimer) clearTimeout(settleTimer)
+    if (autoTimer) clearTimeout(autoTimer)
     if (cleanup) cleanup()
   })
 
@@ -144,7 +200,13 @@ export function createAutoScroll(options: AutoScrollOptions) {
 
       if (!el) return
 
-      el.style.overflowAnchor = "none"
+      const anchor = options.overflowAnchor ?? "none"
+      if (anchor === "dynamic") {
+        el.style.overflowAnchor = active() ? "none" : "auto"
+      } else {
+        el.style.overflowAnchor = anchor
+      }
+
       el.addEventListener("wheel", handleWheel, { passive: true })
       el.addEventListener("pointerdown", handlePointerDown)
       el.addEventListener("touchstart", handleTouchStart, { passive: true })

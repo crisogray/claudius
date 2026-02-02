@@ -48,6 +48,7 @@ import { InlineQuestion } from "./inline-question"
 import { InlinePlanApproval } from "./inline-plan-approval"
 import type { PermissionMode } from "./plan-approval-actions"
 import { createAutoScroll } from "../hooks"
+import { createResizeObserver } from "@solid-primitives/resize-observer"
 
 interface Diagnostic {
   range: {
@@ -323,6 +324,23 @@ export function AssistantMessageDisplay(props: { message: AssistantMessage; part
 export function UserMessageDisplay(props: { message: UserMessage; parts: PartType[] }) {
   const dialog = useDialog()
   const [copied, setCopied] = createSignal(false)
+  const [expanded, setExpanded] = createSignal(false)
+  const [canExpand, setCanExpand] = createSignal(false)
+  let textRef: HTMLDivElement | undefined
+
+  const updateCanExpand = () => {
+    const el = textRef
+    if (!el) return
+    if (expanded()) return
+    setCanExpand(el.scrollHeight > el.clientHeight + 2)
+  }
+
+  createResizeObserver(() => textRef, () => updateCanExpand())
+
+  const toggleExpanded = () => {
+    if (!canExpand()) return
+    setExpanded((value) => !value)
+  }
 
   const textPart = createMemo(
     () => props.parts?.find((p) => p.type === "text" && !(p as TextPart).synthetic) as TextPart | undefined,
@@ -361,7 +379,7 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
   }
 
   return (
-    <div data-component="user-message">
+    <div data-component="user-message" data-expanded={expanded()} data-can-expand={canExpand()}>
       <Show when={attachments().length > 0}>
         <div data-slot="user-message-attachments">
           <For each={attachments()}>
@@ -391,11 +409,29 @@ export function UserMessageDisplay(props: { message: UserMessage; parts: PartTyp
         </div>
       </Show>
       <Show when={text()}>
-        <div data-slot="user-message-text">
+        <div data-slot="user-message-text" ref={(el) => (textRef = el)} onClick={toggleExpanded}>
           <HighlightedText text={text()} references={inlineFiles()} agents={agents()} />
+          <button
+            data-slot="user-message-expand"
+            type="button"
+            aria-label={expanded() ? "Collapse message" : "Expand message"}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleExpanded()
+            }}
+          >
+            <Icon name="chevron-down" size="small" />
+          </button>
           <div data-slot="user-message-copy-wrapper">
             <Tooltip value={copied() ? "Copied!" : "Copy"} placement="top" gutter={8}>
-              <IconButton icon={copied() ? "check" : "copy"} variant="secondary" onClick={handleCopy} />
+              <IconButton
+                icon={copied() ? "check" : "copy"}
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleCopy()
+                }}
+              />
             </Tooltip>
           </div>
         </div>

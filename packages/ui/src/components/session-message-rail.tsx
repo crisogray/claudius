@@ -8,10 +8,11 @@ export interface SessionMessageRailProps extends ComponentProps<"div"> {
   current?: UserMessage
   wide?: boolean
   onMessageSelect: (message: UserMessage) => void
+  getMessageText?: (messageId: string) => string | undefined
 }
 
 export function SessionMessageRail(props: SessionMessageRailProps) {
-  const [local, others] = splitProps(props, ["messages", "current", "wide", "onMessageSelect", "class", "classList"])
+  const [local, others] = splitProps(props, ["messages", "current", "wide", "onMessageSelect", "getMessageText", "class", "classList"])
 
   return (
     <Show when={(local.messages?.length ?? 0) > 1}>
@@ -29,6 +30,7 @@ export function SessionMessageRail(props: SessionMessageRailProps) {
             messages={local.messages}
             current={local.current}
             onMessageSelect={local.onMessageSelect}
+            getMessageText={local.getMessageText}
             size="compact"
           />
         </div>
@@ -37,6 +39,7 @@ export function SessionMessageRail(props: SessionMessageRailProps) {
             messages={local.messages}
             current={local.current}
             onMessageSelect={local.onMessageSelect}
+            getMessageText={local.getMessageText}
             size={local.wide ? "normal" : "compact"}
           />
         </div>

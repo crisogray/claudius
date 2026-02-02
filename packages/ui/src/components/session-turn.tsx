@@ -15,7 +15,6 @@ import { Binary } from "@opencode-ai/util/binary"
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, ParentProps, Show, Switch } from "solid-js"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { DiffChanges } from "./diff-changes"
-import { Typewriter } from "./typewriter"
 import { Message, Part } from "./message-part"
 import { Markdown } from "./markdown"
 import { Accordion } from "./accordion"
@@ -406,7 +405,6 @@ export function SessionTurn(
   const diffBatch = 20
 
   const [store, setStore] = createStore({
-    stickyTitleRef: undefined as HTMLDivElement | undefined,
     stickyTriggerRef: undefined as HTMLDivElement | undefined,
     stickyHeaderHeight: 0,
     retrySeconds: 0,
@@ -414,7 +412,6 @@ export function SessionTurn(
     diffLimit: diffInit,
     status: rawStatus(),
     duration: duration(),
-    userMessageHovered: false,
   })
 
   createEffect(
@@ -443,16 +440,14 @@ export function SessionTurn(
     onCleanup(() => clearInterval(timer))
   })
 
-  // Combined resize observer to avoid layout thrashing
+  // Resize observer for sticky trigger height
   const updateStickyHeight = () => {
     requestAnimationFrame(() => {
-      const titleHeight = store.stickyTitleRef?.offsetHeight ?? 0
       const triggerHeight = store.stickyTriggerRef?.offsetHeight ?? 0
-      setStore("stickyHeaderHeight", titleHeight + triggerHeight + 8)
+      setStore("stickyHeaderHeight", triggerHeight + 8)
     })
   }
 
-  createResizeObserver(() => store.stickyTitleRef, updateStickyHeight)
   createResizeObserver(() => store.stickyTriggerRef, updateStickyHeight)
 
   createEffect(() => {
@@ -511,34 +506,12 @@ export function SessionTurn(
                 data-slot="session-turn-message-container"
                 class={props.classes?.container}
                 style={{ "--sticky-header-height": `${store.stickyHeaderHeight}px` }}
-                onMouseEnter={() => setStore("userMessageHovered", true)}
-                onMouseLeave={() => setStore("userMessageHovered", false)}
               >
                 <Switch>
                   <Match when={isShellMode()}>
                     <Part part={shellModePart()!} message={msg()} defaultOpen />
                   </Match>
                   <Match when={true}>
-                    {/* Title (sticky) */}
-                    <div ref={(el) => setStore("stickyTitleRef", el)} data-slot="session-turn-sticky-title">
-                      <div data-slot="session-turn-message-header">
-                        <div data-slot="session-turn-message-title">
-                          <Switch>
-                            <Match when={working()}>
-                              <Typewriter as="h1" text={msg().summary?.title} data-slot="session-turn-typewriter" />
-                            </Match>
-                            <Match when={true}>
-                              <h1>{msg().summary?.title}</h1>
-                            </Match>
-                          </Switch>
-                        </div>
-                        <div data-slot="session-turn-user-badges" data-visible={store.userMessageHovered}>
-                          <Show when={(msg() as UserMessage).model?.modelID}>
-                            <span data-slot="session-turn-badge">{(msg() as UserMessage).model?.modelID}</span>
-                          </Show>
-                        </div>
-                      </div>
-                    </div>
                     {/* User Message */}
                     <div data-slot="session-turn-message-content">
                       <Message message={msg()} parts={parts()} />
@@ -551,6 +524,7 @@ export function SessionTurn(
                           data-slot="session-turn-collapsible-trigger-content"
                           variant="ghost"
                           size="small"
+                          aria-expanded={props.stepsExpanded}
                           onClick={props.onStepsExpandedToggle ?? (() => {})}
                         >
                           <Show when={working()}>

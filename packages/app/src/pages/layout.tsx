@@ -684,7 +684,8 @@ export default function Layout(props: ParentProps) {
     if (!directory) return
 
     const [store] = globalSync.child(directory)
-    if (store.message[session.id] !== undefined) return
+    const cached = untrack(() => store.message[session.id] !== undefined)
+    if (cached) return
 
     const q = queueFor(directory)
     if (q.inflight.has(session.id)) return

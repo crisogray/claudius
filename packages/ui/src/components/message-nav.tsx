@@ -1,7 +1,16 @@
 import { UserMessage } from "@opencode-ai/sdk/v2"
-import { ComponentProps, For, Match, Show, splitProps, Switch } from "solid-js"
+import { ComponentProps, For, Match, splitProps, Switch } from "solid-js"
 import { DiffChanges } from "./diff-changes"
 import { Tooltip } from "@kobalte/core/tooltip"
+
+const MAX_PREVIEW_LENGTH = 60
+
+function truncateText(text: string, maxLength: number = MAX_PREVIEW_LENGTH): string {
+  if (!text) return "New message"
+  const trimmed = text.trim().replace(/\s+/g, " ")
+  if (trimmed.length <= maxLength) return trimmed
+  return trimmed.slice(0, maxLength).trim() + "…"
+}
 
 export function MessageNav(
   props: ComponentProps<"ul"> & {
@@ -9,9 +18,10 @@ export function MessageNav(
     current?: UserMessage
     size: "normal" | "compact"
     onMessageSelect: (message: UserMessage) => void
+    getMessageText?: (messageId: string) => string | undefined
   },
 ) {
-  const [local, others] = splitProps(props, ["messages", "current", "size", "onMessageSelect"])
+  const [local, others] = splitProps(props, ["messages", "current", "size", "onMessageSelect", "getMessageText"])
 
   const content = () => (
     <ul role="list" data-component="message-nav" data-size={local.size} {...others}>
@@ -34,9 +44,7 @@ export function MessageNav(
                       data-slot="message-nav-title-preview"
                       data-active={message.id === local.current?.id || undefined}
                     >
-                      <Show when={message.summary?.title} fallback="New message">
-                        {message.summary?.title}
-                      </Show>
+                      {truncateText(local.getMessageText?.(message.id) ?? "")}
                     </div>
                   </button>
                 </Match>
