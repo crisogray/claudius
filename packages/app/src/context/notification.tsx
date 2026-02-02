@@ -1,12 +1,13 @@
 import { createStore } from "solid-js/store"
-import { createEffect, onCleanup } from "solid-js"
+import { createEffect, createMemo, onCleanup } from "solid-js"
+import { useParams } from "@solidjs/router"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useGlobalSDK } from "./global-sdk"
 import { useGlobalSync } from "./global-sync"
 import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { Binary } from "@opencode-ai/util/binary"
-import { base64Encode } from "@opencode-ai/util/encode"
+import { base64Encode, base64Decode } from "@opencode-ai/util/encode"
 import { EventSessionError } from "@opencode-ai/sdk/v2"
 import { Persist, persisted } from "@/utils/persist"
 import { playSound, soundSrc } from "@/utils/sound"
@@ -43,10 +44,23 @@ function pruneNotifications(list: Notification[]) {
 export const { use: useNotification, provider: NotificationProvider } = createSimpleContext({
   name: "Notification",
   init: () => {
+    const params = useParams()
     const globalSDK = useGlobalSDK()
     const globalSync = useGlobalSync()
     const platform = usePlatform()
     const settings = useSettings()
+
+    const currentDirectory = createMemo(() => {
+      const dir = params.dir
+      if (!dir) return undefined
+      try {
+        return base64Decode(dir)
+      } catch {
+        return undefined
+      }
+    })
+
+    const currentSession = createMemo(() => params.id)
 
     const [store, setStore, _, ready] = persisted(
       Persist.global("notification", ["notification.v1"]),
@@ -71,11 +85,19 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
     const unsub = globalSDK.event.listen((e) => {
       const directory = e.name
       const event = e.details
-      const base = {
-        directory,
-        time: Date.now(),
-        viewed: false,
+      const time = Date.now()
+
+      // Check if the session is currently being viewed - if so, mark as already viewed
+      const viewed = (sessionID?: string) => {
+        const activeDirectory = currentDirectory()
+        const activeSession = currentSession()
+        if (!activeDirectory) return false
+        if (!activeSession) return false
+        if (!sessionID) return false
+        if (directory !== activeDirectory) return false
+        return sessionID === activeSession
       }
+
       switch (event.type) {
         case "session.idle": {
           const sessionID = event.properties.sessionID
@@ -87,7 +109,9 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
           playSound(soundSrc(settings.sounds.agent()))
 
           append({
-            ...base,
+            directory,
+            time,
+            viewed: viewed(sessionID),
             type: "turn-complete",
             session: sessionID,
           })
@@ -110,7 +134,9 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
 
           const error = "error" in event.properties ? event.properties.error : undefined
           append({
-            ...base,
+            directory,
+            time,
+            viewed: viewed(sessionID),
             type: "error",
             session: sessionID ?? "global",
             error,

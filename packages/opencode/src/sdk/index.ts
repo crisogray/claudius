@@ -434,9 +434,6 @@ export namespace SDK {
       log.info("interrupting SDK", { sessionID })
       activeQuery.interrupt()
 
-      // Immediately set session status to idle (stops the timer)
-      SessionStatus.set(sessionID, { type: "idle" })
-
       // Clean up any pending plan/question/permission requests for this session
       await PlanApproval.rejectBySession(sessionID)
       await Question.rejectBySession(sessionID)
@@ -462,6 +459,11 @@ export namespace SDK {
       // Cleanup tracking
       currentMessages.delete(sessionID)
     }
+
+    // Always set session status to idle (stops the spinner)
+    // This must be outside the activeQuery check because child sessions
+    // don't have their own active query - they're managed by the parent's stream
+    SessionStatus.set(sessionID, { type: "idle" })
 
     // Also interrupt any child sessions (subagents)
     for (const child of await Session.children(sessionID)) {

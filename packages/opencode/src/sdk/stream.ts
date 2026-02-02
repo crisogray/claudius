@@ -632,6 +632,13 @@ export namespace SDKStream {
       }
     } catch (error) {
       log.error("stream processing error", { error })
+
+      // Clean up any child sessions that were started but not completed
+      // This ensures child sessions don't get stuck in "busy" state
+      for (const [, childInfo] of childSessions) {
+        SessionStatus.set(childInfo.sessionID, { type: "idle" })
+      }
+
       if (currentMessage) {
         currentMessage.error = MessageV2.fromError(error, { providerID: context.providerID })
         currentMessage.time.completed = Date.now()
