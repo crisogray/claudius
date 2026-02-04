@@ -1,34 +1,24 @@
-import { createMemo, createResource, Show } from "solid-js"
+import { createMemo, Show } from "solid-js"
 import { Portal } from "solid-js/web"
-import { A, useNavigate, useParams } from "@solidjs/router"
+import { useParams } from "@solidjs/router"
 import { useLayout } from "@/context/layout"
 import { useCommand } from "@/context/command"
 import { useServer } from "@/context/server"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { useSync } from "@/context/sync"
-import { useGlobalSDK } from "@/context/global-sdk"
 import { getFilename } from "@opencode-ai/util/path"
-import { base64Decode, base64Encode } from "@opencode-ai/util/encode"
-import { iife } from "@opencode-ai/util/iife"
+import { base64Decode } from "@opencode-ai/util/encode"
 import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Button } from "@opencode-ai/ui/button"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
-import { Select } from "@opencode-ai/ui/select"
-import { Popover } from "@opencode-ai/ui/popover"
-import { TextField } from "@opencode-ai/ui/text-field"
+import { TooltipKeybind } from "@opencode-ai/ui/tooltip"
 import { Keybind } from "@opencode-ai/ui/keybind"
 import { DialogSelectServer } from "@/components/dialog-select-server"
 import { SessionLspIndicator } from "@/components/session-lsp-indicator"
 import { SessionMcpIndicator } from "@/components/session-mcp-indicator"
-import type { Session } from "@opencode-ai/sdk/v2/client"
-import { same } from "@/utils/same"
 
 export function SessionHeader() {
-  const globalSDK = useGlobalSDK()
   const layout = useLayout()
   const params = useParams()
-  const navigate = useNavigate()
   const command = useCommand()
   const server = useServer()
   const dialog = useDialog()
@@ -47,30 +37,12 @@ export function SessionHeader() {
   })
   const hotkey = createMemo(() => command.keybind("file.open"))
 
-  const sessions = createMemo(() => (sync.data.session ?? []).filter((s) => !s.parentID))
   const currentSession = createMemo(() => sync.data.session.find((s) => s.id === params.id))
-  const parentSession = createMemo(() => {
-    const current = currentSession()
-    if (!current?.parentID) return undefined
-    return sync.data.session.find((s) => s.id === current.parentID)
-  })
-  const shareEnabled = createMemo(() => sync.data.config.share !== "disabled")
-  const worktrees = createMemo(() => layout.projects.list().map((p) => p.worktree), [], { equals: same })
   const sessionKey = createMemo(() => `${params.dir}${params.id ? "/" + params.id : ""}`)
   const view = createMemo(() => layout.view(sessionKey()))
 
   const centerMount = createMemo(() => document.getElementById("opencode-titlebar-center"))
   const rightMount = createMemo(() => document.getElementById("opencode-titlebar-right"))
-
-  function navigateToProject(directory: string) {
-    navigate(`/${base64Encode(directory)}`)
-  }
-
-  function navigateToSession(session: Session | undefined) {
-    if (!session) return
-    if (session.id === params.id) return
-    navigate(`/${params.dir}/session/${session.id}`)
-  }
 
   return (
     <>
@@ -213,122 +185,10 @@ export function SessionHeader() {
                   </Button>
                 </TooltipKeybind>
               </div>
-              {/* <Show when={shareEnabled() && currentSession()}>
-                <Popover
-                  title="Share session"
-                  trigger={
-                    <Tooltip class="shrink-0" value="Share session">
-                      <IconButton icon="share" variant="ghost" class="" />
-                    </Tooltip>
-                  }
-                >
-                  {iife(() => {
-                    const [url] = createResource(
-                      () => currentSession(),
-                      async (session) => {
-                        if (!session) return
-                        let shareURL = session.share?.url
-                        if (!shareURL) {
-                          shareURL = await globalSDK.client.session
-                            .share({ sessionID: session.id, directory: projectDirectory() })
-                            .then((r) => r.data?.share?.url)
-                            .catch((e) => {
-                              console.error("Failed to share session", e)
-                              return undefined
-                            })
-                        }
-                        return shareURL
-                      },
-                      { initialValue: "" },
-                    )
-                    return (
-                      <Show when={url.latest}>
-                        {(shareUrl) => <TextField value={shareUrl()} readOnly copyable class="w-72" />}
-                      </Show>
-                    )
-                  })}
-                </Popover>
-              </Show> */}
             </div>
           </Portal>
         )}
       </Show>
-
-      {/* Breadcrumb navigation bar */}
-      <header class="h-10 shrink-0 bg-background-base border-b border-border-weak-base flex items-center px-4 gap-2">
-        <div class="hidden xl:flex items-center gap-2">
-          <Select
-            options={worktrees()}
-            current={sync.project?.worktree ?? projectDirectory()}
-            label={(x) => getFilename(x)}
-            onSelect={(x) => (x ? navigateToProject(x) : undefined)}
-            class="text-14-regular text-text-base"
-            variant="ghost"
-          >
-            {/* @ts-ignore */}
-            {(i) => (
-              <div class="flex items-center gap-2">
-                <Icon name="folder" size="small" />
-                <div class="text-text-strong">{getFilename(i)}</div>
-              </div>
-            )}
-          </Select>
-          <div class="text-text-weaker">/</div>
-        </div>
-        <Show
-          when={parentSession()}
-          fallback={
-            <>
-              <Select
-                options={sessions()}
-                current={currentSession()}
-                placeholder="New session"
-                label={(x) => x.title}
-                value={(x) => x.id}
-                onSelect={navigateToSession}
-                class="text-14-regular text-text-base max-w-[calc(100vw-180px)] md:max-w-md"
-                variant="ghost"
-              />
-            </>
-          }
-        >
-          <div class="flex items-center gap-2 min-w-0">
-            <Select
-              options={sessions()}
-              current={parentSession()}
-              placeholder="Back to parent session"
-              label={(x) => x.title}
-              value={(x) => x.id}
-              onSelect={(session) => {
-                const currentParent = parentSession()
-                if (session && currentParent && session.id !== currentParent.id) {
-                  navigateToSession(session)
-                }
-              }}
-              class="text-14-regular text-text-base max-w-[calc(100vw-180px)] md:max-w-md"
-              variant="ghost"
-            />
-            <div class="text-text-weaker">/</div>
-            <span class="text-14-regular text-text-base truncate max-w-[200px]">
-              {currentSession()?.title || "Subagent"}
-            </span>
-            <Tooltip value="Back to parent session">
-              <button
-                type="button"
-                class="flex items-center justify-center gap-1 p-1 rounded hover:bg-surface-raised-base-hover active:bg-surface-raised-base-active transition-colors flex-shrink-0"
-                onClick={() => navigateToSession(parentSession())}
-              >
-                <Icon name="arrow-left" size="small" class="text-icon-base" />
-              </button>
-            </Tooltip>
-          </div>
-        </Show>
-        <Show when={currentSession() && !parentSession()}>
-          <TooltipKeybind class="hidden xl:block" title="New session" keybind={command.keybind("session.new")}>
-            <IconButton as={A} href={`/${params.dir}/session`} icon="edit-small-2" variant="ghost" />
-          </TooltipKeybind>
-        </Show>
-      </header>
     </>
   )
 }
