@@ -193,9 +193,38 @@ export namespace PermissionNext {
 
         existing.resolve()
 
+        // Build set of related session IDs (same session, parent, children, siblings)
+        // Use dynamic import to avoid circular dependency with Session module
         const sessionID = existing.info.sessionID
+        const relatedSessionIDs = new Set<string>([sessionID])
+
+        try {
+          const { Session } = await import("@/session")
+          const session = await Session.get(sessionID)
+
+          // Include parent session
+          if (session.parentID) {
+            relatedSessionIDs.add(session.parentID)
+            // Include siblings (other children of the same parent)
+            const siblings = await Session.children(session.parentID)
+            for (const sibling of siblings) {
+              relatedSessionIDs.add(sibling.id)
+            }
+          }
+
+          // Include child sessions
+          const children = await Session.children(sessionID)
+          for (const child of children) {
+            relatedSessionIDs.add(child.id)
+          }
+        } catch {
+          // Session lookup failed, just use the original sessionID
+          log.info("failed to lookup related sessions, using only original session", { sessionID })
+        }
+
+        // Auto-resolve pending requests from related sessions that now match
         for (const [id, pending] of Object.entries(s.pending)) {
-          if (pending.info.sessionID !== sessionID) continue
+          if (!relatedSessionIDs.has(pending.info.sessionID)) continue
           const ok = pending.info.patterns.every(
             (pattern) => evaluate(pending.info.permission, pattern, s.approved).action === "allow",
           )
