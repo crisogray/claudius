@@ -110,7 +110,8 @@ export namespace Git {
     }
 
     // Get status with porcelain v2 format
-    const statusOutput = await $`git status --porcelain=v2`.cwd(cwd).quiet().nothrow().text()
+    // Use -uall to show individual files in untracked directories instead of just the directory
+    const statusOutput = await $`git status --porcelain=v2 -uall`.cwd(cwd).quiet().nothrow().text()
 
     const staged: FileStatus[] = []
     const unstaged: FileStatus[] = []
