@@ -383,22 +383,99 @@ Features:
 
 **Current state:** No PR functionality. Has fork sessions and summary generation, but no GitHub API integration.
 
+**Multi-repo/worktree PR handling:**
+
+Each repo/worktree entry shows PR status per-branch with clickable icon:
+
+```
+▼ myapp           main        [3]      ← no PR (main branch)
+  ...
+
+▼ myapp 🌳        feature/auth [0]  🔗 PR #42 ✓   ← click opens PR tab
+  ...
+
+▶ backend         fix/bug     [1]  🔗 PR #17 ⏳   ← pending CI
+
+▼ shared          main        [0]  [+ Create PR]  ← no PR, show create button
+  ...
+```
+
+**PR status icons in accordion row:**
+| Icon | Meaning |
+|------|---------|
+| `🔗 #42 ✓` | Open PR, CI passing |
+| `🔗 #42 ⏳` | Open PR, CI pending |
+| `🔗 #42 ✗` | Open PR, CI failing |
+| `🔗 #42 📝` | Draft PR |
+| `[+ Create PR]` | No PR for this branch |
+
+**Clicking PR icon → opens PR tab:**
+- Full PR details (title, description, reviewers)
+- CI status with individual check results
+- Review comments thread
+- Diff view (or link to existing diff tab)
+- Merge/close actions
+
+**Provider detection (per-repo):**
+```typescript
+// Detect from remote URL
+function detectProvider(remoteUrl: string): "github" | "gitlab" | null {
+  if (remoteUrl.includes("github.com")) return "github"
+  if (remoteUrl.includes("gitlab.com")) return "gitlab"
+  // Check for self-hosted patterns...
+  return null
+}
+```
+
+**Implementation approach:** Direct API with Personal Access Token (PAT)
+
+**Why PAT-only:**
+- No backend/OAuth app needed (open source friendly)
+- No shared rate limits across users
+- Works with self-hosted GitHub Enterprise / GitLab
+- User controls token scopes
+- Simple UX - paste token once
+
+**Auth UI:**
+```
+┌─ GitHub Authentication ─────────────────────┐
+│                                             │
+│ Personal Access Token                       │
+│ [paste token here...                     ]  │
+│                                             │
+│ Scopes needed: repo, read:user              │
+│ [Generate token on GitHub →]                │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Token storage:**
+- Store in `~/.opencode/auth.json`
+- Key by remote host: `{ "github.com": "ghp_xxx", "gitlab.com": "glpat_xxx" }`
+- Support multiple tokens for different hosts
+
+**API endpoints:**
+- GitHub: `https://api.github.com/repos/:owner/:repo/pulls`
+- GitLab: `https://gitlab.com/api/v4/projects/:id/merge_requests`
+- Self-hosted: detect from remote URL, use same API paths
+
 **Needed:**
 
-- GitHub API client (GraphQL or REST)
-- Authentication flow (OAuth or PAT)
-- PR creation/update/status APIs
-- PR listing and management UI
-- Review comments display
-- Status checks display
-
-**SDK Note:** The Agent SDK has no built-in PR support - this would be custom implementation or via MCP server.
+- GitHub/GitLab provider abstraction
+- PR lookup by branch: `getPRForBranch(remote, branch)`
+- PR status caching (don't hit API on every render)
+- PR tab component with full details
+- Create PR flow (title, description, base branch)
+- Authentication per-repo (different tokens possible)
 
 **Files to create:**
 
-- `/packages/opencode/src/github/` - New GitHub integration module
-- `/packages/app/src/components/panel/pr-tab.tsx` - PR management UI
-- PR creation modal/flow
+- `/packages/opencode/src/pr/` - PR provider abstraction
+  - `provider.ts` - Interface for GitHub/GitLab
+  - `github.ts` - GitHub implementation (gh CLI or API)
+  - `gitlab.ts` - GitLab implementation (glab CLI or API)
+- `/packages/app/src/components/panel/pr-tab.tsx` - PR detail tab
+- `/packages/app/src/components/pr-status-badge.tsx` - Inline PR badge for accordion
 
 ---
 
