@@ -106,6 +106,11 @@ export const { use: useNotification, provider: NotificationProvider } = createSi
           const session = match.found ? syncStore.session[match.index] : undefined
           if (session?.parentID) break
 
+          // Skip notification if session was interrupted
+          const messages = syncStore.message[sessionID]
+          const lastAssistant = messages?.findLast((m) => m.role === "assistant")
+          if (lastAssistant?.finish === "cancelled") break
+
           playSound(soundSrc(settings.sounds.agent()))
 
           append({
