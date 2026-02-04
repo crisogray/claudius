@@ -2,21 +2,21 @@
 
 ## Summary
 
-| Feature | Status | Difficulty | Effort |
-|---------|--------|------------|--------|
+| Feature                           | Status      | Difficulty  | Effort   |
+| --------------------------------- | ----------- | ----------- | -------- |
 | **Multi-repo + worktree support** | Not started | Medium-High | 4-6 days |
-| Branch switcher | Not started | Medium | 2-3 days |
-| Push/Pull/Fetch/Merge | Not started | Medium-High | 3-5 days |
-| Replace tabs in-place | Not started | Low | 1 day |
-| New tasks format | Not started | High | 4-6 days |
-| Message reverts | **Done** | N/A | - |
-| Queue message | Not started | Medium | 2-3 days |
-| PRs | Not started | High | 5-7 days |
-| Skills settings | Partial | Low | 1 day |
-| Agents/Subagents settings | Partial | Medium | 2-3 days |
-| Custom Tools settings | Not started | Medium | 2-3 days |
-| Hooks settings | Schema only | Medium | 2-3 days |
-| Drag and drop tabs (split panes) | Not started | Medium-High | 3-4 days |
+| Branch switcher                   | Not started | Medium      | 2-3 days |
+| Push/Pull/Fetch/Merge             | Not started | Medium-High | 3-5 days |
+| Replace tabs in-place             | Not started | Low         | 1 day    |
+| New tasks format                  | Not started | High        | 4-6 days |
+| Message reverts                   | **Done**    | N/A         | -        |
+| Queue message                     | Not started | Medium      | 2-3 days |
+| PRs                               | Not started | High        | 5-7 days |
+| Skills settings                   | Partial     | Low         | 1 day    |
+| Agents/Subagents settings         | Partial     | Medium      | 2-3 days |
+| Custom Tools settings             | Not started | Medium      | 2-3 days |
+| Hooks settings                    | Schema only | Medium      | 2-3 days |
+| Drag and drop tabs (split panes)  | Not started | Medium-High | 3-4 days |
 
 **Total estimated effort: ~32-45 days**
 
@@ -27,6 +27,7 @@
 ### Git Features
 
 #### Multi-Repo Support - **Medium-High** (Not started)
+
 **Current state:** Entire system assumes ONE repo per workspace. Detection stops at first `.git` found walking upward.
 
 **Problem:** A folder containing 3 git repos (e.g., monorepo with nested repos, or multi-project workspace) only sees the root one.
@@ -34,6 +35,7 @@
 **Architecture changes needed:**
 
 1. **Backend - Repository & Worktree Detection**
+
    ```typescript
    // New types in project.ts
    type GitEntry = {
@@ -57,6 +59,7 @@
    - Worktrees appear alongside repos in flattened list
 
    **Example workspace:**
+
    ```
    /workspace
      /myapp           ← repo (main branch)
@@ -67,6 +70,7 @@
    ```
 
    **Flattened gitEntries:**
+
    ```
    [
      { type: "repo",     path: "myapp",         branch: "main" }
@@ -96,6 +100,7 @@
 
 6. **Frontend - Git Tab UI** (`/packages/app/src/components/panel/git-tab.tsx`)
    - **Full accordion** with shared branch switcher & history at bottom:
+
      ```
      ▼ myapp              main         [3]  ← branch indicator (text)
        [Commit message...                    ]
@@ -154,6 +159,7 @@
    - Repos with 0 changes can stay collapsed
 
 **Files to modify:**
+
 - `/packages/opencode/src/project/project.ts` - Multi-repo detection
 - `/packages/opencode/src/project/instance.ts` - Repo context
 - `/packages/opencode/src/git/index.ts` - Accept repo param
@@ -167,14 +173,17 @@
 ---
 
 #### Branch Switcher - **Medium** (Not started)
+
 **Current state:** Only branch name tracking via `Vcs.branch()` and file watching for HEAD changes.
 
 **Missing:**
+
 - `git branch --list` to list all branches
 - `git switch <branch>` / `git checkout <branch>` API
 - UI component for branch selection dropdown
 
 **Files to modify:**
+
 - `/packages/opencode/src/git/index.ts` - Add `listBranches()`, `switchBranch()`
 - `/packages/opencode/src/server/server.ts` - Add routes
 - `/packages/app/src/components/panel/git-tab.tsx` - Add branch dropdown UI
@@ -182,21 +191,25 @@
 ---
 
 #### Push/Pull/Fetch/Merge - **Medium-High** (Not started)
+
 **Current state:** No remote operations exist.
 
 **Missing:**
+
 - `git push`, `git pull`, `git fetch`, `git merge` APIs
 - Conflict detection and resolution UI
 - Remote tracking state
 - Progress/status feedback for long operations
 
 **Complexity factors:**
+
 - Pull may have conflicts requiring resolution UI
 - Merge operations are complex with potential conflicts
 - Need authentication handling for private repos
 - Progress feedback for network operations
 
 **Files to modify:**
+
 - `/packages/opencode/src/git/index.ts` - Add remote operations
 - `/packages/opencode/src/server/server.ts` - Add routes
 - `/packages/app/src/components/panel/git-tab.tsx` - Add push/pull buttons
@@ -207,39 +220,46 @@
 ### Tab Management
 
 #### Replace Tabs In-Place (VS Code style) - **Low** (Not started)
+
 **Current state:** Tabs system is fully implemented with drag-and-drop. Opening a file adds a new tab and makes it active.
 
 **Missing:** "Preview tab" behavior where single-clicking opens a temporary tab that gets replaced by the next file until you edit or double-click.
 
 **Implementation:**
+
 - Add `preview: boolean` flag to tab state
 - Modify `open()` in layout context to replace preview tabs
 - Add visual indicator (italic title) for preview tabs
 - Double-click or edit converts preview to permanent
 
 **Files to modify:**
+
 - `/packages/app/src/context/layout.tsx` - Add preview tab logic (~50 lines)
 - `/packages/app/src/pages/session.tsx` - Add double-click handler for permanence
 
 ---
 
 #### Drag and Drop Tabs (Split Panes) - **Medium-High** (Not started)
+
 **Current state:** Tab reordering works via `@thisbeyond/solid-dnd`, but NO split pane support.
 
 **What's needed:** VS Code-style dragging a tab to create a split view (max 2 panes side-by-side).
 
 **Good news:** Terminal already has a sophisticated split pane system that can be adapted:
+
 - Binary tree panel structure in `/packages/app/src/context/terminal.tsx`
 - `Panel` type with `direction`, `children`, `sizes`
 - ResizeHandle component exists at `/packages/ui/src/components/resize-handle.tsx`
 - TerminalSplit component handles recursive rendering
 
 **Implementation:**
+
 1. **Data structure** - Add `EditorLayout` to layout context:
+
    ```typescript
    type EditorPane = {
      id: string
-     direction?: "vertical"  // Only side-by-side splits
+     direction?: "vertical" // Only side-by-side splits
      children?: [string, string]
      sizes?: [number, number]
      tabs: string[]
@@ -262,6 +282,7 @@
 4. **Persistence** - Save/restore split layout per session
 
 **Files to modify:**
+
 - `/packages/app/src/context/layout.tsx` - Add EditorLayout state & methods
 - `/packages/app/src/pages/session.tsx` - Render split panes, enhance drag detection
 - `/packages/app/src/components/session/session-sortable-tab.tsx` - Split zone detection
@@ -273,6 +294,7 @@
 ### Tasks & Messages
 
 #### New Tasks Format - **High** (Not started)
+
 **Current state:** Has basic Todos in `/packages/opencode/src/session/todo.ts` - but this is NOT the new Tasks system.
 
 **New Tasks System (from Claude Code):**
@@ -299,6 +321,7 @@ This is a major new feature for coordinating work across sessions/subagents:
 ```
 
 **Key differences from current Todos:**
+
 1. **Dependencies** - Tasks can depend on other tasks
 2. **Filesystem storage** - Tasks stored in `~/.claude/tasks/` (not just session memory)
 3. **Multi-session collaboration** - Multiple sessions/subagents can work on same Task List
@@ -306,6 +329,7 @@ This is a major new feature for coordinating work across sessions/subagents:
 5. **Environment variable** - `CLAUDE_CODE_TASK_LIST_ID=<id>` to share task lists
 
 **Implementation needed:**
+
 - `/packages/opencode/src/tasks/` - New task management module
   - Task storage (filesystem-based in `~/.claude/tasks/`)
   - Task List management
@@ -321,9 +345,11 @@ This is a major new feature for coordinating work across sessions/subagents:
 ---
 
 #### Message Reverts - **Done**
+
 **Current state:** Fully implemented in `/packages/opencode/src/session/revert.ts`
 
 Features:
+
 - `SessionRevert.revert()` - Revert to a specific message
 - `SessionRevert.unrevert()` - Undo a revert
 - `SessionRevert.cleanup()` - Permanently delete reverted messages
@@ -333,15 +359,18 @@ Features:
 ---
 
 #### Queue Message - **Medium** (Not started)
+
 **Current state:** Messages are sent immediately and processed sequentially.
 
 **Needed:**
+
 - Queue data structure for pending messages
 - UI to show queued messages
 - Ability to reorder/cancel queued messages
 - Integration with session processing
 
 **Files to create/modify:**
+
 - `/packages/opencode/src/session/queue.ts` - New queue management
 - `/packages/app/src/context/session.tsx` - Queue state integration
 - `/packages/app/src/pages/session.tsx` - Queue UI
@@ -351,9 +380,11 @@ Features:
 ### Pull Requests
 
 #### PRs - **High** (Not started)
+
 **Current state:** No PR functionality. Has fork sessions and summary generation, but no GitHub API integration.
 
 **Needed:**
+
 - GitHub API client (GraphQL or REST)
 - Authentication flow (OAuth or PAT)
 - PR creation/update/status APIs
@@ -364,6 +395,7 @@ Features:
 **SDK Note:** The Agent SDK has no built-in PR support - this would be custom implementation or via MCP server.
 
 **Files to create:**
+
 - `/packages/opencode/src/github/` - New GitHub integration module
 - `/packages/app/src/components/panel/pr-tab.tsx` - PR management UI
 - PR creation modal/flow
@@ -373,7 +405,9 @@ Features:
 ### Settings
 
 #### MCPs - **Done**
+
 Fully implemented with:
+
 - Local (stdio) and Remote (HTTP/SSE) server types
 - OAuth support for remote servers
 - Enable/disable toggle
@@ -383,7 +417,9 @@ Fully implemented with:
 ---
 
 #### Skills Settings - **Low** (Partial)
+
 **Current state:** Skills are markdown files with frontmatter, scanned from:
+
 - Project: `.opencode/skill/`, `.claude/skills/`
 - Global: `~/.opencode/skill/`, `~/.claude/skills/`
 
@@ -394,12 +430,15 @@ Fully implemented with:
 ---
 
 #### Agents/Subagents Settings - **Medium** (Partial)
+
 **Current state:** Agent schema exists in config with support for:
+
 - `model`, `temperature`, `top_p`, `prompt`, `description`
 - `mode: "subagent" | "primary" | "all"`
 - `color`, `steps`, `permission`, `options`
 
 Agents can be defined via:
+
 - JSON in `opencode.jsonc`
 - Markdown files in `agent/` directories
 
@@ -410,9 +449,11 @@ Agents can be defined via:
 ---
 
 #### Custom Tools Settings - **Medium** (Not started)
+
 **Current state:** Only LSP tool is built-in. Custom tools come via MCP servers.
 
 **SDK approach:** Tools are defined via:
+
 1. `tool()` function with Zod schema
 2. `createSdkMcpServer()` to host tools
 3. MCP server configuration
@@ -422,30 +463,34 @@ Agents can be defined via:
 ---
 
 #### Hooks Settings - **Medium** (Schema exists, not implemented)
+
 **Current state:** Schema defined in config for:
+
 - `file_edited` - triggered by file extension
 - `session_completed` - triggered at session end
 
 **SDK hooks (from docs):** Much richer set available:
+
 ```typescript
 type HookEvent =
-  | 'PreToolUse'         // Before tool execution
-  | 'PostToolUse'        // After successful tool execution
-  | 'PostToolUseFailure' // After tool failure
-  | 'Notification'       // When notification sent
-  | 'UserPromptSubmit'   // When user submits prompt
-  | 'SessionStart'       // Session begins (startup/resume/clear/compact)
-  | 'SessionEnd'         // Session ends
-  | 'Stop'               // Stop requested
-  | 'SubagentStart'      // Subagent launched
-  | 'SubagentStop'       // Subagent finished
-  | 'PreCompact'         // Before context compaction
-  | 'PermissionRequest'; // Permission requested
+  | "PreToolUse" // Before tool execution
+  | "PostToolUse" // After successful tool execution
+  | "PostToolUseFailure" // After tool failure
+  | "Notification" // When notification sent
+  | "UserPromptSubmit" // When user submits prompt
+  | "SessionStart" // Session begins (startup/resume/clear/compact)
+  | "SessionEnd" // Session ends
+  | "Stop" // Stop requested
+  | "SubagentStart" // Subagent launched
+  | "SubagentStop" // Subagent finished
+  | "PreCompact" // Before context compaction
+  | "PermissionRequest" // Permission requested
 ```
 
 **Gap:** Current implementation has 2 hook types vs SDK's 12.
 
 **For settings UI:** Need hook management interface with:
+
 - Hook type selection (align with SDK types above)
 - Matcher patterns (e.g., tool name for PreToolUse)
 - Command/script configuration
@@ -459,16 +504,17 @@ type HookEvent =
 **Directory Migration Plan:**
 Per user preference, migrate Claude-compatible settings to `.claude` directory while keeping opencode-specific things in `.opencode`:
 
-| Setting | Location | Notes |
-|---------|----------|-------|
-| **Skills** | `~/.claude/skills/`, `.claude/skills/` | Align with Claude Code |
-| **Agents** | `~/.claude/agents/`, `.claude/agents/` | Align with Claude Code |
-| **Tasks** | `~/.claude/tasks/` | New - filesystem-based |
-| **Hooks** | `.claude/settings.json` | Align with Claude Code |
-| **MCP servers** | Stay in `.opencode/` | OpenCode-specific config |
-| **Custom Tools** | `.claude/tools/` or via MCP | TBD |
+| Setting          | Location                               | Notes                    |
+| ---------------- | -------------------------------------- | ------------------------ |
+| **Skills**       | `~/.claude/skills/`, `.claude/skills/` | Align with Claude Code   |
+| **Agents**       | `~/.claude/agents/`, `.claude/agents/` | Align with Claude Code   |
+| **Tasks**        | `~/.claude/tasks/`                     | New - filesystem-based   |
+| **Hooks**        | `.claude/settings.json`                | Align with Claude Code   |
+| **MCP servers**  | Stay in `.opencode/`                   | OpenCode-specific config |
+| **Custom Tools** | `.claude/tools/` or via MCP            | TBD                      |
 
 **Precedence (lowest to highest):**
+
 1. Global user (`~/.claude/` or `~/.opencode/`)
 2. Project (`.claude/` or `.opencode/`)
 3. Environment overrides
@@ -478,43 +524,48 @@ Per user preference, migrate Claude-compatible settings to `.claude` directory w
 ## Prioritized Roadmap
 
 ### Already Done
+
 - **Message reverts** - Full revert/unrevert/cleanup system
 - **MCP settings** - Complete with OAuth, local/remote servers
 
 ---
 
 ### Phase 1: Core Editor UX (5-6 days)
-*Foundation improvements for daily workflow*
 
-| Order | Feature | Effort | Rationale |
-|-------|---------|--------|-----------|
-| 1.1 | **Replace tabs in-place** | 1 day | Quick win, common VS Code expectation |
-| 1.2 | **Drag and drop tabs (split panes)** | 3-4 days | High-value editor feature, terminal infra reusable |
-| 1.3 | **Queue message** | 2-3 days | Enables better workflow when Claude is busy |
+_Foundation improvements for daily workflow_
+
+| Order | Feature                              | Effort   | Rationale                                          |
+| ----- | ------------------------------------ | -------- | -------------------------------------------------- |
+| 1.1   | **Replace tabs in-place**            | 1 day    | Quick win, common VS Code expectation              |
+| 1.2   | **Drag and drop tabs (split panes)** | 3-4 days | High-value editor feature, terminal infra reusable |
+| 1.3   | **Queue message**                    | 2-3 days | Enables better workflow when Claude is busy        |
 
 ---
 
 ### Phase 2: Git Workflow (9-14 days)
-*Complete git workflow without leaving the app*
 
-| Order | Feature | Effort | Rationale |
-|-------|---------|--------|-----------|
-| 2.1 | **Multi-repo + worktree support** | 4-6 days | **Foundation** - must come first, others build on it |
-| 2.2 | **Branch switcher** | 2-3 days | Per-repo branch switching (disabled for worktrees) |
-| 2.3 | **Push/Pull/Fetch/Merge** | 3-5 days | Depends on branch switcher, completes git story |
+_Complete git workflow without leaving the app_
 
-*Note: Multi-repo/worktree is architectural. Branch switcher and push/pull are incremental on top.*
+| Order | Feature                           | Effort   | Rationale                                            |
+| ----- | --------------------------------- | -------- | ---------------------------------------------------- |
+| 2.1   | **Multi-repo + worktree support** | 4-6 days | **Foundation** - must come first, others build on it |
+| 2.2   | **Branch switcher**               | 2-3 days | Per-repo branch switching (disabled for worktrees)   |
+| 2.3   | **Push/Pull/Fetch/Merge**         | 3-5 days | Depends on branch switcher, completes git story      |
+
+_Note: Multi-repo/worktree is architectural. Branch switcher and push/pull are incremental on top._
 
 ---
 
 ### Phase 3: Claude Code Alignment (4-6 days)
-*Align with official Claude Code features*
 
-| Order | Feature | Effort | Rationale |
-|-------|---------|--------|-----------|
-| 3.1 | **New Tasks format** | 4-6 days | Major Claude Code feature, cross-session collaboration |
+_Align with official Claude Code features_
 
-*Note: This is the biggest single feature. Consider splitting into sub-phases:*
+| Order | Feature              | Effort   | Rationale                                              |
+| ----- | -------------------- | -------- | ------------------------------------------------------ |
+| 3.1   | **New Tasks format** | 4-6 days | Major Claude Code feature, cross-session collaboration |
+
+_Note: This is the biggest single feature. Consider splitting into sub-phases:_
+
 - 3.1a: Basic task structure with dependencies (2 days)
 - 3.1b: Filesystem storage & cross-session sync (2-3 days)
 - 3.1c: UI with dependency visualization (1-2 days)
@@ -522,42 +573,47 @@ Per user preference, migrate Claude-compatible settings to `.claude` directory w
 ---
 
 ### Phase 4: Settings & Configuration (6-10 days)
-*Settings UI for all configuration types*
 
-| Order | Feature | Effort | Rationale |
-|-------|---------|--------|-----------|
-| 4.1 | **Skills settings UI** | 1 day | Quick - just list existing files |
-| 4.2 | **Agents/Subagents settings** | 2-3 days | Core configuration |
-| 4.3 | **Hooks settings** | 2-3 days | Align with SDK's 12 hook types |
-| 4.4 | **Custom Tools settings** | 2-3 days | Allow tool definitions via UI |
+_Settings UI for all configuration types_
 
-*Consider doing 4.1-4.4 together as a "Settings Overhaul" initiative since they share patterns*
+| Order | Feature                       | Effort   | Rationale                        |
+| ----- | ----------------------------- | -------- | -------------------------------- |
+| 4.1   | **Skills settings UI**        | 1 day    | Quick - just list existing files |
+| 4.2   | **Agents/Subagents settings** | 2-3 days | Core configuration               |
+| 4.3   | **Hooks settings**            | 2-3 days | Align with SDK's 12 hook types   |
+| 4.4   | **Custom Tools settings**     | 2-3 days | Allow tool definitions via UI    |
+
+_Consider doing 4.1-4.4 together as a "Settings Overhaul" initiative since they share patterns_
 
 ---
 
 ### Phase 5: GitHub Integration (5-7 days)
-*Full PR workflow*
 
-| Order | Feature | Effort | Rationale |
-|-------|---------|--------|-----------|
-| 5.1 | **PRs** | 5-7 days | Depends on git being solid, biggest integration |
+_Full PR workflow_
+
+| Order | Feature | Effort   | Rationale                                       |
+| ----- | ------- | -------- | ----------------------------------------------- |
+| 5.1   | **PRs** | 5-7 days | Depends on git being solid, biggest integration |
 
 ---
 
 ## Alternative Orderings
 
 ### If prioritizing Claude Code compatibility:
+
 1. New Tasks format (Phase 3)
 2. Settings migration to `.claude`
 3. Hooks alignment with SDK
 4. Then editor UX
 
 ### If prioritizing quick wins:
+
 1. Replace tabs in-place (1 day)
 2. Skills settings UI (1 day)
 3. Branch switcher (2-3 days)
 4. Then bigger features
 
 ### If prioritizing git workflow:
+
 1. Multi-repo support → Branch switcher → Push/Pull/Fetch/Merge → PRs
 2. Then editor and settings
