@@ -29,6 +29,9 @@ for (const file of files) {
   console.log("Updated:", file)
 }
 
+// Remove all local tags first (sync with remote)
+await $`git tag -l | xargs git tag -d 2>/dev/null || true`
+
 await $`git add -A`
 await $`git commit -m "release: v${newVersion}"`
 await $`git tag v${newVersion}`
