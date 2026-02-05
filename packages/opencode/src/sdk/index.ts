@@ -360,7 +360,7 @@ export namespace SDK {
         resumeSessionAt: forkOptions.resumeSessionAt ?? revertOptions.resumeSessionAt,
         forkSession: forkOptions.forkSession,
         systemPrompt: options.systemPrompt,
-        settingSources: ["project"],
+        settingSources: ["user", "project"],
         includePartialMessages: true,
       },
     })
@@ -563,7 +563,7 @@ export namespace SDK {
             type: "preset" as const,
             preset: "claude_code" as const,
           },
-      settingSources: ["project" as const],
+      settingSources: ["user" as const, "project" as const],
     }
   }
 
