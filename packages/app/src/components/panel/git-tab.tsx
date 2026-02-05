@@ -289,6 +289,12 @@ export function GitTab() {
             rows={2}
             value={commitMessage()}
             onInput={(e) => setCommitMessage(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                handleCommit()
+              }
+            }}
             autocapitalize="off"
             autocomplete="off"
             autocorrect="off"
