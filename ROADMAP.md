@@ -4,12 +4,12 @@
 
 | Feature                           | Status      | Difficulty  | Effort   |
 | --------------------------------- | ----------- | ----------- | -------- |
-| **Multi-repo + worktree support** | Not started | Medium-High | 4-6 days |
+| **Multi-repo support** | Not started | Medium-High | 4-6 days |
 | Branch switcher                   | Not started | Medium      | 2-3 days |
 | Push/Pull/Fetch/Merge             | Not started | Medium-High | 3-5 days |
 | Replace tabs in-place             | Not started | Low         | 1 day    |
 | New tasks format                  | Not started | High        | 4-6 days |
-| Message reverts                   | **Done**    | N/A         | -        |
+| Message reverts                   | **Done** (needs keybindings) | Low | ~0.5 day |
 | Queue message                     | Not started | Medium      | 2-3 days |
 | PRs                               | Not started | High        | 5-7 days |
 | Skills settings                   | Partial     | Low         | 1 day    |
@@ -32,54 +32,61 @@
 
 **Problem:** A folder containing 3 git repos (e.g., monorepo with nested repos, or multi-project workspace) only sees the root one.
 
-**Architecture changes needed:**
+**Two modes - mutually exclusive:**
 
-1. **Backend - Repository & Worktree Detection**
+| Mode | When | Sessions | Worktrees |
+|------|------|----------|-----------|
+| **Single repo** | One `.git` at/above workspace | Shared via worktree grouping | ✓ Detected & listed |
+| **Multi-repo** | Multiple `.git` dirs in workspace | Per-workspace (top level) | ✗ Disabled |
 
-   ```typescript
-   // New types in project.ts
-   type GitEntry = {
-     id: string           // unique identifier
-     type: "repo" | "worktree"
-     path: string         // relative path from workspace
-     root: string         // absolute path
-     branch?: string      // current branch
-     repoId?: string      // for worktrees: parent repo id
-     displayName: string  // e.g., "myapp (main)" or "myapp (feature/auth)"
-   }
+**Detection algorithm:**
 
-   // Project.Info gains:
-   gitEntries: GitEntry[]  // flattened list of repos + worktrees
-   ```
+```typescript
+// Find all .git directories in workspace
+const gitDirs = await glob("**/.git", { onlyDirectories: true })
+  .filter(p => !p.includes("node_modules"))
 
-   **Worktree detection:**
-   - Run `git worktree list --porcelain` in each detected repo
-   - Parse output to find all worktrees
-   - Each worktree becomes its own `GitEntry` with `type: "worktree"`
-   - Worktrees appear alongside repos in flattened list
+if (gitDirs.length === 0) {
+  // No git - check parent dirs for repo (current behavior)
+  const parentRepo = await findGitRepoAbove(workspace)
+  if (parentRepo) return { mode: "single", repos: [parentRepo] }
+  return { mode: "none" }
+}
 
-   **Example workspace:**
+if (gitDirs.length === 1) {
+  // Single repo mode - worktrees enabled
+  const repo = dirname(gitDirs[0])
+  const worktrees = await $`git -C ${repo} worktree list --porcelain`
+  return { mode: "single", repos: [repo], worktrees: parseWorktrees(worktrees) }
+}
 
-   ```
-   /workspace
-     /myapp           ← repo (main branch)
-     /myapp-feature   ← worktree of myapp (feature/auth)
-     /backend         ← separate repo
-     /shared          ← another repo
-     /shared-hotfix   ← worktree of shared (hotfix)
-   ```
+// Multi-repo mode - no worktree detection
+const repos = gitDirs.map(p => dirname(p))
+return { mode: "multi", repos }
+```
 
-   **Flattened gitEntries:**
+**Why disable worktrees in multi-repo:**
+- Worktree session sharing creates circular dependency with project identity
+- Multi-repo = multiple independent projects, sessions at workspace level
+- Keeps architecture simple
 
-   ```
-   [
-     { type: "repo",     path: "myapp",         branch: "main" }
-     { type: "worktree", path: "myapp-feature", branch: "feature/auth", repoId: "myapp" }
-     { type: "repo",     path: "backend",       branch: "main" }
-     { type: "repo",     path: "shared",        branch: "main" }
-     { type: "worktree", path: "shared-hotfix", branch: "hotfix", repoId: "shared" }
-   ]
-   ```
+**Example - Single repo mode:**
+```
+/workspace/myapp/          ← opened folder
+  .git/                    ← single repo detected
+
+Worktrees of myapp also detected, sessions shared
+```
+
+**Example - Multi-repo mode:**
+```
+/workspace/                ← opened folder
+  /backend/.git/           ← repo 1
+  /frontend/.git/          ← repo 2
+  /shared/.git/            ← repo 3
+
+No worktree detection, sessions belong to workspace
+```
 
 2. **Backend - Git Module** (`/packages/opencode/src/git/index.ts`)
    - All functions accept optional `repoPath` parameter
@@ -99,10 +106,11 @@
    - `expandedRepos: Set<string>` for accordion state
 
 6. **Frontend - Git Tab UI** (`/packages/app/src/components/panel/git-tab.tsx`)
-   - **Full accordion** with shared branch switcher & history at bottom:
+
+   **Multi-repo mode** - full accordion with shared branch switcher & history:
 
      ```
-     ▼ myapp              main         [3]  ← branch indicator (text)
+     ▼ backend            main         [3]  ← branch indicator (text)
        [Commit message...                    ]
        [☐ Amend]                   [✓ Commit]
        ▼ Staged (1)
@@ -111,33 +119,36 @@
          src/utils.ts
          README.md
 
-     ▼ myapp 🌳           feature/auth [0]  ← worktree (branch locked)
-       [Commit message...                    ]
-       [☐ Amend]                   [✓ Commit]
-       (no changes)
+     ▶ frontend           main         [0]  ← collapsed (0 changes)
 
-     ▶ backend            main         [0]  ← collapsed (0 changes)
-
-     ▼ shared             main         [1]
+     ▼ shared             fix/bug      [1]
        [Commit message...                    ]
        [☐ Amend]                   [✓ Commit]
        ▼ Changes (1)
          lib/utils.ts
 
      ────────────────────────────────────────────────────
-     ▶ History (myapp)                                    ← shared, collapsed
+     ▶ History (backend)                                  ← shared, collapsed
        abc123  fix: api bug           2 hours ago
        def456  feat: add auth         1 day ago
 
-     ┌─ myapp ─────────────────────────────────────────┐  ← shared footer
+     ┌─ backend ──────────────────────────────────────┐  ← shared footer
      │ [main ▼]  ↑0 ↓0          [⟳] [↑ Push] [↓ Pull] │
-     └─────────────────────────────────────────────────┘
+     └────────────────────────────────────────────────┘
+     ```
+
+   **Single-repo mode** - same UI but also shows worktrees (existing behavior):
+     ```
+     ▼ myapp              main         [3]
+       ...
+     ▼ myapp 🌳           feature/auth [0]  ← worktree (branch locked)
+       ...
      ```
 
    **Per-repo (replicated in accordion):**
    | Element | Notes |
    |---------|-------|
-   | Header row | Name + 🌳 + branch (text) + change count |
+   | Header row | Name + branch (text) + change count |
    | Commit message input | Per-repo textarea |
    | Amend checkbox | Per-repo |
    | Commit button | Per-repo |
@@ -155,8 +166,8 @@
    **Behavior:**
    - Clicking/focusing a repo makes it "selected" for shared components
    - Branch switcher shows which repo it operates on
-   - Worktrees: branch indicator shown but not switchable
    - Repos with 0 changes can stay collapsed
+   - Single-repo mode: worktrees shown with 🌳 icon, branch not switchable
 
 **Files to modify:**
 
@@ -344,17 +355,21 @@ This is a major new feature for coordinating work across sessions/subagents:
 
 ---
 
-#### Message Reverts - **Done**
+#### Message Reverts - **Done** (polish needed)
 
-**Current state:** Fully implemented in `/packages/opencode/src/session/revert.ts`
+**Current state:** Fully implemented - backend, server endpoints, and UI commands all working.
 
-Features:
+**What works:**
+- `SessionRevert.revert()` / `unrevert()` / `cleanup()` in backend
+- `/undo` and `/redo` slash commands in UI
+- File snapshot rollback
+- Reverted messages hidden from chat
+- Prompt restoration on undo
+- SDK context preservation via `sdkUuid`
 
-- `SessionRevert.revert()` - Revert to a specific message
-- `SessionRevert.unrevert()` - Undo a revert
-- `SessionRevert.cleanup()` - Permanently delete reverted messages
-- Filesystem snapshots for file state restoration
-- UI integration with `/session.undo` and `/session.redo` commands
+**Polish needed (~0.5 day):**
+- Add Cmd+Z / Cmd+Shift+Z keyboard shortcuts (currently slash commands only)
+- Simplify redo UX (stepping through revert points is non-intuitive)
 
 ---
 
@@ -625,11 +640,11 @@ _Complete git workflow without leaving the app_
 
 | Order | Feature                           | Effort   | Rationale                                            |
 | ----- | --------------------------------- | -------- | ---------------------------------------------------- |
-| 2.1   | **Multi-repo + worktree support** | 4-6 days | **Foundation** - must come first, others build on it |
+| 2.1   | **Multi-repo support** | 4-6 days | **Foundation** - must come first, others build on it |
 | 2.2   | **Branch switcher**               | 2-3 days | Per-repo branch switching (disabled for worktrees)   |
 | 2.3   | **Push/Pull/Fetch/Merge**         | 3-5 days | Depends on branch switcher, completes git story      |
 
-_Note: Multi-repo/worktree is architectural. Branch switcher and push/pull are incremental on top._
+_Note: Multi-repo is architectural (worktrees disabled in multi-repo mode). Branch switcher and push/pull are incremental on top._
 
 ---
 
