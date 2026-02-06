@@ -26,7 +26,7 @@
 
 ## About
 
-Claudius is a fork of [OpenCode](https://github.com/anomaly/opencode) Desktop rebuilt around the Claude Agent SDK.
+Claudius is a fork of [OpenCode](https://github.com/anomalyco/opencode) Desktop rebuilt around the Claude Agent SDK.
 
 ### Key Features
 
