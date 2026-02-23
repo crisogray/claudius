@@ -322,6 +322,24 @@ function createGlobalSync() {
     const event = e.details
 
     if (directory === "global") {
+      // Handle models.updated event (not yet in generated types)
+      if ((event?.type as string) === "models.updated") {
+        globalSDK.client.provider.list().then((x) => {
+          const data = x.data
+          if (!data) return
+          setGlobalStore("provider", {
+            ...data,
+            all: data.all.map((provider) => ({
+              ...provider,
+              models: Object.fromEntries(
+                Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
+              ),
+            })),
+          })
+        })
+        return
+      }
+
       switch (event?.type) {
         case "global.disposed": {
           bootstrap()

@@ -55,8 +55,11 @@ const ModelList: Component<{
         }}
       >
         {(i) => (
-          <div class="w-full flex items-center gap-x-2 text-13-regular">
+          <div class="w-full flex flex-col items-start text-13-regular">
             <span class="truncate">{i.name}</span>
+            <Show when={i.description}>
+              <span class="text-text-dimmed-extra text-12-regular whitespace-nowrap text-left">{i.description}</span>
+            </Show>
           </div>
         )}
       </List>
@@ -73,7 +76,7 @@ export const ModelSelectorPopover: Component<{
     <Kobalte open={open()} onOpenChange={setOpen} placement="top-start" gutter={8}>
       <Kobalte.Trigger as="div">{props.children}</Kobalte.Trigger>
       <Kobalte.Portal>
-        <Kobalte.Content class="w-72 h-80 flex flex-col rounded-md border border-border-base bg-surface-raised-stronger-non-alpha shadow-md z-50 outline-none overflow-hidden">
+        <Kobalte.Content class="min-w-72 h-80 flex flex-col rounded-md border border-border-base bg-surface-raised-stronger-non-alpha shadow-md z-50 outline-none overflow-hidden">
           <Kobalte.Title class="sr-only">Select model</Kobalte.Title>
           <ModelList onSelect={() => setOpen(false)} class="p-1" />
         </Kobalte.Content>

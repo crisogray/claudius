@@ -367,6 +367,9 @@ export namespace SDK {
 
     activeQueries.set(input.sessionID, activeQuery)
 
+    // Lazily update models cache from this real query (fire-and-forget)
+    SDKModels.updateModelsFromQuery(activeQuery)
+
     try {
       // Process stream - SDK query is async iterable
       const result = await SDKStream.processSDKStream(

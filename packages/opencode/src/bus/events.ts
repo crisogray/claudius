@@ -11,4 +11,10 @@ export const AppEvent = {
       duration: z.number().default(5000).optional().describe("Duration in milliseconds"),
     }),
   ),
+  ModelsUpdated: BusEvent.define(
+    "models.updated",
+    z.object({
+      count: z.number().describe("Number of models in the updated list"),
+    }),
+  ),
 }

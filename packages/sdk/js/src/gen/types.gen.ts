@@ -1840,6 +1840,7 @@ export type Command = {
 export type Model = {
   id: string
   name: string
+  description?: string
   family?: string
   reasoning: boolean
   cost: {
@@ -3908,6 +3909,7 @@ export type ProviderListResponses = {
         [key: string]: {
           id: string
           name: string
+          description?: string
           family?: string
           status: "active" | "deprecated"
           release_date: string

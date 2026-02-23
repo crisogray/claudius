@@ -10,6 +10,12 @@
   top: 0;
   bottom: 8rem;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+[data-slot="session-message-rail-compact"]::-webkit-scrollbar,
+[data-slot="session-message-rail-full"]::-webkit-scrollbar {
+  display: none;
 }
 
 [data-slot="session-message-rail-compact"] {

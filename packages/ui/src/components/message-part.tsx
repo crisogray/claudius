@@ -180,6 +180,20 @@ export type ToolInfo = {
   subtitle?: string
 }
 
+function formatMcpToolName(tool: string): { server: string; name: string } | null {
+  const match = tool.match(/^mcp__([^_]+)__(.+)$/)
+  if (!match) return null
+
+  const [, server, name] = match
+  return {
+    server: server.charAt(0).toUpperCase() + server.slice(1),
+    name: name
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" "),
+  }
+}
+
 export function getToolInfo(tool: string, input: any = {}): ToolInfo {
   switch (tool) {
     case "read":
@@ -263,11 +277,19 @@ export function getToolInfo(tool: string, input: any = {}): ToolInfo {
         icon: "mcp",
         title: "Enter Plan Mode",
       }
-    default:
+    default: {
+      const mcp = formatMcpToolName(tool)
+      if (mcp) {
+        return {
+          icon: "mcp",
+          title: `${mcp.server}: ${mcp.name}`,
+        }
+      }
       return {
         icon: "mcp",
         title: tool,
       }
+    }
   }
 }
 

@@ -1744,6 +1744,7 @@ export namespace Server {
                                 id: z.string(),
                                 providerID: z.string(),
                                 name: z.string(),
+                                description: z.string().optional(),
                                 family: z.string().optional(),
                                 capabilities: z.object({
                                   temperature: z.boolean(),
@@ -1806,6 +1807,7 @@ export namespace Server {
                 id: m.id,
                 providerID: "anthropic",
                 name: m.name,
+                description: m.description,
                 family: m.family,
                 capabilities: {
                   temperature: true,
@@ -1917,6 +1919,7 @@ export namespace Server {
                                 .object({
                                   id: z.string(),
                                   name: z.string(),
+                                  description: z.string().optional(),
                                   family: z.string().optional(),
                                   status: z.enum(["active", "deprecated"]),
                                   release_date: z.string(),
@@ -1956,6 +1959,7 @@ export namespace Server {
                 id: m.id,
                 providerID: "anthropic",
                 name: m.name,
+                description: m.description,
                 family: m.family,
                 capabilities: {
                   temperature: true,

@@ -14,6 +14,7 @@ export namespace Provider {
     .object({
       id: z.string(),
       name: z.string(),
+      description: z.string().optional(),
       family: z.string().optional(),
       reasoning: z.boolean(),
       cost: z.object({
@@ -36,6 +37,7 @@ export namespace Provider {
     return Object.entries(SDKModels.CLAUDE_MODELS).map(([id, m]) => ({
       id,
       name: m.name,
+      description: m.description,
       family: id.includes("opus") ? "opus" : id.includes("haiku") ? "haiku" : "sonnet",
       reasoning: m.features.includes("thinking"),
       cost: {
@@ -49,25 +51,11 @@ export namespace Provider {
 
   /**
    * Get models from SDK dynamically (async)
+   * @deprecated Use list() instead - models are now lazily cached from real queries
    */
   export async function listAsync(): Promise<Model[]> {
-    const sdkModels = await SDKModels.getSupportedModels()
-    return sdkModels.map((m) => {
-      const id = m.value
-      const fallback = SDKModels.CLAUDE_MODELS[id]
-      return {
-        id,
-        name: m.displayName,
-        family: id.includes("opus") ? "opus" : id.includes("haiku") ? "haiku" : "sonnet",
-        reasoning: id.includes("opus") || id.includes("sonnet"),
-        cost: {
-          input: fallback?.cost.input ?? 0,
-          output: fallback?.cost.output ?? 0,
-          cache: fallback?.cost.cache ?? { read: 0, write: 0 },
-        },
-        context: fallback?.context ?? 200000,
-      }
-    })
+    // Just return the sync list - models are updated lazily from real queries
+    return list()
   }
 
   /**

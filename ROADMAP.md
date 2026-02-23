@@ -17,8 +17,13 @@
 | Custom Tools settings             | Not started | Medium      | 2-3 days |
 | Hooks settings                    | Schema only | Medium      | 2-3 days |
 | Drag and drop tabs (split panes)  | Not started | Medium-High | 3-4 days |
+| Figma integration (link cards)    | Not started | Low         | ~1 day   |
+| Linear integration (awareness)    | Not started | Medium      | 2-3 days |
+| Slack integration (rich cards)    | Partial     | Medium      | 2-3 days |
+| Notion integration (@-tags)       | Not started | Medium      | 2-3 days |
+| Playwright integration (tab)      | Not started | Medium-High | 3-4 days |
 
-**Total estimated effort: ~32-45 days**
+**Total estimated effort: ~43-58 days**
 
 ---
 
@@ -686,6 +691,237 @@ _Full PR workflow_
 | Order | Feature | Effort   | Rationale                                       |
 | ----- | ------- | -------- | ----------------------------------------------- |
 | 5.1   | **PRs** | 5-7 days | Depends on git being solid, biggest integration |
+
+---
+
+### Phase 6: First-Class Integrations (sprinkle across phases)
+
+_Hand-selected integrations with custom UI - each can be tackled independently_
+
+#### Architecture: Built-in Integration Pattern
+
+Each integration follows a dual-layer pattern. The app exposes a native API client
+that powers both app-level UI features AND auto-exposes MCP tools to the AI model.
+No separate MCP server installation needed.
+
+```typescript
+// Example: Linear integration
+function createLinearIntegration(pat: string) {
+  const client = new LinearClient(pat)
+
+  return {
+    // App-level: powers UI features directly
+    app: {
+      searchIssues: (query: string) => client.search(query),      // @-tag autocomplete
+      getIssue: (id: string) => client.issue(id),                 // link card unfurling
+      getIssueForBranch: (branch: string) => /* parse + lookup */, // session header badge
+    },
+
+    // AI-level: auto-exposed as MCP tools via createSdkMcpServer()
+    tools: {
+      "linear.searchIssues": tool({ description: "Search Linear issues", ... }),
+      "linear.updateIssue":  tool({ description: "Update issue status", ... }),
+      "linear.createIssue":  tool({ description: "Create new issue", ... }),
+    }
+  }
+}
+```
+
+**User experience:**
+1. Add PAT in settings (once)
+2. App UI features light up (badges, @-tags, link cards)
+3. AI automatically gets tools (no MCP config needed)
+4. User can still install third-party MCP for additional tools if desired
+
+**Shared infrastructure:**
+- Token storage in `~/.opencode/auth.json` (shared across GitHub, Linear, Notion, Figma)
+- `createSdkMcpServer()` to expose tools to AI
+- Common rich card component library
+- Common `@`-tag autocomplete framework
+- Note: Playwright needs no auth (local browser automation)
+
+---
+
+#### Figma - **Light** (~1 day)
+
+Rich link rendering when Figma URLs appear in chat or tool results.
+
+```
+┌─ Figma ─────────────────────────────────┐
+│ 🎨 Auth Page v2                         │
+│ [thumbnail preview from API]            │
+│ Last modified: 2h ago                   │
+│ [Open in Figma →]                       │
+└─────────────────────────────────────────┘
+```
+
+**Implementation:**
+- Detect Figma URLs in message content / tool results
+- Fetch metadata via Figma API (file name, thumbnail, last modified)
+- Render as rich card instead of plain URL
+- Uses PAT for Figma API (same pattern as GitHub)
+- MCP handles the actual design-to-code work, this is just display
+
+---
+
+#### Linear - **Medium** (~2-3 days)
+
+Global ticket awareness + `@`-tag search + auto-exposed AI tools.
+
+```
+┌─ Session Header ────────────────────────────────┐
+│ Session 3 · ENG-142 Add auth flow  [In Progress]│
+└─────────────────────────────────────────────────┘
+```
+
+**App-level features:**
+- `@ENG-142` or `@auth` in input → search Linear → autocomplete dropdown
+- Link sessions to Linear issues (auto-detect from branch name: `feat/ENG-142-auth-flow`)
+- Show linked issue in session header with status badge
+- Auto-update issue status on session events (e.g., PR created → "In Review")
+- Rich issue card rendering:
+  ```
+  ┌─ Linear ──────────────────────────┐
+  │ ENG-142 · Add auth flow           │
+  │ Priority: High · Sprint 12        │
+  │ Assignee: @ben                    │
+  │ [Open in Linear →]               │
+  └───────────────────────────────────┘
+  ```
+
+**Auto-exposed AI tools (via built-in MCP):**
+- `linear.searchIssues` - Search issues by text
+- `linear.getIssue` - Get issue details
+- `linear.updateIssue` - Update status/assignee/priority
+- `linear.createIssue` - Create new issues
+- `linear.listMyIssues` - Get assigned issues
+
+**Implementation:**
+- PAT-based auth for Linear API (stored in `~/.opencode/auth.json`)
+- Branch name parsing: `feat/ENG-142-auth-flow` → `ENG-142`
+- Session metadata field for linked issue
+- Shared `@`-tag autocomplete framework (reused by Notion)
+- `createSdkMcpServer()` to expose tools to AI
+
+---
+
+#### Slack - **Medium** (~2-3 days)
+
+Existing `/packages/slack/` bot already creates sessions per Slack thread with live tool updates.
+
+**What exists:**
+- Full Slack bot via `@slack/bolt`
+- Creates opencode sessions per Slack thread
+- Live tool call updates posted to threads
+- Session sharing URLs
+
+**What to add for in-app integration:**
+- Slack message links render as rich cards in chat:
+  ```
+  ┌─ Slack ──────────────────────────────┐
+  │ 💬 #engineering                      │
+  │ @alice: "Deploy is done, can you     │
+  │ check the auth changes?"             │
+  │ 2:34 PM · [Open in Slack →]         │
+  └──────────────────────────────────────┘
+  ```
+- "Share to Slack" button on session summaries
+- Notification bridge: session complete → Slack DM/channel
+- Explore: bidirectional - Slack thread context available in-app?
+
+**Implementation:**
+- Detect Slack message URLs, unfurl via Slack API
+- "Share to Slack" calls existing bot infrastructure
+- Link to existing `/packages/slack/` package
+
+---
+
+#### Notion - **Medium** (~2-3 days)
+
+Subtle `@`-tag integration for pulling knowledge into context.
+
+**`@` mention in chat input:**
+```
+User types: "Implement auth based on @Auth Design Doc"
+                                     ↑
+                               ┌─ Notion Search ─────────┐
+                               │ 📄 Auth Design Doc      │
+                               │ 📄 Auth API Spec        │
+                               │ 📄 Authentication RFC   │
+                               └─────────────────────────┘
+```
+
+**When selected, injects page content as context:**
+```
+┌─ Context ──────────────────────────────────────┐
+│ 📄 Auth Design Doc (Notion)                    │
+│ Last edited: 3 days ago                        │
+│ [2,340 tokens]                        [Remove] │
+└────────────────────────────────────────────────┘
+```
+
+**Features:**
+- `@` trigger in input searches Notion pages
+- Selected page content pulled and added to session context
+- Shows in Context tab alongside files
+- Content cached with TTL (don't re-fetch every message)
+- Token count shown (user knows context cost)
+
+**Implementation:**
+- PAT-based Notion API auth
+- Search endpoint: `POST /v1/search`
+- Page content: `GET /v1/blocks/:id/children` (recursive)
+- Markdown conversion for page content
+- Integration with existing context/attachment system
+
+---
+
+#### Playwright - **High** (~3-4 days)
+
+Live browser tab for visual feedback during web development.
+
+```
+┌─ Session │ Review │ 🌐 Browser │ file.ts ──────┐
+│                                                │
+│  URL: https://localhost:3000/dashboard          │
+│  ┌──────────────────────────────────────────┐  │
+│  │                                          │  │
+│  │     [Live screenshot / stream]           │  │
+│  │                                          │  │
+│  └──────────────────────────────────────────┘  │
+│  Console: 2 errors, 1 warning                  │
+│  Last action: Clicked "Submit"                 │
+└────────────────────────────────────────────────┘
+```
+
+**Features:**
+- Dedicated "Browser" tab appears when Playwright MCP detected
+- Shows latest screenshot after each action
+- URL bar (read-only) showing current page
+- Console output summary (errors/warnings)
+- Clickable - opens in real browser
+
+**Implementation:**
+- No auth needed (local browser automation)
+- Detect Playwright MCP from server config
+- Hook into `screenshot` tool results → render in tab
+- Hook into `navigate` tool results → update URL bar
+- Tab auto-opens on first Playwright tool call
+- Could use iframe for live view if same-origin, otherwise screenshots
+
+---
+
+#### Summary
+
+| Integration | Level | Effort | Trigger |
+|-------------|-------|--------|---------|
+| **Figma** | Link card | ~1 day | URL detection |
+| **Linear** | Global awareness | ~2-3 days | Branch name + `@` mention |
+| **Slack** | Rich cards + share | ~2-3 days | URL unfurl + existing bot |
+| **Notion** | `@`-tag context | ~2-3 days | `@` in input → search |
+| **Playwright** | Browser tab | ~3-4 days | MCP detection → tab |
+
+_These can be tackled one at a time, sprinkled between other phases._
 
 ---
 
