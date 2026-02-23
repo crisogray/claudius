@@ -525,6 +525,16 @@ export type EventToastShow = {
   }
 }
 
+export type EventModelsUpdated = {
+  type: "models.updated"
+  properties: {
+    /**
+     * Number of models in the updated list
+     */
+    count: number
+  }
+}
+
 export type EventMcpToolsChanged = {
   type: "mcp.tools.changed"
   properties: {
@@ -960,6 +970,7 @@ export type Event =
   | EventSessionStatus
   | EventSessionIdle
   | EventToastShow
+  | EventModelsUpdated
   | EventMcpToolsChanged
   | EventCommandExecuted
   | EventPermissionAsked
@@ -3786,6 +3797,7 @@ export type ConfigProvidersResponses = {
           id: string
           providerID: string
           name: string
+          description?: string
           family?: string
           capabilities: {
             temperature: boolean

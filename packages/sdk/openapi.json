@@ -3653,6 +3653,9 @@
                                 "name": {
                                   "type": "string"
                                 },
+                                "description": {
+                                  "type": "string"
+                                },
                                 "family": {
                                   "type": "string"
                                 },
@@ -3990,6 +3993,9 @@
                                   "type": "string"
                                 },
                                 "name": {
+                                  "type": "string"
+                                },
+                                "description": {
                                   "type": "string"
                                 },
                                 "family": {
@@ -7928,6 +7934,26 @@
         },
         "required": ["type", "properties"]
       },
+      "Event.models.updated": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "models.updated"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "description": "Number of models in the updated list",
+                "type": "number"
+              }
+            },
+            "required": ["count"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
       "Event.mcp.tools.changed": {
         "type": "object",
         "properties": {
@@ -9117,6 +9143,9 @@
           },
           {
             "$ref": "#/components/schemas/Event.toast.show"
+          },
+          {
+            "$ref": "#/components/schemas/Event.models.updated"
           },
           {
             "$ref": "#/components/schemas/Event.mcp.tools.changed"
@@ -10629,6 +10658,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "family": {

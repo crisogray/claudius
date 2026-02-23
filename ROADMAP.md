@@ -2,26 +2,26 @@
 
 ## Summary
 
-| Feature                           | Status      | Difficulty  | Effort   |
-| --------------------------------- | ----------- | ----------- | -------- |
-| **Multi-repo support** | Not started | Medium-High | 4-6 days |
-| Branch switcher                   | Not started | Medium      | 2-3 days |
-| Push/Pull/Fetch/Merge             | Not started | Medium-High | 3-5 days |
-| Replace tabs in-place             | Not started | Low         | 1 day    |
-| New tasks format                  | Not started | High        | 4-6 days |
-| Message reverts                   | **Done** (needs keybindings) | Low | ~0.5 day |
-| Queue message                     | Not started | Medium      | 2-3 days |
-| PRs                               | Not started | High        | 5-7 days |
-| Skills settings                   | Partial     | Low         | 1 day    |
-| Agents/Subagents settings         | Partial     | Medium      | 2-3 days |
-| Custom Tools settings             | Not started | Medium      | 2-3 days |
-| Hooks settings                    | Schema only | Medium      | 2-3 days |
-| Drag and drop tabs (split panes)  | Not started | Medium-High | 3-4 days |
-| Figma integration (link cards)    | Not started | Low         | ~1 day   |
-| Linear integration (awareness)    | Not started | Medium      | 2-3 days |
-| Slack integration (rich cards)    | Partial     | Medium      | 2-3 days |
-| Notion integration (@-tags)       | Not started | Medium      | 2-3 days |
-| Playwright integration (tab)      | Not started | Medium-High | 3-4 days |
+| Feature                          | Status                       | Difficulty  | Effort   |
+| -------------------------------- | ---------------------------- | ----------- | -------- |
+| **Multi-repo support**           | Not started                  | Medium-High | 4-6 days |
+| Branch switcher                  | Not started                  | Medium      | 2-3 days |
+| Push/Pull/Fetch/Merge            | Not started                  | Medium-High | 3-5 days |
+| Replace tabs in-place            | Not started                  | Low         | 1 day    |
+| New tasks format                 | Not started                  | High        | 4-6 days |
+| Message reverts                  | **Done** (needs keybindings) | Low         | ~0.5 day |
+| Queue message                    | Not started                  | Medium      | 2-3 days |
+| PRs                              | Not started                  | High        | 5-7 days |
+| Skills settings                  | Partial                      | Low         | 1 day    |
+| Agents/Subagents settings        | Partial                      | Medium      | 2-3 days |
+| Custom Tools settings            | Not started                  | Medium      | 2-3 days |
+| Hooks settings                   | Schema only                  | Medium      | 2-3 days |
+| Drag and drop tabs (split panes) | Not started                  | Medium-High | 3-4 days |
+| Figma integration (link cards)   | Not started                  | Low         | ~1 day   |
+| Linear integration (awareness)   | Not started                  | Medium      | 2-3 days |
+| Slack integration (rich cards)   | Partial                      | Medium      | 2-3 days |
+| Notion integration (@-tags)      | Not started                  | Medium      | 2-3 days |
+| Playwright integration (tab)     | Not started                  | Medium-High | 3-4 days |
 
 **Total estimated effort: ~43-58 days**
 
@@ -39,17 +39,16 @@
 
 **Two modes - mutually exclusive:**
 
-| Mode | When | Sessions | Worktrees |
-|------|------|----------|-----------|
-| **Single repo** | One `.git` at/above workspace | Shared via worktree grouping | ✓ Detected & listed |
-| **Multi-repo** | Multiple `.git` dirs in workspace | Per-workspace (top level) | ✗ Disabled |
+| Mode            | When                              | Sessions                     | Worktrees           |
+| --------------- | --------------------------------- | ---------------------------- | ------------------- |
+| **Single repo** | One `.git` at/above workspace     | Shared via worktree grouping | ✓ Detected & listed |
+| **Multi-repo**  | Multiple `.git` dirs in workspace | Per-workspace (top level)    | ✗ Disabled          |
 
 **Detection algorithm:**
 
 ```typescript
 // Find all .git directories in workspace
-const gitDirs = await glob("**/.git", { onlyDirectories: true })
-  .filter(p => !p.includes("node_modules"))
+const gitDirs = await glob("**/.git", { onlyDirectories: true }).filter((p) => !p.includes("node_modules"))
 
 if (gitDirs.length === 0) {
   // No git - check parent dirs for repo (current behavior)
@@ -66,16 +65,18 @@ if (gitDirs.length === 1) {
 }
 
 // Multi-repo mode - no worktree detection
-const repos = gitDirs.map(p => dirname(p))
+const repos = gitDirs.map((p) => dirname(p))
 return { mode: "multi", repos }
 ```
 
 **Why disable worktrees in multi-repo:**
+
 - Worktree session sharing creates circular dependency with project identity
 - Multi-repo = multiple independent projects, sessions at workspace level
 - Keeps architecture simple
 
 **Example - Single repo mode:**
+
 ```
 /workspace/myapp/          ← opened folder
   .git/                    ← single repo detected
@@ -84,6 +85,7 @@ Worktrees of myapp also detected, sessions shared
 ```
 
 **Example - Multi-repo mode:**
+
 ```
 /workspace/                ← opened folder
   /backend/.git/           ← repo 1
@@ -114,41 +116,42 @@ No worktree detection, sessions belong to workspace
 
    **Multi-repo mode** - full accordion with shared branch switcher & history:
 
-     ```
-     ▼ backend            main         [3]  ← branch indicator (text)
-       [Commit message...                    ]
-       [☐ Amend]                   [✓ Commit]
-       ▼ Staged (1)
-         src/api.ts
-       ▼ Changes (2)
-         src/utils.ts
-         README.md
+   ```
+   ▼ backend            main         [3]  ← branch indicator (text)
+     [Commit message...                    ]
+     [☐ Amend]                   [✓ Commit]
+     ▼ Staged (1)
+       src/api.ts
+     ▼ Changes (2)
+       src/utils.ts
+       README.md
 
-     ▶ frontend           main         [0]  ← collapsed (0 changes)
+   ▶ frontend           main         [0]  ← collapsed (0 changes)
 
-     ▼ shared             fix/bug      [1]
-       [Commit message...                    ]
-       [☐ Amend]                   [✓ Commit]
-       ▼ Changes (1)
-         lib/utils.ts
+   ▼ shared             fix/bug      [1]
+     [Commit message...                    ]
+     [☐ Amend]                   [✓ Commit]
+     ▼ Changes (1)
+       lib/utils.ts
 
-     ────────────────────────────────────────────────────
-     ▶ History (backend)                                  ← shared, collapsed
-       abc123  fix: api bug           2 hours ago
-       def456  feat: add auth         1 day ago
+   ────────────────────────────────────────────────────
+   ▶ History (backend)                                  ← shared, collapsed
+     abc123  fix: api bug           2 hours ago
+     def456  feat: add auth         1 day ago
 
-     ┌─ backend ──────────────────────────────────────┐  ← shared footer
-     │ [main ▼]  ↑0 ↓0          [⟳] [↑ Push] [↓ Pull] │
-     └────────────────────────────────────────────────┘
-     ```
+   ┌─ backend ──────────────────────────────────────┐  ← shared footer
+   │ [main ▼]  ↑0 ↓0          [⟳] [↑ Push] [↓ Pull] │
+   └────────────────────────────────────────────────┘
+   ```
 
    **Single-repo mode** - same UI but also shows worktrees (existing behavior):
-     ```
-     ▼ myapp              main         [3]
-       ...
-     ▼ myapp 🌳           feature/auth [0]  ← worktree (branch locked)
-       ...
-     ```
+
+   ```
+   ▼ myapp              main         [3]
+     ...
+   ▼ myapp 🌳           feature/auth [0]  ← worktree (branch locked)
+     ...
+   ```
 
    **Per-repo (replicated in accordion):**
    | Element | Notes |
@@ -365,6 +368,7 @@ This is a major new feature for coordinating work across sessions/subagents:
 **Current state:** Fully implemented - backend, server endpoints, and UI commands all working.
 
 **What works:**
+
 - `SessionRevert.revert()` / `unrevert()` / `cleanup()` in backend
 - `/undo` and `/redo` slash commands in UI
 - File snapshot rollback
@@ -373,6 +377,7 @@ This is a major new feature for coordinating work across sessions/subagents:
 - SDK context preservation via `sdkUuid`
 
 **Polish needed (~0.5 day):**
+
 - Add Cmd+Z / Cmd+Shift+Z keyboard shortcuts (currently slash commands only)
 - Simplify redo UX (stepping through revert points is non-intuitive)
 
@@ -430,6 +435,7 @@ Each repo/worktree entry shows PR status per-branch with clickable icon:
 | `[+ Create PR]` | No PR for this branch |
 
 **Clicking PR icon → opens PR tab:**
+
 - Full PR details (title, description, reviewers)
 - CI status with individual check results
 - Review comments thread
@@ -437,6 +443,7 @@ Each repo/worktree entry shows PR status per-branch with clickable icon:
 - Merge/close actions
 
 **Provider detection (per-repo):**
+
 ```typescript
 // Detect from remote URL
 function detectProvider(remoteUrl: string): "github" | "gitlab" | null {
@@ -450,6 +457,7 @@ function detectProvider(remoteUrl: string): "github" | "gitlab" | null {
 **Implementation approach:** Direct API with Personal Access Token (PAT)
 
 **Why PAT-only:**
+
 - No backend/OAuth app needed (open source friendly)
 - No shared rate limits across users
 - Works with self-hosted GitHub Enterprise / GitLab
@@ -457,6 +465,7 @@ function detectProvider(remoteUrl: string): "github" | "gitlab" | null {
 - Simple UX - paste token once
 
 **Auth UI:**
+
 ```
 ┌─ GitHub Authentication ─────────────────────┐
 │                                             │
@@ -470,11 +479,13 @@ function detectProvider(remoteUrl: string): "github" | "gitlab" | null {
 ```
 
 **Token storage:**
+
 - Store in `~/.opencode/auth.json`
 - Key by remote host: `{ "github.com": "ghp_xxx", "gitlab.com": "glpat_xxx" }`
 - Support multiple tokens for different hosts
 
 **API endpoints:**
+
 - GitHub: `https://api.github.com/repos/:owner/:repo/pulls`
 - GitLab: `https://gitlab.com/api/v4/projects/:id/merge_requests`
 - Self-hosted: detect from remote URL, use same API paths
@@ -643,11 +654,11 @@ _Foundation improvements for daily workflow_
 
 _Complete git workflow without leaving the app_
 
-| Order | Feature                           | Effort   | Rationale                                            |
-| ----- | --------------------------------- | -------- | ---------------------------------------------------- |
-| 2.1   | **Multi-repo support** | 4-6 days | **Foundation** - must come first, others build on it |
-| 2.2   | **Branch switcher**               | 2-3 days | Per-repo branch switching (disabled for worktrees)   |
-| 2.3   | **Push/Pull/Fetch/Merge**         | 3-5 days | Depends on branch switcher, completes git story      |
+| Order | Feature                   | Effort   | Rationale                                            |
+| ----- | ------------------------- | -------- | ---------------------------------------------------- |
+| 2.1   | **Multi-repo support**    | 4-6 days | **Foundation** - must come first, others build on it |
+| 2.2   | **Branch switcher**       | 2-3 days | Per-repo branch switching (disabled for worktrees)   |
+| 2.3   | **Push/Pull/Fetch/Merge** | 3-5 days | Depends on branch switcher, completes git story      |
 
 _Note: Multi-repo is architectural (worktrees disabled in multi-repo mode). Branch switcher and push/pull are incremental on top._
 
@@ -728,12 +739,14 @@ function createLinearIntegration(pat: string) {
 ```
 
 **User experience:**
+
 1. Add PAT in settings (once)
 2. App UI features light up (badges, @-tags, link cards)
 3. AI automatically gets tools (no MCP config needed)
 4. User can still install third-party MCP for additional tools if desired
 
 **Shared infrastructure:**
+
 - Token storage in `~/.opencode/auth.json` (shared across GitHub, Linear, Notion, Figma)
 - `createSdkMcpServer()` to expose tools to AI
 - Common rich card component library
@@ -756,6 +769,7 @@ Rich link rendering when Figma URLs appear in chat or tool results.
 ```
 
 **Implementation:**
+
 - Detect Figma URLs in message content / tool results
 - Fetch metadata via Figma API (file name, thumbnail, last modified)
 - Render as rich card instead of plain URL
@@ -775,6 +789,7 @@ Global ticket awareness + `@`-tag search + auto-exposed AI tools.
 ```
 
 **App-level features:**
+
 - `@ENG-142` or `@auth` in input → search Linear → autocomplete dropdown
 - Link sessions to Linear issues (auto-detect from branch name: `feat/ENG-142-auth-flow`)
 - Show linked issue in session header with status badge
@@ -790,6 +805,7 @@ Global ticket awareness + `@`-tag search + auto-exposed AI tools.
   ```
 
 **Auto-exposed AI tools (via built-in MCP):**
+
 - `linear.searchIssues` - Search issues by text
 - `linear.getIssue` - Get issue details
 - `linear.updateIssue` - Update status/assignee/priority
@@ -797,6 +813,7 @@ Global ticket awareness + `@`-tag search + auto-exposed AI tools.
 - `linear.listMyIssues` - Get assigned issues
 
 **Implementation:**
+
 - PAT-based auth for Linear API (stored in `~/.opencode/auth.json`)
 - Branch name parsing: `feat/ENG-142-auth-flow` → `ENG-142`
 - Session metadata field for linked issue
@@ -810,12 +827,14 @@ Global ticket awareness + `@`-tag search + auto-exposed AI tools.
 Existing `/packages/slack/` bot already creates sessions per Slack thread with live tool updates.
 
 **What exists:**
+
 - Full Slack bot via `@slack/bolt`
 - Creates opencode sessions per Slack thread
 - Live tool call updates posted to threads
 - Session sharing URLs
 
 **What to add for in-app integration:**
+
 - Slack message links render as rich cards in chat:
   ```
   ┌─ Slack ──────────────────────────────┐
@@ -830,6 +849,7 @@ Existing `/packages/slack/` bot already creates sessions per Slack thread with l
 - Explore: bidirectional - Slack thread context available in-app?
 
 **Implementation:**
+
 - Detect Slack message URLs, unfurl via Slack API
 - "Share to Slack" calls existing bot infrastructure
 - Link to existing `/packages/slack/` package
@@ -841,6 +861,7 @@ Existing `/packages/slack/` bot already creates sessions per Slack thread with l
 Subtle `@`-tag integration for pulling knowledge into context.
 
 **`@` mention in chat input:**
+
 ```
 User types: "Implement auth based on @Auth Design Doc"
                                      ↑
@@ -852,6 +873,7 @@ User types: "Implement auth based on @Auth Design Doc"
 ```
 
 **When selected, injects page content as context:**
+
 ```
 ┌─ Context ──────────────────────────────────────┐
 │ 📄 Auth Design Doc (Notion)                    │
@@ -861,6 +883,7 @@ User types: "Implement auth based on @Auth Design Doc"
 ```
 
 **Features:**
+
 - `@` trigger in input searches Notion pages
 - Selected page content pulled and added to session context
 - Shows in Context tab alongside files
@@ -868,6 +891,7 @@ User types: "Implement auth based on @Auth Design Doc"
 - Token count shown (user knows context cost)
 
 **Implementation:**
+
 - PAT-based Notion API auth
 - Search endpoint: `POST /v1/search`
 - Page content: `GET /v1/blocks/:id/children` (recursive)
@@ -895,6 +919,7 @@ Live browser tab for visual feedback during web development.
 ```
 
 **Features:**
+
 - Dedicated "Browser" tab appears when Playwright MCP detected
 - Shows latest screenshot after each action
 - URL bar (read-only) showing current page
@@ -902,6 +927,7 @@ Live browser tab for visual feedback during web development.
 - Clickable - opens in real browser
 
 **Implementation:**
+
 - No auth needed (local browser automation)
 - Detect Playwright MCP from server config
 - Hook into `screenshot` tool results → render in tab
@@ -913,13 +939,13 @@ Live browser tab for visual feedback during web development.
 
 #### Summary
 
-| Integration | Level | Effort | Trigger |
-|-------------|-------|--------|---------|
-| **Figma** | Link card | ~1 day | URL detection |
-| **Linear** | Global awareness | ~2-3 days | Branch name + `@` mention |
-| **Slack** | Rich cards + share | ~2-3 days | URL unfurl + existing bot |
-| **Notion** | `@`-tag context | ~2-3 days | `@` in input → search |
-| **Playwright** | Browser tab | ~3-4 days | MCP detection → tab |
+| Integration    | Level              | Effort    | Trigger                   |
+| -------------- | ------------------ | --------- | ------------------------- |
+| **Figma**      | Link card          | ~1 day    | URL detection             |
+| **Linear**     | Global awareness   | ~2-3 days | Branch name + `@` mention |
+| **Slack**      | Rich cards + share | ~2-3 days | URL unfurl + existing bot |
+| **Notion**     | `@`-tag context    | ~2-3 days | `@` in input → search     |
+| **Playwright** | Browser tab        | ~3-4 days | MCP detection → tab       |
 
 _These can be tackled one at a time, sprinkled between other phases._
 
